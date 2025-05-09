@@ -1,15 +1,15 @@
 ### modeling/bertopic_model.py
 """
 BERTopic modeling on final AI bias dataset.
-Performs topic modeling using BERTopic with custom stopwords and saves topic info.
-Also saves post-topic assignments with probabilities.
+Performs topic modeling using BERTopic with reusable vectorizer config.
+Also saves topic info and document-topic assignments with probabilities.
 """
 
 import os
 
 import pandas as pd
 from bertopic import BERTopic
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, CountVectorizer
+from vectorizer_config import vectorizer_model
 
 from config import AI_KEYWORDS
 
@@ -19,84 +19,10 @@ TOPIC_ASSIGNMENT_PATH = os.getenv(
     "BERTopic_TOPIC_DOCS", "data/results/bertopic_post_topics.csv"
 )
 
-# Combine default and custom stopwords
-CUSTOM_STOPWORDS = set(
-    [
-        "use",
-        "know",
-        "thing",
-        "like",
-        "just",
-        "really",
-        "even",
-        "think",
-        "get",
-        "used",
-        "dont",
-        "make",
-        "want",
-        "need",
-        "see",
-        "im",
-        "people",
-        "post",
-        "prompt",
-        "prompts",
-        "image",
-        "images",
-        "mj",
-        "midjourney",
-        "dalle",
-        "openai",
-        "transformer",
-        "resnets",
-        "layer",
-        "weight",
-        "param",
-        "train",
-        "loss",
-        "epoch",
-        "tokenizer",
-        "attention",
-        "model",
-        "error",
-        "ckpt",
-        "yaml",
-        "diffusers",
-        "setup",
-        "api",
-        "automatic1111",
-        "torch",
-        "cuda",
-        "rtx",
-        "comfyui",
-        "training",
-        "checkpoint",
-        "ai",
-        "models",
-        "sd",
-        "sdxl",
-        "movie",
-        "movies",
-        "human",
-        "new",
-        "good",
-        "time",
-        "feel",
-        "using",
-        "seen",
-        "character",
-        "thing",
-        "image",
-    ]
-)
-
-STOPWORDS = set(ENGLISH_STOP_WORDS).union(CUSTOM_STOPWORDS)
-
 
 def run_bertopic_model(df):
-    docs = df["text"].fillna("").astype(str).tolist()
-    vectorizer_model = CountVectorizer(stop_words=STOPWORDS, min_df=2)
+    docs = df["clean_text"].fillna("").astype(str).tolist()
+
     topic_model = BERTopic(
         vectorizer_model=vectorizer_model,
         language="english",
@@ -104,23 +30,16 @@ def run_bertopic_model(df):
         nr_topics="auto",
         verbose=True,
     )
-    topics, probs = topic_model.fit_transform(docs)
+    topic_model.fit(docs)
     topic_info = topic_model.get_topic_info()
 
-    doc_topics = pd.DataFrame(
-        {
-            "post_id": df.get("id", pd.Series(range(len(df)))),
-            "topic": topics,
-            "probability": [
-                max(p) if isinstance(p, list) and p else None for p in probs
-            ],
-        }
-    )
-    doc_topics = pd.merge(
-        doc_topics, topic_info, how="left", left_on="topic", right_on="Topic"
-    )
+    # 🔍 document-topic info extraction (BERTopic >= 0.14.0)
+    doc_info = topic_model.get_document_info(docs)
+    doc_info["post_id"] = df.get("id", pd.Series(range(len(df))))
+    doc_info["input_text"] = df["clean_text"]
+    doc_info["raw_text"] = df["full_text"]
 
-    return {"model": topic_model, "topic_info": topic_info, "doc_topics": doc_topics}
+    return topic_model, topic_info, doc_info
 
 
 def main():
