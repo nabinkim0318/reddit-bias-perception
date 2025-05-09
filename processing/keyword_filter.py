@@ -1,4 +1,4 @@
-### filtering/keyword_filter.py
+### processing/keyword_filter.py
 """
 Keyword-based filtering module for AI bias Reddit project.
 Filters posts based on presence of bias-related keywords and AI relevance.
@@ -19,16 +19,33 @@ def match_keywords(text, keywords):
     return [kw for kw in keywords if kw in text]
 
 
-def filter_posts(posts, bias_keywords, ai_keywords):
+def infer_bias_types(text, bias_keywords_dict):
+    text = str(text).lower()
+    matched_types = []
+    for bias_type, keywords in bias_keywords_dict.items():
+        if any(kw in text for kw in keywords):
+            matched_types.append(bias_type)
+    return matched_types
+
+
+def filter_posts(posts, bias_keywords_dict, ai_keywords):
     filtered = []
+    ai_flat = flatten_keywords({"ai": ai_keywords})
+
     for post in posts:
         content = f"{post.get('title', '')} {post.get('selftext', '')} {' '.join(post.get('comments', []))}".lower()
-        matched_bias = match_keywords(content, bias_keywords)
-        matched_ai = match_keywords(content, ai_keywords)
 
-        if matched_bias and matched_ai:
-            post["matched_bias_keywords"] = matched_bias
-            post["matched_ai_keywords"] = matched_ai
+        # Mandatory condition: need to have
+        matched_bias_keywords = match_keywords(
+            content, flatten_keywords(bias_keywords_dict)
+        )
+        matched_ai_keywords = match_keywords(content, ai_flat)
+        bias_types = infer_bias_types(content, bias_keywords_dict)
+
+        if matched_bias_keywords and matched_ai_keywords:
+            post["matched_bias_keywords"] = matched_bias_keywords
+            post["matched_ai_keywords"] = matched_ai_keywords
+            post["bias_types"] = ";".join(bias_types)  # 또는 list 형태로 저장해도 됨
             filtered.append(post)
     return filtered
 

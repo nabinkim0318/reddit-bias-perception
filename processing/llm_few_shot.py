@@ -1,4 +1,4 @@
-### filtering/llm_few_shot.py
+### processing/llm_few_shot.py
 """
 Few-shot classification using Gemma 2B model to determine whether a Reddit post discusses bias in AI-generated images.
 """

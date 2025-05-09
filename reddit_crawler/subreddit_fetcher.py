@@ -27,7 +27,16 @@ async def fetch_posts(reddit, subreddit_name: str, limit: int = 200) -> list:
         else:
             try:
                 await post.comments.replace_more(limit=0)
-                comments = [c.body for c in post.comments[:3]]
+                # comments: first 10 comments (any depth, sequential order) for random sampling
+                comments = [c.body for c in post.comments[:10]]
+
+                # top_comments: top 5 highest-scoring top-level comments
+                top_level = [c for c in post.comments if c.is_root]
+                top_comments = [
+                    c.body
+                    for c in sorted(top_level, key=lambda x: x.score, reverse=True)[:5]
+                ]
+
             except Exception as e:
                 logging.warning(
                     f"⚠️ Skipped comments in r/{subreddit_name} due to error: {e}"
@@ -41,7 +50,11 @@ async def fetch_posts(reddit, subreddit_name: str, limit: int = 200) -> list:
                 "title": post.title,
                 "selftext": post.selftext,
                 "comments": comments,
+                "top_comments": top_comments,
                 "score": post.score,
+                "num_comments": post.num_comments,
+                "upvote_ratio": post.upvote_ratio,
+                "flair": post.link_flair_text,
                 "created_utc": post.created_utc,
             }
         )

@@ -38,7 +38,6 @@ def is_valid_content(text):
 def preprocess_dataframe(df):
     # Clean comments to ensure consistency
     df["comments"] = df["comments"].apply(lambda x: x if isinstance(x, list) else [])
-    df["comments_text"] = df["comments"].apply(lambda x: " ".join(x))
 
     # Remove deleted/empty content
     df = df[
@@ -46,13 +45,7 @@ def preprocess_dataframe(df):
     ]
 
     # Construct and clean text
-    df["full_text"] = (
-        df["title"].fillna("")
-        + " "
-        + df["selftext"].fillna("")
-        + " "
-        + df["comments_text"]
-    )
+    df["full_text"] = df["title"].fillna("") + " " + df["selftext"].fillna("")
     df["clean_text"] = df["full_text"].apply(preprocess_text)
 
     # Order columns for clarity
@@ -62,7 +55,6 @@ def preprocess_dataframe(df):
         "title",
         "selftext",
         "comments",
-        "comments_text",
         "full_text",
         "clean_text",
     ]

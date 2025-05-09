@@ -1,7 +1,5 @@
 # reddit_crawler/reddit_client.py
 
-# reddit_crawler/reddit_client.py
-
 import asyncio
 import os
 
