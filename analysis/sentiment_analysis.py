@@ -16,11 +16,15 @@ from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-from config.config import FINAL_ANALYSIS_INPUT, SENTIMENT_OUTPUT
+from config.config import (
+    EMOTION_MODEL,
+    FINAL_ANALYSIS_INPUT,
+    SENTIMENT_OUTPUT,
+    VADER_PLOT_PATH,
+)
 
 # Setup model and tokenizer
-MODEL_ID = "SamLowe/roberta-base-go_emotions"
-
+MODEL_ID = EMOTION_MODEL
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("🔍 Loading GoEmotions model (PyTorch)...")

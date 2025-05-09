@@ -1,34 +1,32 @@
-### main.py
-
 import pandas as pd
-from modeling.bertopic_model import run_bertopic
-from modeling.lda_model import run_lda
-from preprocessing.clean_text import preprocess_dataframe
 
-from analysis.topic_filter import extract_bias_topics
-from analysis.visualization import visualize_topics
-from config import DATA_PATH
-from reddit_crawler.fetch_data import fetch_all_subreddits
+from analysis.bertopic_model import run_bertopic_model
+from analysis.sentiment_analysis import run_sentiment_analysis
+from config.config import (
+    FINAL_ANALYSIS_INPUT,
+    SENTIMENT_OUTPUT,
+    TOPIC_ASSIGNMENT_PATH,
+    TOPIC_OUTPUT,
+)
 
 
 def main():
-    # 1. Load Data
-    df = pd.read_csv(DATA_PATH)
-    print(f"Loaded {len(df)} posts")
+    # 1. Load final filtered dataset
+    df = pd.read_csv(FINAL_ANALYSIS_INPUT)
+    print(f"📥 Loaded {len(df)} filtered posts for analysis")
 
-    # 2. Preprocess
-    df = preprocess_dataframe(df)
+    # 2. Run sentiment analysis (GoEmotions + VADER)
+    df = run_sentiment_analysis(df)
+    df.to_csv(SENTIMENT_OUTPUT, index=False)
+    print(f"✅ Sentiment results saved to: {SENTIMENT_OUTPUT}")
 
-    # 3. BERTopic Modeling
-    topic_model, topic_info, df_with_topics = run_bertopic(df)
+    # 3. Run BERTopic modeling
+    topic_model, topic_info, doc_topics = run_bertopic_model(df)
+    topic_info.to_csv(TOPIC_OUTPUT, index=False)
+    doc_topics.to_csv(TOPIC_ASSIGNMENT_PATH, index=False)
+    print(f"✅ Topic modeling complete. Saved to: {TOPIC_OUTPUT}")
 
-    # 4. Filter bias topics
-    bias_df = extract_bias_topics(topic_info, df_with_topics)
-
-    # 5. Visualization
-    visualize_topics(topic_model, bias_df)
-
-    print("Pipeline complete.")
+    print("🎉 Analysis pipeline complete.")
 
 
 if __name__ == "__main__":

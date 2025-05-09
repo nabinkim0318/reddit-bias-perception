@@ -12,3 +12,6 @@ check:
 
 test:
 	poetry run pytest tests/ --disable-warnings
+
+pipeline:
+	poetry run python pipeline_main.py

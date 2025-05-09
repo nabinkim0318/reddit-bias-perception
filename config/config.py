@@ -55,12 +55,13 @@ SENTIMENT_OUTPUT = os.getenv(
 )
 
 # === MODEL PARAMETERS ===
-EMOTION_MODEL = "j-hartmann/emotion-english-roberta-base"
+EMOTION_MODEL = "SamLowe/roberta-base-go_emotions"
 EMOTION_TOP_K = 3
 MAX_TEXT_LENGTH = 512
 
 # === VADER ===
 VADER_THRESHOLD = 0.05
+VADER_PLOT_PATH = os.path.join(RESULTS_DIR, "vader_dist.png")
 
 # === ETC ===
 RANDOM_SEED = 42
