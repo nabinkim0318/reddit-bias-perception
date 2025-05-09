@@ -3,6 +3,8 @@
 import asyncio
 import logging
 
+from processing.utils_technical_filter import is_blacklist_post
+
 
 async def fetch_posts(reddit, subreddit_name: str, limit: int = 200) -> list:
     """
@@ -14,6 +16,11 @@ async def fetch_posts(reddit, subreddit_name: str, limit: int = 200) -> list:
 
     async for post in submissions:
         await post.load()
+
+        # Filtering: Exclude technical posts
+        combined_text = f"{post.title} {post.selftext}"
+        if is_blacklist_post(combined_text):
+            continue  # Skip posts with blacklist keywords
 
         if not hasattr(post, "comments") or post.comments is None:
             comments = []
