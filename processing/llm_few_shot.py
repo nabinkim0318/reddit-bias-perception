@@ -8,15 +8,20 @@ import traceback
 
 import pandas as pd
 import torch
+from dotenv import load_dotenv
 from jinja2 import Template
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# Load environment variables
+load_dotenv()
 
 # Config
 MODEL_ID = "google/gemma-2b-it"
 INPUT_PATH = os.getenv("FEWSHOT_INPUT_PATH", "data/processed/ai_bias_posts_clean.csv")
 OUTPUT_DIR = os.getenv("FEWSHOT_OUTPUT_DIR", "data/processed/")
 TEMPLATE_PATH = "templates/fewshot_prompt_template.j2"
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 
 # Classification instruction (system prompt)
@@ -39,7 +44,6 @@ NO_CRITERIA = (
     "- Reflects on the creative process or philosophical/artistic value of AI output without reference to social bias or exclusion"
 )
 
-# Load model and tokenizer
 print("🔍 Loading model...")
 
 

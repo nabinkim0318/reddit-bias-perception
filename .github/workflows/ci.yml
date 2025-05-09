@@ -21,14 +21,11 @@ jobs:
     - name: Install Poetry
       run: pip install poetry
 
-    - name: Install dependencies
-      run: poetry install
+    - name: Install dependencies via Makefile
+      run: make install
 
-    - name: Run code checks
-      run: |
-        poetry run black --check .
-        poetry run isort --check-only .
-        poetry check
+    - name: Run format and static checks via Makefile
+      run: make check
 
-    - name: Run tests
-      run: poetry run pytest tests/
+    - name: Run tests via Makefile
+      run: make test

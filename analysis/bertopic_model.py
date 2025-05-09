@@ -3,6 +3,13 @@
 BERTopic modeling on final AI bias dataset.
 Performs topic modeling using BERTopic with reusable vectorizer config.
 Also saves topic info and document-topic assignments with probabilities.
+
+| post\_id | topic | probability | Name    | Representative Words                                  | raw_text                                                                                     |
+| -------- | ----- | ----------- | ------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| abc123   | 0     | 0.85        | Topic 0 | `["bias", "image", "ai", "gender", "representation"]` | "I noticed all AI-generated portraits show women with the same unrealistic proportions." |
+| def456   | 1     | 0.92        | Topic 1 | `["model", "training", "data", "epoch", "cuda"]`      | "I'm training a diffusion model and keep getting CUDA errors at epoch 3."                |
+| xyz789   | -1    | None        | Outlier | `[]`                                                  | "Sometimes I wonder if machines dream in color or code."                                 |
+
 """
 
 import os

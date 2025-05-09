@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from dotenv import load_dotenv
 from jinja2 import Template
 
 # 공통 템플릿
@@ -33,7 +34,7 @@ class MockTokenizer:
         return 0
 
 
-# 공통 mock model
+# Common mock model
 class MockModel:
     def generate(self, *args, **kwargs):
         return [[0, 1, 2, 3]]
@@ -54,10 +55,10 @@ class MockModel:
 def test_classify_post_variants(mock_output, expected_label):
     from processing import llm_few_shot
 
-    # 템플릿 재정의
+    # template for the prompt
     llm_few_shot.template = Template(SAMPLE_TEMPLATE)
 
-    # tokenizer/model 생성 및 mock 설정
+    # tokenizer/model  & mock settings
     tokenizer = MockTokenizer()
     tokenizer._mock_output = mock_output
     model = MockModel()
