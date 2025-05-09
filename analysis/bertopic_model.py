@@ -1,10 +1,9 @@
-### modeling/bertopic_model.py
 """
 BERTopic modeling on final AI bias dataset.
 Performs topic modeling using BERTopic with reusable vectorizer config.
 Also saves topic info and document-topic assignments with probabilities.
 
-| post\_id | topic | probability | Name    | Representative Words                                  | raw_text                                                                                     |
+| post_id | topic | probability | Name    | Representative Words                                  | raw_text                                                                                     |
 | -------- | ----- | ----------- | ------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | abc123   | 0     | 0.85        | Topic 0 | `["bias", "image", "ai", "gender", "representation"]` | "I noticed all AI-generated portraits show women with the same unrealistic proportions." |
 | def456   | 1     | 0.92        | Topic 1 | `["model", "training", "data", "epoch", "cuda"]`      | "I'm training a diffusion model and keep getting CUDA errors at epoch 3."                |
@@ -12,19 +11,15 @@ Also saves topic info and document-topic assignments with probabilities.
 
 """
 
-import os
-
 import pandas as pd
 from bertopic import BERTopic
-from vectorizer_config import vectorizer_model
+from dotenv import load_dotenv
 
-from config import AI_KEYWORDS
+from config.config import (FINAL_ANALYSIS_INPUT, TOPIC_ASSIGNMENT_PATH,
+                           TOPIC_OUTPUT)
+from config.vectorizer_config import vectorizer_model
 
-INPUT_PATH = os.getenv("BERTopic_INPUT", "data/processed/ai_bias_final.csv")
-TOPIC_INFO_PATH = os.getenv("BERTopic_OUTPUT", "data/results/bertopic_topic_info.csv")
-TOPIC_ASSIGNMENT_PATH = os.getenv(
-    "BERTopic_TOPIC_DOCS", "data/results/bertopic_post_topics.csv"
-)
+load_dotenv()
 
 
 def run_bertopic_model(df):
@@ -50,13 +45,13 @@ def run_bertopic_model(df):
 
 
 def main():
-    df = pd.read_csv(INPUT_PATH)
+    df = pd.read_csv(FINAL_ANALYSIS_INPUT)
     topic_model, topic_info, doc_topics = run_bertopic_model(df)
-    topic_info.to_csv(TOPIC_INFO_PATH, index=False)
+    topic_info.to_csv(TOPIC_OUTPUT, index=False)
     doc_topics.to_csv(TOPIC_ASSIGNMENT_PATH, index=False)
 
     print(f"✅ BERTopic modeling complete.")
-    print(f"- Topic summary saved to: {TOPIC_INFO_PATH}")
+    print(f"- Topic summary saved to: {TOPIC_OUTPUT}")
     print(f"- Post-topic assignments saved to: {TOPIC_ASSIGNMENT_PATH}")
 
 

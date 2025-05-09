@@ -3,10 +3,14 @@ repos:
     rev: 25.1.0
     hooks:
       - id: black
+        args: [--check]
+
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.10.1
     hooks:
       - id: isort
+        args: [--check-only]
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:

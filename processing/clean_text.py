@@ -9,9 +9,12 @@ import json
 import re
 
 import pandas as pd
+from dotenv import load_dotenv
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
-from config import DATA_PATH
+from config.config import CLEANED_DATA, RAW_REDDIT_DATA
+
+load_dotenv()
 
 STOPWORDS = set(ENGLISH_STOP_WORDS)
 
@@ -62,15 +65,14 @@ def preprocess_dataframe(df):
 
 
 def main(input_path=None):
-    path = input_path or DATA_PATH
+    path = input_path or RAW_REDDIT_DATA
     with open(path, "r", encoding="utf-8") as f:
         posts = json.load(f)
 
     df = pd.DataFrame(posts)
     df = preprocess_dataframe(df)
-    output_path = path.replace(".json", "_clean.csv")
-    df.to_csv(output_path, index=False)
-    print(f"✅ Preprocessed text saved to {output_path}")
+    df.to_csv(CLEANED_DATA, index=False)
+    print(f"✅ Preprocessed text saved to {CLEANED_DATA}")
 
 
 if __name__ == "__main__":

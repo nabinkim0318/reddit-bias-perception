@@ -7,7 +7,12 @@ Filters posts based on presence of bias-related keywords and AI relevance.
 import json
 import re
 
-from config import AI_KEYWORDS, BIAS_KEYWORDS, DATA_PATH, RAW_DATA_PATH
+from dotenv import load_dotenv
+
+from config.config import (AI_KEYWORDS, BIAS_KEYWORDS, CLASSIFIED_BIAS,
+                           FILTERED_DATA)
+
+load_dotenv()
 
 
 def flatten_keywords(keyword_dict):
@@ -45,23 +50,23 @@ def filter_posts(posts, bias_keywords_dict, ai_keywords):
         if matched_bias_keywords and matched_ai_keywords:
             post["matched_bias_keywords"] = matched_bias_keywords
             post["matched_ai_keywords"] = matched_ai_keywords
-            post["bias_types"] = ";".join(bias_types)  # 또는 list 형태로 저장해도 됨
+            post["bias_types"] = ";".join(bias_types)
             filtered.append(post)
     return filtered
 
 
 def main():
-    with open(RAW_DATA_PATH, "r", encoding="utf-8") as f:
+    with open(CLASSIFIED_BIAS, "r", encoding="utf-8") as f:
         raw_data = json.load(f)
 
     bias_flat = flatten_keywords(BIAS_KEYWORDS)
     filtered_data = filter_posts(raw_data, bias_flat, AI_KEYWORDS)
 
-    with open(DATA_PATH, "w", encoding="utf-8") as f:
+    with open(FILTERED_DATA, "w", encoding="utf-8") as f:
         json.dump(filtered_data, f, ensure_ascii=False, indent=2)
 
     print(
-        f"Filtered {len(filtered_data)} posts from {len(raw_data)} raw posts → saved to {DATA_PATH}"
+        f"Filtered {len(filtered_data)} posts from {len(raw_data)} raw posts → saved to {FILTERED_DATA}"
     )
 
 

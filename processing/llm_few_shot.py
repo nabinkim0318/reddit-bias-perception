@@ -13,16 +13,13 @@ from jinja2 import Template
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from config.config import (BIAS_UNCERTAIN, CLASSIFIED_BIAS, CLASSIFIED_NONBIAS,
+                           CLEANED_DATA, FEWSHOT_RESULT, MODEL_ID, OUTPUT_DIR,
+                           TEMPLATE_PATH)
+
 # Load environment variables
 load_dotenv()
-
-# Config
-MODEL_ID = "google/gemma-2b-it"
-INPUT_PATH = os.getenv("FEWSHOT_INPUT_PATH", "data/processed/ai_bias_posts_clean.csv")
-OUTPUT_DIR = os.getenv("FEWSHOT_OUTPUT_DIR", "data/processed/")
-TEMPLATE_PATH = "templates/fewshot_prompt_template.j2"
 HF_TOKEN = os.getenv("HF_TOKEN")
-
 
 # Classification instruction (system prompt)
 SYSTEM_INSTRUCTION = (
@@ -97,7 +94,7 @@ def main():
     tokenizer, model = load_model(MODEL_ID)
 
     # Data loading
-    df = pd.read_csv(INPUT_PATH)
+    df = pd.read_csv(CLEANED_DATA)
     texts = df["text"].fillna("").astype(str).tolist()
     subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
 
@@ -121,18 +118,11 @@ def main():
 
     # Saving results
     result_df = pd.DataFrame(results)
-    result_df.to_csv(
-        os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv"), index=False
-    )
-
-    result_df[result_df["pred_label"] == "Yes"].to_csv(
-        os.path.join(OUTPUT_DIR, "classified_bias.csv"), index=False
-    )
-    result_df[result_df["pred_label"] == "No"].to_csv(
-        os.path.join(OUTPUT_DIR, "classified_nonbias.csv"), index=False
-    )
+    result_df.to_csv(FEWSHOT_RESULT, index=False)
+    result_df[result_df["pred_label"] == "Yes"].to_csv(CLASSIFIED_BIAS, index=False)
+    result_df[result_df["pred_label"] == "No"].to_csv(CLASSIFIED_NONBIAS, index=False)
     result_df[~result_df["pred_label"].isin(["Yes", "No"])].to_csv(
-        os.path.join(OUTPUT_DIR, "bias_uncertain.csv"), index=False
+        BIAS_UNCERTAIN, index=False
     )
 
     print("✅ Few-shot classification complete. Saved:")

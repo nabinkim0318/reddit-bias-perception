@@ -16,12 +16,11 @@ from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-# Setup paths and model
-INPUT_PATH = os.getenv("SENTIMENT_INPUT", "data/processed/ai_bias_final.csv")
-OUTPUT_PATH = os.getenv("SENTIMENT_OUTPUT", "data/results/sentiment_labeled.csv")
+from config.config import FINAL_ANALYSIS_INPUT, SENTIMENT_OUTPUT
+
+# Setup model and tokenizer
 MODEL_ID = "SamLowe/roberta-base-go_emotions"
 
-# Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("🔍 Loading GoEmotions model (PyTorch)...")
@@ -109,7 +108,7 @@ def analyze_comments(comments):
 
 
 def main():
-    df = pd.read_csv(INPUT_PATH)
+    df = pd.read_csv(FINAL_ANALYSIS_INPUT)
     df["text"] = df["text"].fillna("")
 
     texts = [t for t in df["text"].tolist() if t.strip()]
@@ -128,8 +127,8 @@ def main():
         )
         df["comment_sentiment"] = df["comments"].apply(analyze_comments)
 
-    df.to_csv(OUTPUT_PATH, index=False)
-    print(f"✅ Sentiment analysis complete. Output saved to: {OUTPUT_PATH}")
+    df.to_csv(SENTIMENT_OUTPUT, index=False)
+    print(f"✅ Sentiment analysis complete. Output saved to: {SENTIMENT_OUTPUT}")
 
     plot_goemotion_distribution(df)
     plot_vader_distribution(df)
