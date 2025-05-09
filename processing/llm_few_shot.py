@@ -13,9 +13,16 @@ from jinja2 import Template
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from config.config import (BIAS_UNCERTAIN, CLASSIFIED_BIAS, CLASSIFIED_NONBIAS,
-                           CLEANED_DATA, FEWSHOT_RESULT, MODEL_ID, OUTPUT_DIR,
-                           TEMPLATE_PATH)
+from config.config import (
+    BIAS_UNCERTAIN,
+    CLASSIFIED_BIAS,
+    CLASSIFIED_NONBIAS,
+    CLEANED_DATA,
+    FEWSHOT_RESULT,
+    MODEL_ID,
+    OUTPUT_DIR,
+    TEMPLATE_PATH,
+)
 
 # Load environment variables
 load_dotenv()

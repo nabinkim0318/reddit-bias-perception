@@ -9,8 +9,7 @@ import re
 
 from dotenv import load_dotenv
 
-from config.config import (AI_KEYWORDS, BIAS_KEYWORDS, CLASSIFIED_BIAS,
-                           FILTERED_DATA)
+from config.config import AI_KEYWORDS, BIAS_KEYWORDS, CLASSIFIED_BIAS, FILTERED_DATA
 
 load_dotenv()
 

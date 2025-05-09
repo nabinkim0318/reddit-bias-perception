@@ -15,8 +15,7 @@ import pandas as pd
 from bertopic import BERTopic
 from dotenv import load_dotenv
 
-from config.config import (FINAL_ANALYSIS_INPUT, TOPIC_ASSIGNMENT_PATH,
-                           TOPIC_OUTPUT)
+from config.config import FINAL_ANALYSIS_INPUT, TOPIC_ASSIGNMENT_PATH, TOPIC_OUTPUT
 from config.vectorizer_config import vectorizer_model
 
 load_dotenv()
