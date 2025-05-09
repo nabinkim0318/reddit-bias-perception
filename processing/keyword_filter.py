@@ -14,18 +14,21 @@ def flatten_keywords(keyword_dict):
     return list({kw.lower() for values in keyword_dict.values() for kw in values})
 
 
-def contains_keywords(text, keywords):
+def match_keywords(text, keywords):
     text = str(text).lower()
-    return any(kw in text for kw in keywords)
+    return [kw for kw in keywords if kw in text]
 
 
 def filter_posts(posts, bias_keywords, ai_keywords):
     filtered = []
     for post in posts:
         content = f"{post.get('title', '')} {post.get('selftext', '')} {' '.join(post.get('comments', []))}".lower()
-        if contains_keywords(content, bias_keywords) and contains_keywords(
-            content, ai_keywords
-        ):
+        matched_bias = match_keywords(content, bias_keywords)
+        matched_ai = match_keywords(content, ai_keywords)
+
+        if matched_bias and matched_ai:
+            post["matched_bias_keywords"] = matched_bias
+            post["matched_ai_keywords"] = matched_ai
             filtered.append(post)
     return filtered
 

@@ -29,7 +29,7 @@ onnx = "^1.17.0"
 onnxruntime = "^1.16.3"
 
 # Classical sentiment model
-vaderSentiment = "^3.3.2"
+vadersentiment = "^3.3.2"
 
 # Topic modeling
 bertopic = "^0.17.0"
@@ -39,6 +39,9 @@ asyncpraw = "^7.8.1"
 
 # Environment config
 python-dotenv = "^1.0.1"
+jinja2 = "^3.1.6"
+sentencepiece = "^0.2.0"
+accelerate = "^1.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"

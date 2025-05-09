@@ -1,0 +1,16 @@
+<s> [INST] {{ instruction }}
+
+    A post should be classified as "1" (Yes) if it includes:
+    {% if include_yes_criteria %}
+    {{ yes_criteria }}
+    {% endif %}
+
+    A post should be classified as "0" (No) if it:
+    {% if include_no_criteria %}
+    {{ no_criteria }}
+    {% endif %}
+
+    Now decide:
+    Post: "{{ post }}"
+    [/INST]
+    Output:

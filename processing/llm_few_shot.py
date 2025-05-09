@@ -4,17 +4,20 @@ Few-shot classification using Gemma 2B model to determine whether a Reddit post 
 """
 
 import os
-import re
+import traceback
 
 import pandas as pd
 import torch
+from jinja2 import Template
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM, LlamaTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # Config
 MODEL_ID = "google/gemma-2b-it"
 INPUT_PATH = os.getenv("FEWSHOT_INPUT_PATH", "data/processed/ai_bias_posts_clean.csv")
 OUTPUT_DIR = os.getenv("FEWSHOT_OUTPUT_DIR", "data/processed/")
+TEMPLATE_PATH = "templates/fewshot_prompt_template.j2"
+
 
 # Classification instruction (system prompt)
 SYSTEM_INSTRUCTION = (
@@ -38,28 +41,33 @@ NO_CRITERIA = (
 
 # Load model and tokenizer
 print("🔍 Loading model...")
-tokenizer = LlamaTokenizer.from_pretrained(MODEL_ID)
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_ID, device_map="auto", torch_dtype="auto", trust_remote_code=True
-)
+
+
+def load_model(model_id):
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id, device_map="cpu", torch_dtype="auto", trust_remote_code=True
+    )
+    return tokenizer, model
+
+
+# Load Jinja2 template once
+with open(TEMPLATE_PATH) as f:
+    template = Template(f.read())
 
 
 def build_prompt(post_text):
-    return f"""<s> [INST] {SYSTEM_INSTRUCTION}
-
-A post should be classified as \"1\" (Yes) if it includes:
-{YES_CRITERIA}
-
-A post should be classified as \"0\" (No) if it:
-{NO_CRITERIA}
-
-Now decide:
-Post: \"{post_text.strip()}\"
-[/INST]
-Output:"""
+    return template.render(
+        instruction=SYSTEM_INSTRUCTION,
+        yes_criteria=YES_CRITERIA,
+        no_criteria=NO_CRITERIA,
+        post=post_text.strip(),
+        include_yes_criteria=True,
+        include_no_criteria=True,
+    )
 
 
-def classify_post(post_text):
+def classify_post(post_text, tokenizer, model):
     prompt = build_prompt(post_text)
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
@@ -72,25 +80,31 @@ def classify_post(post_text):
         )
 
     decoded = tokenizer.decode(outputs[0], skip_special_tokens=False)
-    match = re.search(r"\[/INST\]\s*Output:\s*(\d)", decoded)
-    if match:
-        label = "Yes" if match.group(1) == "1" else "No"
+    if "Output: 1" in decoded:
+        return "Yes", decoded
+    elif "Output: 0" in decoded:
+        return "No", decoded
     else:
-        label = "Uncertain"
-    return label, decoded
+        return "Uncertain", decoded
 
 
 def main():
+    # Model loading
+    tokenizer, model = load_model(MODEL_ID)
+
+    # Data loading
     df = pd.read_csv(INPUT_PATH)
     texts = df["text"].fillna("").astype(str).tolist()
     subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
 
     results = []
+
+    # Classify each text
     for i, text in tqdm(enumerate(texts), total=len(texts)):
         try:
-            label, output = classify_post(text)
+            label, output = classify_post(text, tokenizer, model)
         except Exception as e:
-            label, output = "Error", str(e)
+            label, output = "Error", traceback.format_exc()
         results.append(
             {
                 "index": i,
@@ -101,25 +115,26 @@ def main():
             }
         )
 
+    # Saving results
     result_df = pd.DataFrame(results)
     result_df.to_csv(
-        os.path.join(OUTPUT_DIR, "classified_fewshot_all.csv"), index=False
+        os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv"), index=False
     )
 
     result_df[result_df["pred_label"] == "Yes"].to_csv(
-        os.path.join(OUTPUT_DIR, "included_BCD_fewshot.csv"), index=False
+        os.path.join(OUTPUT_DIR, "classified_bias.csv"), index=False
     )
     result_df[result_df["pred_label"] == "No"].to_csv(
-        os.path.join(OUTPUT_DIR, "excluded_AE_fewshot.csv"), index=False
+        os.path.join(OUTPUT_DIR, "classified_nonbias.csv"), index=False
     )
     result_df[~result_df["pred_label"].isin(["Yes", "No"])].to_csv(
-        os.path.join(OUTPUT_DIR, "uncertain_fewshot.csv"), index=False
+        os.path.join(OUTPUT_DIR, "bias_uncertain.csv"), index=False
     )
 
     print("✅ Few-shot classification complete. Saved:")
-    print("- included_BCD_fewshot.csv")
-    print("- excluded_AE_fewshot.csv")
-    print("- uncertain_fewshot.csv")
+    print("- classified_bias.csv")
+    print("- classified_nonbias.csv")
+    print("- bias_uncertain.csv")
 
 
 if __name__ == "__main__":

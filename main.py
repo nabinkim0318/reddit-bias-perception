@@ -3,11 +3,11 @@
 import pandas as pd
 from modeling.bertopic_model import run_bertopic
 from modeling.lda_model import run_lda
+from preprocessing.clean_text import preprocess_dataframe
 
 from analysis.topic_filter import extract_bias_topics
 from analysis.visualization import visualize_topics
 from config import DATA_PATH
-from preprocessing.clean_text import preprocess_dataframe
 from reddit_crawler.fetch_data import fetch_all_subreddits
 
 
