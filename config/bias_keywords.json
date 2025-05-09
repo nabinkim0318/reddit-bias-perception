@@ -1,0 +1,41 @@
+{
+    "gender": [
+      "gender", "woman", "man", "female", "male", "beauty", "attractive",
+      "sexist", "misogyny", "misandry"
+    ],
+    "age": [
+      "age", "old", "young", "elderly", "middle-aged", "youth", "teen", "senior"
+    ],
+    "disability": [
+      "disability", "disabled", "wheelchair", "blind", "deaf", "handicap"
+    ],
+    "race": [
+      "race", "racial", "asian", "black", "white", "ethnicity", "ethnic"
+    ],
+    "class": [
+      "rich", "poor", "income", "job", "profession", "unemployed", "worker", "class"
+    ],
+    "education": [
+      "education", "graduate", "school", "college", "degree"
+    ],
+    "religion": [
+      "religion", "muslim", "christian", "jewish", "temple", "hijab", "islam", "bible"
+    ],
+    "body_modification": [
+      "tattoo", "piercing", "body modification"
+    ],
+    "name": [
+      "name", "laura", "mohammed", "kevin", "akhil", "kim", "ali"
+    ],
+    "lgbtq": [
+      "gay", "lesbian", "queer", "lgbtq", "trans", "nonbinary"
+    ],
+    "location": [
+      "urban", "rural", "developed country", "developing world", "africa", "europe", "america"
+    ],
+    "general_bias": [
+      "bias", "biased", "biases", "biasing", "stereotype", "stereotypical",
+      "prejudice", "prejudiced", "discrimination", "discriminatory", "unfair"
+    ]
+  }
+  

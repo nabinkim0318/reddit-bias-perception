@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+*.log
+
+# Poetry
+poetry.lock
+
+# Virtual environments
+.env
+.venv/
+env/
+venv/
+
+# Jupyter / temp
+.ipynb_checkpoints/
+*.ipynb
+.DS_Store
+
+# VSCode or IDE
+.vscode/
+.idea/
+
+# DVC or data
+/data/
+*.csv

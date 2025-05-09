@@ -1,0 +1,20 @@
+{
+    "expert": [
+      "MachineLearning",
+      "artificial",
+      "ArtificialIntelligence",
+      "LanguageTechnology",
+      "DeepLearning"
+    ],
+    "casual": [
+      "aiArt",
+      "midjourney",
+      "StableDiffusion",
+      "dalle2",
+      "aiwars",
+      "deepdream",
+      "ChatGPT",
+      "Futurology",
+      "Technology"
+    ]
+  }

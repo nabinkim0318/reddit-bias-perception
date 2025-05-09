@@ -1,0 +1,52 @@
+[project]
+name = "reddit-bias-perception"
+version = "0.1.0"
+description = "Sentiment analysis on AI bias-related Reddit posts using ONNX and VADER"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Nabin Kim", email = "nabinkim0318@gmail.com" }
+]
+
+[tool.poetry]
+packages = [{ include = "analysis" }]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+# Core data handling & visualization
+pandas = "^2.2.2"
+numpy = ">=1.24,<2.0"
+tqdm = "^4.66.4"
+matplotlib = "^3.9.0"
+seaborn = "^0.13.2"
+
+# Transformer-based sentiment (ONNX + HuggingFace)
+transformers = "^4.41.1"
+torch = "^2.2.2"
+optimum = "^1.19.1"
+onnx = "^1.17.0"
+onnxruntime = "^1.16.3"
+
+# Classical sentiment model
+vaderSentiment = "^3.3.2"
+
+# Topic modeling
+bertopic = "^0.17.0"
+
+# Reddit crawling
+asyncpraw = "^7.8.1"
+
+# Environment config
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+pytest-asyncio = "^0.26.0"
+black = "^24.4.2"
+isort = "^5.13.2"
+pre-commit = "^3.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
