@@ -54,6 +54,9 @@ isort = "^5.13.2"
 pre-commit = "^3.7.0"
 ipykernel = "^6.29.5"
 
+[tool.poetry.plugins."poetry.plugin"]
+"export" = "poetry_plugin_export.plugin:ExportPlugin"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
