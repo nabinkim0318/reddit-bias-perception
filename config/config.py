@@ -1,6 +1,17 @@
 import json
 import os
 
+# === COLAB ===
+try:
+    IS_COLAB = "google.colab" in str(get_ipython())
+except NameError:
+    IS_COLAB = False
+
+if IS_COLAB:
+    BASE_DIR = "/content/drive/MyDrive/reddit_bias_data"
+else:
+    BASE_DIR = "data"
+
 # === PATHS ===
 DATA_DIR = "data"
 RAW_DIR = os.path.join(DATA_DIR, "raw")
@@ -8,9 +19,7 @@ PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
 RESULTS_DIR = os.path.join(DATA_DIR, "results")
 
 # === INPUT FILES ===
-RAW_REDDIT_DATA = os.getenv(
-    "RAW_REDDIT_DATA", os.path.join(RAW_DIR, "reddit_bias_data.csv")
-)
+RAW_REDDIT_DATA = os.getenv("RAW_REDDIT_DATA", os.path.join(RAW_DIR, "reddit_raw.json"))
 CLEANED_DATA = os.getenv(
     "CLEANED_DATA", os.path.join(PROCESSED_DIR, "reddit_bias_data_clean.csv")
 )
@@ -38,7 +47,7 @@ BIAS_UNCERTAIN = os.path.join(OUTPUT_DIR, "bias_uncertain.csv")
 FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv")
 
 # === TEMPLATE & MODEL ===
-TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "fewshot_prompt_template.j2")
+TEMPLATE_PATH = "config/fewshot_prompt_template.j2"
 MODEL_ID = os.getenv("MODEL_ID", "google/gemma-2b-it")
 
 # === TOPIC MODELING OUTPUT ===

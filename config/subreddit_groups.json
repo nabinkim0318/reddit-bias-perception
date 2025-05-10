@@ -1,20 +1,18 @@
 {
     "expert": [
       "MachineLearning",
-      "artificial",
-      "ArtificialIntelligence",
-      "LanguageTechnology",
-      "DeepLearning"
-    ],
-    "casual": [
+      "ArtificialInteligence",
       "aiArt",
       "midjourney",
       "StableDiffusion",
-      "dalle2",
-      "aiwars",
-      "deepdream",
-      "ChatGPT",
+      "ChatGPT"
+    ],
+    "casual": [
+      "todayilearned",
+      "movies",
+      "worldnews",
+      "Art",
       "Futurology",
-      "Technology"
+      "AskReddit"
     ]
   }

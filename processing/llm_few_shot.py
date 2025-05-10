@@ -104,7 +104,7 @@ def classify_post(post_text, tokenizer, model):
 def main():
     tokenizer, model = load_model(MODEL_ID)
     df = pd.read_csv(CLEANED_DATA)
-    texts = df["text"].fillna("").astype(str).tolist()
+    texts = df["clean_text"].fillna("").astype(str).tolist()
     subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
 
     results = []

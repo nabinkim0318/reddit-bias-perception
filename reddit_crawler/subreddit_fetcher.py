@@ -22,9 +22,10 @@ async def fetch_posts(reddit, subreddit_name: str, limit: int = 200) -> list:
         if is_blacklist_post(combined_text):
             continue  # Skip posts with blacklist keywords
 
-        if not hasattr(post, "comments") or post.comments is None:
-            comments = []
-        else:
+        comments = []
+        top_comments = []
+
+        if hasattr(post, "comments") and post.comments is not None:
             try:
                 await post.comments.replace_more(limit=0)
                 # comments: first 10 comments (any depth, sequential order) for random sampling
@@ -41,7 +42,6 @@ async def fetch_posts(reddit, subreddit_name: str, limit: int = 200) -> list:
                 logging.warning(
                     f"⚠️ Skipped comments in r/{subreddit_name} due to error: {e}"
                 )
-                comments = []
 
         results.append(
             {
