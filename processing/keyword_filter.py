@@ -7,6 +7,7 @@ Filters posts based on presence of bias-related keywords and AI relevance.
 import json
 import re
 
+import pandas as pd
 from dotenv import load_dotenv
 
 from config.config import AI_KEYWORDS, BIAS_KEYWORDS, CLASSIFIED_BIAS, FILTERED_DATA
@@ -55,11 +56,10 @@ def filter_posts(posts, bias_keywords_dict, ai_keywords):
 
 
 def main():
-    with open(CLASSIFIED_BIAS, "r", encoding="utf-8") as f:
-        raw_data = json.load(f)
+    df = pd.read_csv(CLASSIFIED_BIAS)
+    raw_data = df.to_dict("records")
 
-    bias_flat = flatten_keywords(BIAS_KEYWORDS)
-    filtered_data = filter_posts(raw_data, bias_flat, AI_KEYWORDS)
+    filtered_data = filter_posts(raw_data, BIAS_KEYWORDS, AI_KEYWORDS)
 
     with open(FILTERED_DATA, "w", encoding="utf-8") as f:
         json.dump(filtered_data, f, ensure_ascii=False, indent=2)

@@ -95,7 +95,7 @@ def plot_vader_distribution(df):
     plt.title("VADER Compound Score Distribution")
     plt.xlabel("Compound Score")
     plt.tight_layout()
-    plt.savefig("data/results/vader_dist.png", dpi=300)
+    plt.savefig(VADER_PLOT_PATH, dpi=300)
     plt.show()
 
 

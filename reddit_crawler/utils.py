@@ -1,8 +1,10 @@
 # reddit_crawler/utils.py
 import json
 
+from config.config import SUBREDDIT_GROUPS_PATH
 
-def load_subreddit_groups(path="config/subreddit_groups.json"):
+
+def load_subreddit_groups(path=SUBREDDIT_GROUPS_PATH):
     with open(path, "r") as f:
         data = json.load(f)
     return data.get("expert", []), data.get("casual", [])

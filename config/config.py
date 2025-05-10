@@ -1,29 +1,23 @@
 import json
 import os
 
-# === COLAB ===
+# === COLAB DETECTION ===
 try:
     IS_COLAB = "google.colab" in str(get_ipython())
 except NameError:
     IS_COLAB = False
 
-if IS_COLAB:
-    BASE_DIR = "/content/drive/MyDrive/reddit_bias_data"
-else:
-    BASE_DIR = "data"
-
-# === PATHS ===
-DATA_DIR = "data"
-RAW_DIR = os.path.join(DATA_DIR, "raw")
-PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
-RESULTS_DIR = os.path.join(DATA_DIR, "results")
+# === BASE PATH SETTING ===
+BASE_DIR = "/content/drive/MyDrive/reddit_bias_data" if IS_COLAB else "data"
+RAW_DIR = os.path.join(BASE_DIR, "raw")
+PROCESSED_DIR = os.path.join(BASE_DIR, "processed")
+RESULTS_DIR = os.path.join(BASE_DIR, "results")
 
 # === INPUT FILES ===
 RAW_REDDIT_DATA = os.getenv("RAW_REDDIT_DATA", os.path.join(RAW_DIR, "reddit_raw.json"))
 CLEANED_DATA = os.getenv(
     "CLEANED_DATA", os.path.join(PROCESSED_DIR, "reddit_bias_data_clean.csv")
 )
-# CLASSIFIED_BIAS is the input for the keyword-based filtering
 FILTERED_DATA = os.getenv(
     "FILTERED_DATA", os.path.join(PROCESSED_DIR, "filtered_ai_bias.csv")
 )
@@ -47,7 +41,9 @@ BIAS_UNCERTAIN = os.path.join(OUTPUT_DIR, "bias_uncertain.csv")
 FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv")
 
 # === TEMPLATE & MODEL ===
-TEMPLATE_PATH = "config/fewshot_prompt_template.j2"
+TEMPLATE_PATH = os.getenv(
+    "TEMPLATE_PATH", os.path.join("config", "fewshot_prompt_template.j2")
+)
 MODEL_ID = os.getenv("MODEL_ID", "google/gemma-2b-it")
 
 # === TOPIC MODELING OUTPUT ===
@@ -74,3 +70,4 @@ VADER_PLOT_PATH = os.path.join(RESULTS_DIR, "vader_dist.png")
 
 # === ETC ===
 RANDOM_SEED = 42
+SUBREDDIT_GROUPS_PATH = "config/subreddit_groups.json"
