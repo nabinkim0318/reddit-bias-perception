@@ -59,13 +59,18 @@ def load_model(model_id):
     return tokenizer, model
 
 
-# Load Jinja2 template once
-with open(TEMPLATE_PATH) as f:
-    template = Template(f.read())
+# Lazy load template
+from functools import lru_cache
+
+
+@lru_cache
+def get_template():
+    with open(TEMPLATE_PATH) as f:
+        return Template(f.read())
 
 
 def build_prompt(post_text):
-    return template.render(
+    return get_template().render(
         instruction=SYSTEM_INSTRUCTION,
         yes_criteria=YES_CRITERIA,
         no_criteria=NO_CRITERIA,
@@ -97,17 +102,12 @@ def classify_post(post_text, tokenizer, model):
 
 
 def main():
-    # Model loading
     tokenizer, model = load_model(MODEL_ID)
-
-    # Data loading
     df = pd.read_csv(CLEANED_DATA)
     texts = df["text"].fillna("").astype(str).tolist()
     subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
 
     results = []
-
-    # Classify each text
     for i, text in tqdm(enumerate(texts), total=len(texts)):
         try:
             label, output = classify_post(text, tokenizer, model)
@@ -123,9 +123,9 @@ def main():
             }
         )
 
-    # Saving results
     result_df = pd.DataFrame(results)
     result_df.to_csv(FEWSHOT_RESULT, index=False)
+
     result_df[result_df["pred_label"] == "Yes"].to_csv(CLASSIFIED_BIAS, index=False)
     result_df[result_df["pred_label"] == "No"].to_csv(CLASSIFIED_NONBIAS, index=False)
     result_df[~result_df["pred_label"].isin(["Yes", "No"])].to_csv(

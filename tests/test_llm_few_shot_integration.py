@@ -3,9 +3,16 @@ import os
 import pytest
 from dotenv import load_dotenv
 
+load_dotenv()  # Load .env where HF_TOKEN is defined
+os.environ["TEMPLATE_PATH"] = "tests/assets/test_prompt_template.j2"
 from processing import llm_few_shot
 
-load_dotenv()  # Load .env where HF_TOKEN is defined
+
+@pytest.fixture(scope="session", autouse=True)
+def create_test_template():
+    os.makedirs("tests/test_assets", exist_ok=True)
+    with open("tests/test_assets/test_template.j2", "w") as f:
+        f.write("Dummy template: {{ instruction }} {{ post }}")
 
 
 @pytest.mark.skipif(not os.getenv("HF_TOKEN"), reason="HF_TOKEN not set in environment")

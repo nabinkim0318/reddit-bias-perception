@@ -1,10 +1,12 @@
-from unittest.mock import MagicMock
+import os
 
 import pytest
-from dotenv import load_dotenv
 from jinja2 import Template
 
-# 공통 템플릿
+# Ensure template path is set to test location
+TEMPLATE_PATH = "tests/assets/test_prompt_template.j2"
+
+# Sample template used in tests
 SAMPLE_TEMPLATE = """<s> [INST] {{ instruction }}
 A post should be classified as "1" (Yes) if it includes:
 {{ yes_criteria }}
@@ -21,7 +23,6 @@ class MockBatchEncoding(dict):
         return self
 
 
-# Common mock tokenizer
 class MockTokenizer:
     def __call__(self, prompt, return_tensors="pt"):
         return MockBatchEncoding({"input_ids": [[1, 2, 3]]})
@@ -34,7 +35,6 @@ class MockTokenizer:
         return 0
 
 
-# Common mock model
 class MockModel:
     def generate(self, *args, **kwargs):
         return [[0, 1, 2, 3]]
@@ -42,6 +42,14 @@ class MockModel:
     @property
     def device(self):
         return "cpu"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def create_test_template():
+    os.makedirs("tests/assets", exist_ok=True)
+    with open(TEMPLATE_PATH, "w") as f:
+        f.write(SAMPLE_TEMPLATE)
+    os.environ["TEMPLATE_PATH"] = TEMPLATE_PATH
 
 
 @pytest.mark.parametrize(
@@ -55,10 +63,9 @@ class MockModel:
 def test_classify_post_variants(mock_output, expected_label):
     from processing import llm_few_shot
 
-    # template for the prompt
+    # Inject sample template and mock model/tokenizer
     llm_few_shot.template = Template(SAMPLE_TEMPLATE)
 
-    # tokenizer/model  & mock settings
     tokenizer = MockTokenizer()
     tokenizer._mock_output = mock_output
     model = MockModel()

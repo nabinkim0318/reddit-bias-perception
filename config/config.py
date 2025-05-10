@@ -38,7 +38,7 @@ BIAS_UNCERTAIN = os.path.join(OUTPUT_DIR, "bias_uncertain.csv")
 FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv")
 
 # === TEMPLATE & MODEL ===
-TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "templates/fewshot_prompt_template.j2")
+TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "fewshot_prompt_template.j2")
 MODEL_ID = os.getenv("MODEL_ID", "google/gemma-2b-it")
 
 # === TOPIC MODELING OUTPUT ===
