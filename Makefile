@@ -11,7 +11,7 @@ check:
 	poetry check && poetry run black --check . && poetry run isort --check-only .
 
 test:
-	poetry run pytest tests/ --disable-warnings
+	PYTHONPATH=. poetry run pytest tests/ --disable-warnings
 
 pipeline:
 	poetry run python pipeline_main.py

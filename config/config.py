@@ -54,6 +54,8 @@ TOPIC_ASSIGNMENT_PATH = os.getenv(
     "TOPIC_ASSIGNMENT_PATH", os.path.join(RESULTS_DIR, "bertopic_post_topics.csv")
 )
 
+TOPIC_MODEL_PATH = os.path.join("models", "bertopic_model")
+
 # === SENTIMENT ANALYSIS ===
 SENTIMENT_OUTPUT = os.getenv(
     "SENTIMENT_OUTPUT", os.path.join(RESULTS_DIR, "sentiment_labeled.csv")
