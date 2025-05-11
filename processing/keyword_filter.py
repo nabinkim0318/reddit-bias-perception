@@ -60,7 +60,7 @@ def filter_posts(posts, bias_keywords_dict, ai_keywords):
                     "bias_types": bias_types,
                 }
                 validated = FilteredAIBiasPost(**enriched)
-                filtered.append(validated.dict())
+                filtered.append(validated.model_dump())
             except ValidationError as e:
                 print(f"❌ Validation error for post {post.get('id')}: {e}")
     return filtered
