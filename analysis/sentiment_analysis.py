@@ -28,8 +28,10 @@ MODEL_ID = EMOTION_MODEL
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("🔍 Loading GoEmotions model (PyTorch)...")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_ID).to(device)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, local_files_only=True)
+model = AutoModelForSequenceClassification.from_pretrained(
+    MODEL_ID, local_files_only=True
+).to(device)
 id2label = model.config.id2label
 
 # Load VADER

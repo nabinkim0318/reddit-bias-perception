@@ -117,7 +117,7 @@ def main():
     results = []
     for i in tqdm(range(0, len(texts), batch_size)):
         batch_texts = texts[i : i + batch_size]
-        batch_subreddits = subreddits[i : i + batch_size]
+        batch_subreddits = subreddits[i : i + batch_size].reset_index(drop=True)
         try:
             label_output_pairs = classify_post(batch_texts, tokenizer, model)
         except Exception:
