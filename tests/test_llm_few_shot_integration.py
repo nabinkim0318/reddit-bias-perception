@@ -8,6 +8,7 @@ os.environ["TEMPLATE_PATH"] = "tests/assets/test_prompt_template.j2"
 from processing import llm_few_shot
 
 
+@pytest.mark.slow
 @pytest.fixture(scope="session", autouse=True)
 def create_test_template():
     os.makedirs("tests/test_assets", exist_ok=True)
@@ -15,6 +16,7 @@ def create_test_template():
         f.write("Dummy template: {{ instruction }} {{ post }}")
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(not os.getenv("HF_TOKEN"), reason="HF_TOKEN not set in environment")
 def test_classify_post_real_model():
     # Load real model and tokenizer

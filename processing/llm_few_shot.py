@@ -80,9 +80,11 @@ def build_prompt(post_text):
     )
 
 
-def classify_post(post_text, tokenizer, model):
-    prompt = build_prompt(post_text)
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+def classify_post(batch_texts, tokenizer, model):
+    prompts = [build_prompt(text) for text in batch_texts]
+    inputs = tokenizer(prompts, return_tensors="pt", padding=True, truncation=True).to(
+        model.device
+    )
 
     with torch.no_grad():
         outputs = model.generate(
@@ -92,13 +94,18 @@ def classify_post(post_text, tokenizer, model):
             pad_token_id=tokenizer.eos_token_id,
         )
 
-    decoded = tokenizer.decode(outputs[0], skip_special_tokens=False)
-    if "Output: 1" in decoded:
-        return "Yes", decoded
-    elif "Output: 0" in decoded:
-        return "No", decoded
-    else:
-        return "Uncertain", decoded
+    decoded_outputs = tokenizer.batch_decode(outputs, skip_special_tokens=False)
+
+    labels = []
+    for decoded in decoded_outputs:
+        if "Output: 1" in decoded:
+            labels.append(("Yes", decoded))
+        elif "Output: 0" in decoded:
+            labels.append(("No", decoded))
+        else:
+            labels.append(("Uncertain", decoded))
+
+    return labels
 
 
 def main():
@@ -107,21 +114,26 @@ def main():
     texts = df["clean_text"].fillna("").astype(str).tolist()
     subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
 
+    batch_size = 8
     results = []
-    for i, text in tqdm(enumerate(texts), total=len(texts)):
+    for i in tqdm(range(0, len(texts), batch_size)):
+        batch_texts = texts[i : i + batch_size]
+        batch_subreddits = subreddits[i : i + batch_size]
         try:
-            label, output = classify_post(text, tokenizer, model)
-        except Exception as e:
-            label, output = "Error", traceback.format_exc()
-        results.append(
-            {
-                "index": i,
-                "text": text,
-                "subreddit": subreddits[i],
-                "pred_label": label,
-                "full_output": output,
-            }
-        )
+            label_output_pairs = classify_post(batch_texts, tokenizer, model)
+        except Exception:
+            label_output_pairs = [("Error", traceback.format_exc())] * len(batch_texts)
+
+        for j, (label, output) in enumerate(label_output_pairs):
+            results.append(
+                {
+                    "index": i + j,
+                    "text": batch_texts[j],
+                    "subreddit": batch_subreddits[j],
+                    "pred_label": label,
+                    "full_output": output,
+                }
+            )
 
     result_df = pd.DataFrame(results)
     result_df.to_csv(FEWSHOT_RESULT, index=False)

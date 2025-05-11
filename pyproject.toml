@@ -54,6 +54,11 @@ isort = "^5.13.2"
 pre-commit = "^3.7.0"
 ipykernel = "^6.29.5"
 
+[tool.pytest.ini_options]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]
+
 [tool.poetry.plugins."poetry.plugin"]
 "export" = "poetry_plugin_export.plugin:ExportPlugin"
 

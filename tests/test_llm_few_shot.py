@@ -24,11 +24,21 @@ class MockBatchEncoding(dict):
 
 
 class MockTokenizer:
-    def __call__(self, prompt, return_tensors="pt"):
+    def __call__(
+        self,
+        prompt,
+        return_tensors=None,
+        padding=False,
+        truncation=False,
+        max_length=None,
+    ):
         return MockBatchEncoding({"input_ids": [[1, 2, 3]]})
 
     def decode(self, ids, skip_special_tokens=False):
         return self._mock_output
+
+    def batch_decode(self, batch_ids, skip_special_tokens=False):
+        return [self._mock_output for _ in batch_ids]
 
     @property
     def eos_token_id(self):
@@ -37,7 +47,7 @@ class MockTokenizer:
 
 class MockModel:
     def generate(self, *args, **kwargs):
-        return [[0, 1, 2, 3]]
+        return [0, 1, 2, 3]
 
     @property
     def device(self):
@@ -63,14 +73,15 @@ def create_test_template():
 def test_classify_post_variants(mock_output, expected_label):
     from processing import llm_few_shot
 
-    # Inject sample template and mock model/tokenizer
-    llm_few_shot.template = Template(SAMPLE_TEMPLATE)
+    # Clear cached template to pick up test template
+    llm_few_shot.get_template.cache_clear()
 
     tokenizer = MockTokenizer()
     tokenizer._mock_output = mock_output
     model = MockModel()
 
-    label, output = llm_few_shot.classify_post("Test post", tokenizer, model)
+    results = llm_few_shot.classify_post(["Test post"], tokenizer, model)
+    label, output = results[0]
 
     assert label == expected_label
     assert mock_output in output
