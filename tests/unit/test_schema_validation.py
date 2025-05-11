@@ -3,11 +3,13 @@
 import ast
 import json
 import os
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 import pandas as pd
 import pytest
 from pydantic import BaseModel, ValidationError
+
+from config.config import TOPIC_ASSIGNMENT_PATH, TOPIC_OUTPUT
 
 
 def safe_load_json(path):
@@ -106,13 +108,68 @@ def test_filtered_ai_bias_output_schema():
             pytest.fail(f"Row {i} failed schema validation: {e}")
 
 
-def test_bertopic_post_topics_schema():
-    path = "data/results/bertopic_post_topics.csv"
-    if not os.path.exists(path):
-        pytest.skip("Missing BERTopic post_topics output")
-    df = safe_load_csv(path)
-    assert df["probability"].between(0, 1).all()
-    assert df["topic"].apply(lambda x: isinstance(x, int)).all()
+# ------------------ Pydantic Models for Topic Modeling ---------------------
+
+
+class TopicInfo(BaseModel):
+    topic: int
+    count: int
+    representative_words: List[str]
+
+
+class PostTopic(BaseModel):
+    id: str
+    subreddit: str
+    clean_text: str
+    topic: int
+    topic_probability: float
+    bias_types: List[str]
+    score: int
+    num_comments: int
+    upvote_ratio: float
+    flair: Optional[str]
+    created_utc: float
+
+
+# --------------------- Helper Functions ---------------------
+
+
+def safe_eval_list(val):
+    try:
+        return ast.literal_eval(val) if isinstance(val, str) else val
+    except Exception:
+        return val  # Let Pydantic catch it
+
+
+# --------------------- Tests ---------------------
+
+
+def test_topic_info_schema():
+    if not os.path.exists(TOPIC_OUTPUT):
+        pytest.skip("Missing topic info output")
+
+    df = pd.read_csv(TOPIC_OUTPUT)
+    df["representative_words"] = df["representative_words"].apply(safe_eval_list)
+
+    for i, row in df.iterrows():
+        try:
+            TopicInfo(**row.to_dict())
+        except ValidationError as e:
+            pytest.fail(f"Row {i} failed schema validation: {e}")
+
+
+def test_post_topics_schema():
+    if not os.path.exists(TOPIC_ASSIGNMENT_PATH):
+        pytest.skip("Missing post-topic assignment output")
+
+    df = pd.read_csv(TOPIC_ASSIGNMENT_PATH)
+    df["bias_types"] = df["bias_types"].apply(safe_eval_list)
+
+    for i, row in df.iterrows():
+        try:
+            PostTopic(**row.to_dict())
+        except ValidationError as e:
+            pytest.fail(f"Row {i} failed schema validation: {e}")
 
 
 def test_sentiment_labeled_schema():
