@@ -5,6 +5,7 @@ Few-shot classification using Gemma 2B model to determine whether a Reddit post 
 
 import logging
 import os
+import re
 import traceback
 
 import pandas as pd
@@ -115,6 +116,13 @@ def build_prompt(post_text):
     )
 
 
+def extract_label(decoded_output):
+    match = re.search(
+        r"Label:\s*(bias|non-bias|uncertain)", decoded_output, re.IGNORECASE
+    )
+    return match.group(1).lower() if match else "uncertain"
+
+
 def classify_post(batch_texts, tokenizer, model):
     """
     Perform few-shot classification on a batch of Reddit post texts.
@@ -142,12 +150,8 @@ def classify_post(batch_texts, tokenizer, model):
 
     labels = []
     for decoded in decoded_outputs:
-        if "Output: 1" in decoded:
-            labels.append(("Yes", decoded))
-        elif "Output: 0" in decoded:
-            labels.append(("No", decoded))
-        else:
-            labels.append(("Uncertain", decoded))
+        label = extract_label(decoded)
+        labels.append((label, decoded))
 
     return labels
 
@@ -190,23 +194,15 @@ def main():
             )
 
         for j, (label, output) in enumerate(label_output_pairs):
-            # Normalize label
-            if label == "Yes":
-                norm_label = "bias"
-            elif label == "No":
-                norm_label = "non-bias"
-            else:
-                norm_label = "uncertain"
-
             try:
                 row = ClassificationResult(
                     id=batch_ids[j],
                     subreddit=batch_subreddits[j],
                     clean_text=batch_texts[j],
-                    pred_label=norm_label,
+                    pred_label=label,
                     llm_reasoning=output,
                 )
-                results.append(row.dict())
+                results.append(row.model_dump())
             except ValidationError as e:
                 logging.error(f"❌ Validation error at row {i + j}: {e}")
 

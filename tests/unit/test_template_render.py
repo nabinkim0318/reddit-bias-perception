@@ -8,14 +8,25 @@ TEMPLATE_PATH = "tests/assets/test_prompt_template.j2"
 
 # Sample template used in tests
 SAMPLE_TEMPLATE = """<s> [INST] {{ instruction }}
-A post should be classified as "1" (Yes) if it includes:
+
+A post should be classified as `"bias"` if it meets any of the following:
 {{ yes_criteria }}
-A post should be classified as "0" (No) if it:
+
+A post should be classified as `"non-bias"` if it meets any of the following:
 {{ no_criteria }}
+
+If the post is ambiguous or doesn't clearly fit either, classify it as `"uncertain"`.
+
 Now decide:
-Post: "{{ post }}"
-[/INST]
-Output:"""
+
+Post:
+"{{ post }}"
+
+Return your label choice and a brief explanation in this format:
+
+Label: <bias|non-bias|uncertain>
+Reasoning: <your explanation>
+[/INST]"""
 
 
 class MockBatchEncoding(dict):
@@ -65,9 +76,10 @@ def create_test_template():
 @pytest.mark.parametrize(
     "mock_output,expected_label",
     [
-        ("</INST>\nOutput: 1", "Yes"),
-        ("</INST>\nOutput: 0", "No"),
-        ("</INST>\nOutput: 🤷", "Uncertain"),
+        ("Label: bias\nReasoning: ...", "bias"),
+        ("Label: non-bias\nReasoning: ...", "non-bias"),
+        ("Label: uncertain\nReasoning: unclear", "uncertain"),
+        ("No Label found", "uncertain"),  # fallback test
     ],
 )
 def test_classify_post_variants(mock_output, expected_label):
