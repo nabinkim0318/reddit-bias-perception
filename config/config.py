@@ -12,6 +12,7 @@ BASE_DIR = "/content/drive/MyDrive/reddit_bias_data" if IS_COLAB else "data"
 RAW_DIR = os.path.join(BASE_DIR, "raw")
 PROCESSED_DIR = os.path.join(BASE_DIR, "processed")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
+CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # === INPUT FILES ===
 RAW_REDDIT_DATA = os.path.join(RAW_DIR, "reddit_raw.json")
@@ -26,8 +27,9 @@ def load_json(path):
         return json.load(f)
 
 
-BIAS_KEYWORDS = load_json(os.path.join("config", "bias_keywords.json"))
-AI_KEYWORDS = load_json(os.path.join("config", "ai_keywords.json"))
+BIAS_KEYWORDS = load_json(os.path.join(CONFIG_DIR, "bias_keywords.json"))
+AI_KEYWORDS = load_json(os.path.join(CONFIG_DIR, "ai_keywords.json"))
+
 
 # === LLM Few-Shot OUTPUTS ===
 OUTPUT_DIR = PROCESSED_DIR
@@ -37,7 +39,7 @@ BIAS_UNCERTAIN = os.path.join(OUTPUT_DIR, "bias_uncertain.csv")
 FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv")
 
 # === TEMPLATE & MODEL ===
-TEMPLATE_PATH = os.path.join("config", "fewshot_prompt_template.j2")
+TEMPLATE_PATH = os.path.join(CONFIG_DIR, "fewshot_prompt_template.j2")
 MODEL_ID = "google/gemma-2b-it"
 
 # === TOPIC MODELING OUTPUT ===
@@ -59,4 +61,4 @@ VADER_PLOT_PATH = os.path.join(RESULTS_DIR, "vader_dist.png")
 
 # === ETC ===
 RANDOM_SEED = 42
-SUBREDDIT_GROUPS_PATH = "config/subreddit_groups.json"
+SUBREDDIT_GROUPS_PATH = os.path.join(CONFIG_DIR, "subreddit_groups.json")
