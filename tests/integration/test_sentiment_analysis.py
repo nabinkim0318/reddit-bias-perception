@@ -1,4 +1,4 @@
-"""import pytest
+import pytest
 
 from analysis.sentiment_analysis import run_goemotions, run_vader
 
@@ -32,4 +32,3 @@ def test_vader_output(text):
     assert isinstance(scores, dict)
     assert "compound" in scores
     assert -1.0 <= scores["compound"] <= 1.0
-"""

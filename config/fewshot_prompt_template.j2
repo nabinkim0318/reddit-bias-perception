@@ -1,16 +1,24 @@
 <s> [INST] {{ instruction }}
 
-    A post should be classified as "1" (Yes) if it includes:
-    {% if include_yes_criteria %}
-    {{ yes_criteria }}
-    {% endif %}
+    A post should be classified as `"bias"` if it meets any of the following:
+        {% if include_yes_criteria %}
+        {{ yes_criteria }}
+        {% endif %}
 
-    A post should be classified as "0" (No) if it:
-    {% if include_no_criteria %}
-    {{ no_criteria }}
-    {% endif %}
+    A post should be classified as `"non-bias"` if it meets any of the following:
+        {% if include_no_criteria %}
+        {{ no_criteria }}
+        {% endif %}
+
+    If the post is ambiguous or doesn't clearly fit either, classify it as `"uncertain"`.
 
     Now decide:
-    Post: "{{ post }}"
-    [/INST]
-    Output:
+
+    Post:
+    "{{ post }}"
+
+    Return your label choice and a brief explanation in this format:
+
+    Label: <bias|non-bias|uncertain>
+    Reasoning: <your explanation>
+[/INST]

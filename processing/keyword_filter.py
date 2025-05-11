@@ -9,8 +9,10 @@ import re
 
 import pandas as pd
 from dotenv import load_dotenv
+from pydantic import ValidationError
 
 from config.config import AI_KEYWORDS, BIAS_KEYWORDS, CLASSIFIED_BIAS, FILTERED_DATA
+from processing.schema import FilteredAIBiasPost
 
 load_dotenv()
 
@@ -47,10 +49,20 @@ def filter_posts(posts, bias_keywords_dict, ai_keywords):
         bias_types = infer_bias_types(content, bias_keywords_dict)
 
         if matched_bias_keywords and matched_ai_keywords:
-            post["matched_bias_keywords"] = matched_bias_keywords
-            post["matched_ai_keywords"] = matched_ai_keywords
-            post["bias_types"] = ";".join(bias_types)
-            filtered.append(post)
+            try:
+                enriched = {
+                    "id": post["id"],
+                    "subreddit": post["subreddit"],
+                    "clean_text": post["clean_text"],
+                    "matched_keywords": list(
+                        set(matched_bias_keywords + matched_ai_keywords)
+                    ),
+                    "bias_types": bias_types,
+                }
+                validated = FilteredAIBiasPost(**enriched)
+                filtered.append(validated.dict())
+            except ValidationError as e:
+                print(f"❌ Validation error for post {post.get('id')}: {e}")
     return filtered
 
 
