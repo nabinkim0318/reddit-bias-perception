@@ -14,14 +14,10 @@ PROCESSED_DIR = os.path.join(BASE_DIR, "processed")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
 
 # === INPUT FILES ===
-RAW_REDDIT_DATA = os.getenv("RAW_REDDIT_DATA", os.path.join(RAW_DIR, "reddit_raw.json"))
-CLEANED_DATA = os.getenv(
-    "CLEANED_DATA", os.path.join(PROCESSED_DIR, "reddit_bias_data_clean.csv")
-)
-FILTERED_DATA = os.getenv(
-    "FILTERED_DATA", os.path.join(PROCESSED_DIR, "filtered_ai_bias.csv")
-)
-FINAL_ANALYSIS_INPUT = os.getenv("FINAL_ANALYSIS_INPUT", FILTERED_DATA)
+RAW_REDDIT_DATA = os.path.join(RAW_DIR, "reddit_raw.json")
+CLEANED_DATA = os.path.join(PROCESSED_DIR, "reddit_bias_data_clean.csv")
+FILTERED_DATA = os.path.join(PROCESSED_DIR, "filtered_ai_bias.csv")
+FINAL_ANALYSIS_INPUT = FILTERED_DATA
 
 
 # === KEYWORDS ===
@@ -34,32 +30,23 @@ BIAS_KEYWORDS = load_json(os.path.join("config", "bias_keywords.json"))
 AI_KEYWORDS = load_json(os.path.join("config", "ai_keywords.json"))
 
 # === LLM Few-Shot OUTPUTS ===
-OUTPUT_DIR = os.getenv("FEWSHOT_OUTPUT_DIR", PROCESSED_DIR)
+OUTPUT_DIR = PROCESSED_DIR
 CLASSIFIED_BIAS = os.path.join(OUTPUT_DIR, "classified_bias.csv")
 CLASSIFIED_NONBIAS = os.path.join(OUTPUT_DIR, "classified_nonbias.csv")
 BIAS_UNCERTAIN = os.path.join(OUTPUT_DIR, "bias_uncertain.csv")
 FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv")
 
 # === TEMPLATE & MODEL ===
-TEMPLATE_PATH = os.getenv(
-    "TEMPLATE_PATH", os.path.join("config", "fewshot_prompt_template.j2")
-)
-MODEL_ID = os.getenv("MODEL_ID", "google/gemma-2b-it")
+TEMPLATE_PATH = os.path.join("config", "fewshot_prompt_template.j2")
+MODEL_ID = "google/gemma-2b-it"
 
 # === TOPIC MODELING OUTPUT ===
-TOPIC_OUTPUT = os.getenv(
-    "TOPIC_OUTPUT", os.path.join(RESULTS_DIR, "bertopic_topic_info.csv")
-)
-TOPIC_ASSIGNMENT_PATH = os.getenv(
-    "TOPIC_ASSIGNMENT_PATH", os.path.join(RESULTS_DIR, "bertopic_post_topics.csv")
-)
-
+TOPIC_OUTPUT = os.path.join(RESULTS_DIR, "bertopic_topic_info.csv")
+TOPIC_ASSIGNMENT_PATH = os.path.join(RESULTS_DIR, "bertopic_post_topics.csv")
 TOPIC_MODEL_PATH = os.path.join("models", "bertopic_model")
 
 # === SENTIMENT ANALYSIS ===
-SENTIMENT_OUTPUT = os.getenv(
-    "SENTIMENT_OUTPUT", os.path.join(RESULTS_DIR, "sentiment_labeled.csv")
-)
+SENTIMENT_OUTPUT = os.path.join(RESULTS_DIR, "sentiment_labeled.csv")
 
 # === MODEL PARAMETERS ===
 EMOTION_MODEL = "SamLowe/roberta-base-go_emotions"
