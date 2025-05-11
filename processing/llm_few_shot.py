@@ -23,6 +23,7 @@ from config.config import (
     OUTPUT_DIR,
     TEMPLATE_PATH,
 )
+from utils.tokenize import batch_tokenize
 
 # Load environment variables
 load_dotenv()
@@ -82,9 +83,7 @@ def build_prompt(post_text):
 
 def classify_post(batch_texts, tokenizer, model):
     prompts = [build_prompt(text) for text in batch_texts]
-    inputs = tokenizer(prompts, return_tensors="pt", padding=True, truncation=True).to(
-        model.device
-    )
+    inputs = batch_tokenize(prompts, tokenizer).to(model.device)
 
     with torch.no_grad():
         outputs = model.generate(
