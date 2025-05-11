@@ -27,5 +27,5 @@ jobs:
     - name: Run format and static checks via Makefile
       run: make check
 
-    - name: Run tests via Makefile
-      run: make test
+    - name: Run all tests via Makefile
+      run: make test-all
