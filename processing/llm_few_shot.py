@@ -75,7 +75,7 @@ def load_model(model_id):
     """
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
     model = AutoModelForCausalLM.from_pretrained(
-        model_id, device_map="cpu", torch_dtype="auto", trust_remote_code=True
+        model_id, device_map="auto", torch_dtype=torch.float16, trust_remote_code=True
     )
     return tokenizer, model
 
@@ -141,7 +141,7 @@ def classify_post(batch_texts, tokenizer, model):
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
-            max_new_tokens=20,
+            max_new_tokens=120,
             do_sample=False,
             pad_token_id=tokenizer.eos_token_id,
         )
