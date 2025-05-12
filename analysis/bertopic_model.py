@@ -41,21 +41,39 @@ from bertopic import BERTopic
 from dotenv import load_dotenv
 
 from config.config import (
-    CLEANED_DATA,
-    FINAL_ANALYSIS_INPUT,
-    TOPIC_ASSIGNMENT_PATH,
-    TOPIC_MODEL_PATH,
-    TOPIC_OUTPUT,
+    CLEANED_DATA,  # Path to full cleaned Reddit data (includes metadata)
 )
-from config.vectorizer_config import vectorizer_model
+from config.config import (
+    FINAL_ANALYSIS_INPUT,  # Path to filtered posts (AI bias-related)
+)
+from config.config import (
+    TOPIC_ASSIGNMENT_PATH,  # Output path for document-topic mapping
+)
+from config.config import TOPIC_MODEL_PATH  # Path to save the trained BERTopic model
+from config.config import TOPIC_OUTPUT  # Output path for topic-level summary
+from config.vectorizer_config import vectorizer_model  # Custom vectorizer for BERTopic
 
+# Load environment variables and configure logging
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 
 def run_bertopic_model(df):
+    """
+    Run BERTopic modeling on the input DataFrame and return topic model, topic summary, and document-topic mappings.
+
+    Args:
+        df (pd.DataFrame): Preprocessed and filtered dataset containing 'clean_text' and metadata.
+
+    Returns:
+        BERTopic: trained topic model
+        pd.DataFrame: topic-level summary (topic, count, representative_words, avg_probability)
+        pd.DataFrame: post-topic mapping with topic assignment and metadata
+    """
+    # Prepare text for modeling
     docs = df["clean_text"].fillna("").astype(str).tolist()
 
+    # Instantiate and fit BERTopic model
     topic_model = BERTopic(
         vectorizer_model=vectorizer_model,
         language="english",
@@ -65,15 +83,18 @@ def run_bertopic_model(df):
     )
     topics, probs = topic_model.fit_transform(docs)
 
+    # Build document-topic assignment DataFrame
     doc_info = topic_model.get_document_info(docs)
     doc_info["id"] = df.get("id", pd.Series(range(len(df))))
     doc_info["clean_text"] = df["clean_text"]
     doc_info["topic"] = topics
+
+    # Assign per-document topic probability (skip if topic is -1 or probs missing)
     doc_info["topic_probability"] = [
         p[t] if p is not None and t != -1 else None for p, t in zip(probs, topics)
     ]
 
-    # Include fields from cleaned data and keyword filtering
+    # Merge metadata and bias labels into the document info
     optional_cols = [
         "subreddit",
         "bias_types",
@@ -87,26 +108,36 @@ def run_bertopic_model(df):
         if col in df.columns:
             doc_info[col] = df[col].values
 
-    # Build topic-level info
+    # Get topic-level summary
     topic_info = topic_model.get_topic_info()
     topic_info["representative_words"] = topic_info["Topic"].apply(
         lambda t: [w for w, _ in topic_model.get_topic(t)]
     )
-    # Compute average probability per topic
-    prob_df = pd.DataFrame({"topic": topics, "prob": doc_info["probability"]})
+
+    # Compute average topic probability across all assigned docs
+    prob_df = pd.DataFrame({"topic": topics, "prob": doc_info["topic_probability"]})
     avg_probs = prob_df.groupby("topic")["prob"].mean().rename("avg_probability")
     topic_info = topic_info.merge(
         avg_probs, left_on="Topic", right_on="topic", how="left"
     ).drop(columns=["topic"])
 
     logging.info(f"Discovered {len(topic_info)} topics (including outlier -1)")
-
     return topic_model, topic_info, doc_info
 
 
 def main():
+    """
+    Load input datasets, run BERTopic, and save results to disk.
+    Merges filtered bias data with full metadata and outputs:
+        - topic_info summary
+        - post-topic mappings
+        - serialized BERTopic model
+    """
+    # Load filtered AI bias posts and clean metadata
     df_filtered = pd.read_csv(FINAL_ANALYSIS_INPUT)
     df_meta = pd.read_csv(CLEANED_DATA)
+
+    # Merge metadata (score, comments, etc.) into filtered dataset
     df = pd.merge(
         df_filtered,
         df_meta[
@@ -117,8 +148,10 @@ def main():
     )
     logging.info(f"Loaded {len(df)} records after merging filtered + metadata")
 
+    # Run BERTopic modeling
     topic_model, topic_info, doc_topics = run_bertopic_model(df)
 
+    # Save all outputs
     os.makedirs(os.path.dirname(TOPIC_OUTPUT), exist_ok=True)
     topic_info.to_csv(TOPIC_OUTPUT, index=False)
     doc_topics.to_csv(TOPIC_ASSIGNMENT_PATH, index=False)
