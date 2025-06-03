@@ -7,6 +7,8 @@ import logging
 import os
 import re
 import traceback
+from functools import lru_cache  # Lazy load template
+from typing import Literal, cast
 
 import pandas as pd
 import torch
@@ -14,7 +16,8 @@ from dotenv import load_dotenv
 from jinja2 import Template
 from pydantic import ValidationError
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers.models.auto.modeling_auto import AutoModelForCausalLM
+from transformers.models.auto.tokenization_auto import AutoTokenizer
 
 from config.config import (
     BATCH_SIZE,
@@ -78,10 +81,6 @@ def load_model(model_id):
         model_id, device_map="auto", torch_dtype=torch.float16, trust_remote_code=True
     )
     return tokenizer, model
-
-
-# Lazy load template
-from functools import lru_cache
 
 
 @lru_cache
@@ -183,28 +182,40 @@ def main():
     results = []
     for i in tqdm(range(0, len(texts), batch_size)):
         batch_texts = texts[i : i + batch_size]
-        batch_subreddits = subreddits[i : i + batch_size].reset_index(drop=True)
-        batch_ids = ids[i : i + batch_size].reset_index(drop=True)
+        batch_subreddits = pd.Series(subreddits)[i : i + batch_size].reset_index(
+            drop=True
+        )
+        batch_ids = pd.Series(ids)[i : i + batch_size].reset_index(drop=True)
 
         try:
             label_output_pairs = classify_post(batch_texts, tokenizer, model)
         except Exception:
-            label_output_pairs = [("Uncertain", traceback.format_exc())] * len(
+            label_output_pairs = [("uncertain", traceback.format_exc())] * len(
                 batch_texts
             )
 
         for j, (label, output) in enumerate(label_output_pairs):
             try:
+                # pred_label validation and normalization
+                normalized_label = (
+                    label.lower() if isinstance(label, str) else "uncertain"
+                )
+                if normalized_label not in ["bias", "non-bias", "uncertain"]:
+                    normalized_label = "uncertain"
+
+                # Type checker for casting
+                pred_label: Literal["bias", "non-bias", "uncertain"] = normalized_label  # type: ignore
+
                 row = ClassificationResult(
                     id=batch_ids[j],
                     subreddit=batch_subreddits[j],
                     clean_text=batch_texts[j],
-                    pred_label=label,
+                    pred_label=pred_label,
                     llm_reasoning=output,
                 )
                 results.append(row.model_dump())
             except ValidationError as e:
-                logging.error(f"❌ Validation error at row {i + j}: {e}")
+                logging.error(f"Validation error at row {i + j}: {e}")
 
     result_df = pd.DataFrame(results)
     result_df.to_csv(FEWSHOT_RESULT, index=False)
@@ -217,12 +228,119 @@ def main():
         BIAS_UNCERTAIN, index=False
     )
 
-    logging.info("✅ Few-shot classification complete. Saved:")
+    logging.info("Few-shot classification complete. Saved:")
     logging.info("- fewshot_classification_results.csv")
     logging.info("- classified_bias.csv")
     logging.info("- classified_nonbias.csv")
     logging.info("- bias_uncertain.csv")
 
 
+# === SINGLE POST CLASSIFICATION ===
+def classify_single_post(
+    post_text, subreddit="unknown", post_id="unknown", tokenizer=None, model=None
+):
+    """
+    Perform bias classification for a single Reddit post.
+
+    Args:
+        post_text (str): Text of the Reddit post to classify
+        subreddit (str): Subreddit name (default: "unknown")
+        post_id (str): Post ID (default: "unknown")
+        tokenizer: Hugging Face tokenizer (auto-load if None)
+        model: Hugging Face model (auto-load if None)
+
+    Returns:
+        dict: Dictionary
+        {
+            'id': str,
+            'subreddit': str,
+            'clean_text': str,
+            'pred_label': str,
+            'llm_reasoning': str
+        }
+    """
+    # If model and tokenizer are not loaded, load them
+    if tokenizer is None or model is None:
+        logging.info("🔍 Loading model and tokenizer...")
+        tokenizer, model = load_model(MODEL_ID)
+
+    try:
+        # Create prompt
+        prompt = build_prompt(post_text)
+
+        # Tokenize
+        inputs = tokenizer(
+            prompt, return_tensors="pt", padding=True, truncation=True, max_length=2048
+        )
+        inputs = {k: v.to(model.device) for k, v in inputs.items()}
+
+        # Perform inference
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=120,
+                do_sample=False,
+                pad_token_id=tokenizer.eos_token_id,
+            )
+
+        # Decode result
+        decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=False)
+
+        # Extract label
+        label = extract_label(decoded_output)
+
+        # Construct result
+        result = {
+            "id": post_id,
+            "subreddit": subreddit,
+            "clean_text": post_text,
+            "pred_label": label,
+            "llm_reasoning": decoded_output,
+        }
+
+        logging.info(f"✅ Classification complete: {label}")
+        return result
+
+    except Exception as e:
+        logging.error(f"❌ Error during classification: {e}")
+        return {
+            "id": post_id,
+            "subreddit": subreddit,
+            "clean_text": post_text,
+            "pred_label": "uncertain",
+            "llm_reasoning": f"Error: {str(e)}",
+        }
+
+
+def example_single_classification():
+    """
+    A function to show an example of single post classification.
+    """
+    # Example text
+    example_text = """
+    I tried to generate images of 'doctors' and 'nurses' using AI,
+    but all the doctors came out as white men and all the nurses as women.
+    This feels really biased and doesn't represent the diversity we see in real healthcare.
+    """
+
+    print("🔍 Running example of single post classification...")
+    print(f"📝 Input text: {example_text.strip()}")
+
+    # Classification run
+    result = classify_single_post(
+        post_text=example_text, subreddit="artificial", post_id="example_001"
+    )
+
+    print("\nClassification result:")
+    print(f"Label: {result['pred_label']}\n")
+    print(f"Subreddit: {result['subreddit']}\n")
+    print(f"ID: {result['id']}\n")
+    print(f"LLM reasoning: {result['llm_reasoning'][:200]}...")
+
+    return result
+
+
 if __name__ == "__main__":
-    main()
+    # main()
+    result = example_single_classification()
+    print(result)

@@ -10,8 +10,22 @@ Non-bias criteria:
 {{ no_criteria }}
 {% endif %}
 
-If the post is ambiguous or doesn't clearly fit either, classify it as "uncertain".
+Return your classification in the following strict format, and do not use synonyms or paraphrasing:
 
+Label: bias|non-bias|uncertain
+Reasoning: [Brief explanation in one sentence explaining why the post fits that label]
+
+Only respond with one of the three valid labels exactly as shown: `bias`, `non-bias`, or `uncertain`.
+
+Examples:
+
+Label: bias
+Reasoning: The post highlights racial misrepresentation in AI-generated outputs.
+
+Label: non-bias
+Reasoning: The post discusses reinforcement learning techniques with no mention of identity or fairness.
+
+Now classify the following post.
 Post:
 "{{ post }}"
 
