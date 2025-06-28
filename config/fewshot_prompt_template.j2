@@ -10,23 +10,20 @@ Non-bias criteria:
 {{ no_criteria }}
 {% endif %}
 
-Return your classification in the following strict format, and do not use synonyms or paraphrasing:
+Choose one of the following labels:
+
+- bias
+- non-bias
+- uncertain
+
+Give your answer in this format:
 
 Label: bias|non-bias|uncertain
-Reasoning: [Brief explanation in one sentence explaining why the post fits that label]
+Reasoning: [One sentence explanation]
 
-Only respond with one of the three valid labels exactly as shown: `bias`, `non-bias`, or `uncertain`.
+---
 
-Examples:
-
-Label: bias
-Reasoning: The post highlights racial misrepresentation in AI-generated outputs.
-
-Label: non-bias
-Reasoning: The post discusses reinforcement learning techniques with no mention of identity or fairness.
-
-Now classify the following post.
 Post:
-"{{ post }}"
+{{ post }}
 
-Label:
+Your answer:
