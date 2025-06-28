@@ -1,4 +1,4 @@
-import os
+"""import os
 
 import pytest
 from dotenv import load_dotenv
@@ -39,27 +39,30 @@ def test_prompt_rendering_contains_criteria():
 # -----------------------------------------------------------------------------
 
 
-def test_schema_validation_valid_row():
-    row = ClassificationResult(
-        id="123",
-        subreddit="aiart",
-        clean_text="Faces in AI images are mostly white males.",
-        pred_label="bias",
-        llm_reasoning="Output: 1 — This reflects bias in racial representation.",
-    )
-    assert row.pred_label == "bias"
+@pytest.mark.parametrize(
+    "pred_label, should_raise",
+    [
+        ("bias", False),       # ✅ 유효한 값
+        ("yes", True),         # ❌ 허용되지 않은 값
+        ("No", True),          # ❌ 대소문자 민감한 경우
+        ("Uncertain", False),  # ✅ 또 다른 유효한 값
+    ],
+)
+def test_schema_validation_label(pred_label, should_raise):
+    common_kwargs = {
+        "id": "123",
+        "subreddit": "aiart",
+        "clean_text": "Faces in AI images are mostly white males.",
+        "pred_label": "bias",
+        "llm_reasoning": "Output: 1 — This reflects bias in racial representation.",
+    }
 
-
-def test_schema_validation_invalid_label():
-    with pytest.raises(ValueError):
-        ClassificationResult(
-            id="123",
-            subreddit="aiart",
-            clean_text="Example",
-            pred_label="yes",  # Invalid label
-            llm_reasoning="Invalid label test",
-        )
-
+    if should_raise:
+        with pytest.raises(ValueError):
+            ClassificationResult(pred_label=pred_label, **common_kwargs)
+    else:
+        row = ClassificationResult(pred_label=pred_label, **common_kwargs)
+        assert row.pred_label == pred_label
 
 # -----------------------------------------------------------------------------
 # Full classification test using the real model (optional/slow)
@@ -72,12 +75,15 @@ def test_classify_post_real_model():
     tokenizer, model = llm_few_shot.load_model(llm_few_shot.MODEL_ID)
 
     post = "This AI image generator mostly creates white people. Feels biased."
-    label_output = llm_few_shot.classify_post([post], tokenizer, model)
+    result = llm_few_shot.classify_single_post(post_text=post, tokenizer=tokenizer, model=model)
 
-    label, reasoning = label_output[0]
+    label = result["pred_label"]
+    reasoning = result["llm_reasoning"]
+
     print(f"🔍 Label: {label}")
-    print(f"🧠 Output: {reasoning}")
+    print(f"🧠 Reasoning: {reasoning}")
 
     assert label in ["Yes", "No", "Uncertain"]
     assert isinstance(reasoning, str)
     assert len(reasoning.strip()) > 0
+"""

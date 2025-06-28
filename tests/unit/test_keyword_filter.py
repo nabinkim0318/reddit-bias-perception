@@ -74,6 +74,7 @@ def test_filter_posts_realistic():
             "title": "AI generates young white males",
             "selftext": "Feels stereotypical",
             "comments": ["No diversity"],
+            "clean_text": "AI generates young white males Feels stereotypical No diversity",
         },
         {
             "id": "xyz789",
@@ -81,6 +82,7 @@ def test_filter_posts_realistic():
             "title": "Not related",
             "selftext": "No AI here",
             "comments": [],
+            "clean_text": "No AI here",
         },
     ]
     filtered = filter_posts(posts, BIAS_KEYWORDS, AI_KEYWORDS)

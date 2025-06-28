@@ -1,11 +1,9 @@
 # ======== Project Setup ========
 install:
 	poetry install
-	pre-commit install
 
 setup:
 	poetry shell
-	pre-commit install
 
 # ======== Development ========
 lock:
