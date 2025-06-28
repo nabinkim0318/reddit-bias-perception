@@ -13,11 +13,12 @@ Output files:
 Schema:
 
 📄 `bertopic_topic_info.csv`
-| topic | count | representative_words                          |
-|-------|-------|------------------------------------------------|
-| 0     | 210   | ["bias", "image", "ai", "gender", "representation"] |
-| 1     | 180   | ["model", "training", "data", "epoch", "cuda"]     |
-| -1    |  35   | []                                             |
+| topic | count | representative_words                                 | avg_probability |
+| ----- | ----- | ---------------------------------------------------- | ---------------- |
+| 0     | 210   | ["bias", "image", "ai", "gender", "representation"]  | 0.78             |
+| 1     | 180   | ["model", "training", "data", "epoch", "cuda"]       | 0.82             |
+| -1    | 35    | []                                                   | NaN              |
+
 
 📄 `bertopic_post_topics.csv`
 | id     | subreddit | clean_text          | topic | topic_probability | bias_types        | score | num_comments | upvote_ratio | flair | created_utc |
