@@ -3,6 +3,7 @@
 Few-shot classification using Gemma 2B model to determine whether a Reddit post discusses bias in AI-generated images.
 """
 
+import json
 import logging
 import os
 import re
@@ -17,7 +18,6 @@ from dotenv import load_dotenv
 from jinja2 import Template
 from pydantic import ValidationError
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.tokenization_auto import AutoTokenizer
 
@@ -29,7 +29,6 @@ from config.config import (
     CLEANED_DATA,
     FEWSHOT_RESULT,
     MODEL_ID,
-    OUTPUT_DIR,
     TEMPLATE_PATH,
 )
 from processing.schema import ClassificationResult
@@ -44,26 +43,6 @@ logging.basicConfig(
 # Load environment variables
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-
-# Classification instruction (system prompt)
-SYSTEM_INSTRUCTION = (
-    "You are a helpful assistant. Your job is to classify whether the following Reddit post "
-    "reflects a **concern, observation, or critique about bias** in AI-generated images."
-)
-
-YES_CRITERIA = (
-    "- A complaint or observation about misrepresentation related to race, gender, body type, culture, disability, or religion\n"
-    "- Frustration about the lack of diversity or overuse of stereotypical visuals in AI output\n"
-    "- Emotional, social, or ethical concerns about fairness, exclusion, or how certain identities are depicted or erased\n"
-    "- Even if subtle, the post reflects discomfort or surprise with how identity is visualized or how bias manifests in image generation"
-)
-
-NO_CRITERIA = (
-    "- Focuses on technical details, creative tools, styles, rendering techniques, or model features\n"
-    "- Shares AI-generated art, music, or fictional work without discussing fairness, identity, or social representation\n"
-    "- Describes how the AI responded to prompts with no identity-related concern\n"
-    "- Reflects on the creative process or philosophical/artistic value of AI output without reference to social bias or exclusion"
-)
 
 logging.info("🔍 Loading model...")
 
@@ -94,7 +73,7 @@ def get_template():
     Returns:
         Template: Jinja2 template object used to render few-shot prompts.
     """
-    with open(TEMPLATE_PATH) as f:
+    with open(TEMPLATE_PATH, "r") as f:
         return Template(f.read())
 
 
@@ -111,41 +90,38 @@ def build_prompt(post_text):
     if not post_text:
         post_text = ""
 
-    return get_template().render(
-        instruction=SYSTEM_INSTRUCTION,
-        yes_criteria=YES_CRITERIA,
-        no_criteria=NO_CRITERIA,
-        post=post_text.strip(),
-        include_yes_criteria=True,
-        include_no_criteria=True,
-    )
+    return get_template().render(post=(post_text or "").strip())
 
 
 def extract_label_and_reasoning(decoded_output):
     """
-    Extract both label and reasoning from the model's output.
-    Assumes the format:
-    Label: bias|non-bias|uncertain
-    Reasoning: [One sentence explanation]
+    Extract both label and reasoning from the model's JSON-formatted output.
+    Assumes the output is a JSON block like:
+    {
+      "reasoning": "...",
+      "label": "bias"
+    }
     """
-    label_match = re.search(
-        r"Label:\s*(bias|non-bias|uncertain)", decoded_output, re.IGNORECASE
-    )
-    reasoning_match = re.search(
-        r"Reasoning:\s*(.*)", decoded_output, re.IGNORECASE | re.DOTALL
-    )
+    try:
+        # Find first JSON block in the output
+        json_str_match = re.search(r"\{.*\}", decoded_output, re.DOTALL)
+        if not json_str_match:
+            raise ValueError("No JSON block found")
 
-    label = label_match.group(1).lower() if label_match else "uncertain"
-    reasoning = (
-        reasoning_match.group(1).strip() if reasoning_match else decoded_output.strip()
-    )
+        json_block = json_str_match.group(0)
+        parsed = json.loads(json_block)
 
-    # Optional: clean common token artifacts
-    for token in ["<pad>", "<bos>", "<eos>"]:
-        reasoning = reasoning.replace(token, "")
-    reasoning = reasoning.strip()
+        label = parsed.get("label", "uncertain").strip().lower()
+        reasoning = parsed.get("reasoning", "").strip()
 
-    return label, reasoning
+        if label not in ["bias", "non-bias", "uncertain"]:
+            label = "uncertain"
+
+        return label, reasoning
+
+    except Exception as e:
+        logging.warning(f"⚠️ Failed to parse JSON output: {e}")
+        return "uncertain", f"Could not extract JSON: {decoded_output.strip()}"
 
 
 def load_model_and_tokenizer():
@@ -216,7 +192,16 @@ def classify_post_wrapper(batch_input):
     batch_texts, batch_ids, batch_subreddits = batch_input
     tokenizer, model = load_model_and_tokenizer()
     if tokenizer is None or model is None:
-        return [{"error": "Model load failed"}] * len(batch_texts)
+        return [
+            {
+                "id": batch_ids[i],
+                "subreddit": batch_subreddits[i],
+                "clean_text": batch_texts[i],
+                "pred_label": "uncertain",
+                "llm_reasoning": "Model load failed",
+            }
+            for i in range(len(batch_texts))
+        ]
 
     decoded_outputs = generate_outputs(batch_texts, tokenizer, model)
     return postprocess_outputs(
@@ -323,7 +308,7 @@ def classify_single_post(
         decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=False)
 
         # Extract label
-        label = extract_label_and_reasoning(decoded_output)
+        label, reasoning = extract_label_and_reasoning(decoded_output)
 
         # Construct result
         result = {
@@ -331,7 +316,7 @@ def classify_single_post(
             "subreddit": subreddit,
             "clean_text": post_text,
             "pred_label": label,
-            "llm_reasoning": decoded_output,
+            "llm_reasoning": reasoning,
         }
 
         logging.info(f"✅ Classification complete: {label}")
@@ -371,7 +356,12 @@ def example_single_classification():
     print(f"Label: {result['pred_label']}\n")
     print(f"Subreddit: {result['subreddit']}\n")
     print(f"ID: {result['id']}\n")
-    print(f"LLM reasoning: {result['llm_reasoning'][:200]}...")
+    print(
+        json.dumps(
+            {"label": result["pred_label"], "reasoning": result["llm_reasoning"]},
+            indent=2,
+        )
+    )
 
     return result
 
