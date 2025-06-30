@@ -95,6 +95,8 @@ def extract_label_and_reasoning(decoded_output, post_text):
         # Validate label
         if label not in {"yes", "no"}:
             logging.warning(f"⚠️ Label missing: {decoded_output[:150]}")
+            print(f"[DEBUG] Post text:\n{post_text}")
+            print(f"[DEBUG] Raw output with missing label:\n{decoded_output}\n")
             return "skip", "", decoded_output
 
         if not reasoning or reasoning.lower() in {
@@ -103,6 +105,8 @@ def extract_label_and_reasoning(decoded_output, post_text):
             "n/a",
             "",
         }:
+            print(f"[DEBUG] Post text:\n{post_text}")
+            print(f"[DEBUG] Raw output with invalid reasoning:\n{decoded_output}\n")
             reasoning = ""
 
         return label, reasoning, decoded_output
@@ -208,6 +212,7 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
                         "llm_reasoning": f"Validation Error: {e}",
                     }
                 )
+    print(f"[DEBUG] Total valid rows: {len(rows)}")
     return rows
 
 
@@ -277,6 +282,12 @@ def main():
             all_results.extend(future.result())
 
     result_df = pd.DataFrame(all_results)
+
+    if result_df.empty:
+        logging.error(
+            "❌ No results were generated — check prompt, model, or parser issues."
+        )
+        return  # or sys.exit(1)
 
     # Print classification statistics
     logging.info(f"📊 Classification Results:")
