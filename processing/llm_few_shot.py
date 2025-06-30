@@ -45,7 +45,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 logging.info("🔍 Loading model...")
 
 
-def load_model(model_id):
+def load_model():
     """
     Load the Hugging Face tokenizer and model for few-shot classification.
 
@@ -57,9 +57,16 @@ def load_model(model_id):
     """
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
     model = AutoModelForCausalLM.from_pretrained(
-        model_id, device_map="auto", torch_dtype=torch.float16, trust_remote_code=True
+        MODEL_ID,
+        device_map="auto",
+        torch_dtype=torch.float16,
+        trust_remote_code=True,
+        max_memory={
+            "cuda:0": "1GiB",
+            "cpu": "60GiB",
+        },
+        offload_buffers=True,
     )
-    model = torch.compile(model)
     return tokenizer, model
 
 
