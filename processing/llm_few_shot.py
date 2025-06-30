@@ -115,8 +115,6 @@ def extract_label_and_reasoning(decoded_output):
         parsed = json.loads(json_block)
 
         label = parsed.get("label", "non-bias").strip().lower()
-        if label not in {"bias", "non-bias"}:
-            raise ValueError(f"Invalid label: {label}")
         reasoning = parsed.get("reasoning", "").strip()
 
         return label, reasoning
