@@ -175,14 +175,27 @@ def generate_outputs(batch_texts, tokenizer, model):
 
 def split_multiple_responses(decoded_output: str) -> List[str]:
     """
-    Split model output into separate prompt responses based on repeated 'Label:' prefix.
-    Useful when LLM returns multiple completions in a single generation.
+    Split model output into separate prompt responses based on occurrences of 'Label:'.
+    Handles optional prefixes like 'Output:' and noisy tokens like <eos>.
     """
-    # Remove hallucinated prompt-like patterns first
-    cleaned = re.sub(r"(?i)input\s*:.*?output\s*:", "", decoded_output, flags=re.DOTALL)
-    # Then split cleanly on "Label:"
-    blocks = re.split(r"(?i)(?=label\s*:)", cleaned)
-    return [b.strip() for b in blocks if re.match(r"(?i)label\s*:", b.strip())]
+    # Remove hallucinated prompt-like patterns (Input/Output headers)
+    cleaned = re.sub(
+        r"(?i)input\s*:.*?(?=(label|output)\s*:)", "", decoded_output, flags=re.DOTALL
+    )
+    cleaned = cleaned.replace("<eos>", " ")  # Clean eos tokens
+    cleaned = cleaned.strip()
+
+    # Split on occurrences of 'Label:' optionally preceded by 'Output:'
+    blocks = re.split(r"(?i)(?=output\s*:\s*)?(?=label\s*:)", cleaned)
+
+    # Filter blocks that actually start with 'Label:'
+    results = []
+    for b in blocks:
+        b = b.strip()
+        if re.search(r"(?i)^label\s*:", b):
+            results.append(b)
+
+    return results
 
 
 def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddits):
