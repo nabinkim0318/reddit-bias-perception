@@ -93,108 +93,53 @@ def build_prompt(post_text):
 
 def extract_label_and_reasoning(decoded_output):
     """
-    Extract both label and reasoning from the model's output using regex patterns.
+    Extract label and reasoning by directly looking for lines starting with 'label:' and 'reasoning:'
+    If not found or malformed, fall back to simple keyword heuristics.
     """
-    try:
-        # Clean the output
-        cleaned = re.sub(r"```json|```", "", decoded_output).strip()
 
-        # Try to extract label first
-        label_patterns = [
-            r'"label"\s*:\s*"([^"]+)"',  # JSON format
-            r'label\s*:\s*"([^"]+)"',  # Without quotes
-            r"label\s*:\s*([a-zA-Z-]+)",  # Without quotes, alphanumeric
-        ]
+    try:
+        cleaned = re.sub(r"```json|```", "", decoded_output).strip()
+        lines = cleaned.splitlines()
 
         label = None
-        for pattern in label_patterns:
-            match = re.search(pattern, cleaned, re.IGNORECASE)
-            if match:
-                label = match.group(1).strip().lower()
-                break
+        reasoning = None
 
-        # If no label found, try keyword-based detection
-        if not label:
+        for line in lines:
+            if "label:" in line.lower():
+                label = (
+                    re.sub(r"label\s*:\s*", "", line, flags=re.IGNORECASE)
+                    .strip()
+                    .strip("-*")
+                )
+            elif "reasoning:" in line.lower():
+                reasoning = line.split(":", 1)[1].strip()
+
+        # If label is missing or invalid, fallback
+        if label not in {"yes", "no"}:
             text_lower = cleaned.lower()
-            if "no" in text_lower and "yes" not in text_lower:
-                return "no", f"Fallback parsing: {decoded_output.strip()[:100]}"
-            elif re.search(
-                r"\b(yes|bias|biased|fairness|representation|diversity|stereotype|identity)\b",
+            if re.search(
+                r"\b(race|gender|diversity|bias|fairness|identity|stereotype|representation|exclusion)\b",
                 text_lower,
             ):
-                return "yes", f"Fallback parsing: {decoded_output.strip()[:100]}"
+                label = "yes"
             else:
-                # 최종 fallback은 보수적으로 no로 처리
-                return (
-                    "no",
-                    f"Fallback (no strong signal): {decoded_output.strip()[:100]}",
-                )
+                label = "no"
+            reasoning = f"[Fallback] Could not find label: {decoded_output[:150]}"
 
-        # Validate label
-        if label not in {"yes", "no"}:
-            label = "no"
-
-        # Try to extract reasoning
-        reasoning_patterns = [
-            r'"reasoning"\s*:\s*"([^"]+)"',  # JSON format
-            r'reasoning\s*:\s*"([^"]+)"',  # Without quotes
-            r"reasoning\s*:\s*([^,\n]+)",  # Without quotes, until comma or newline
-        ]
-
-        reasoning = "No reasoning provided"
-        for pattern in reasoning_patterns:
-            match = re.search(pattern, cleaned, re.IGNORECASE)
-            if match:
-                reasoning = match.group(1).strip()
-                # Remove trailing punctuation
-                reasoning = re.sub(r"[.,;]+$", "", reasoning)
-                break
-
-        # If no reasoning found, try to extract meaningful text
-        if reasoning == "No reasoning provided":
-            # Look for sentences that might contain reasoning
-            sentences = re.split(r"[.!?]", cleaned)
-            for sentence in sentences:
-                sentence = sentence.strip()
-                if len(sentence) > 20 and any(
-                    word in sentence.lower()
-                    for word in [
-                        "because",
-                        "since",
-                        "as",
-                        "due",
-                        "reason",
-                        "concern",
-                        "issue",
-                        "problem",
-                    ]
-                ):
-                    reasoning = sentence
-                    break
+        # If reasoning is placeholder or missing
+        if not reasoning or reasoning.lower() in {
+            "your reasoning in 1-2 sentences",
+            "none",
+            "n/a",
+            "",
+        }:
+            reasoning = f"[Fallback] No valid reasoning found. Raw: {decoded_output.strip()[:150]}"
 
         return label, reasoning
 
     except Exception as e:
-        # Log the first few failed cases for debugging
-        if not hasattr(extract_label_and_reasoning, "_logged_failures"):
-            extract_label_and_reasoning._logged_failures = 0
-
-        if extract_label_and_reasoning._logged_failures < 3:
-            logging.warning(
-                f"⚠️ Failed to parse output (case {extract_label_and_reasoning._logged_failures + 1}): {e}"
-            )
-            logging.warning(f"Raw output: {decoded_output[:500]}...")
-            extract_label_and_reasoning._logged_failures += 1
-        elif extract_label_and_reasoning._logged_failures == 3:
-            logging.warning("⚠️ Suppressing further parsing failure logs...")
-            extract_label_and_reasoning._logged_failures += 1
-
-        # Fallback: try to extract any meaningful information
-        text_lower = decoded_output.lower()
-        if "yes" in text_lower and "no" not in text_lower:
-            return "yes", f"Fallback parsing: {decoded_output.strip()[:100]}"
-        else:
-            return "no", f"Fallback parsing: {decoded_output.strip()[:100]}"
+        logging.warning(f"⚠️ Exception while extracting label/reasoning: {e}")
+        return "no", f"[Exception fallback] {str(e)} | Raw: {decoded_output[:100]}"
 
 
 def load_model_and_tokenizer():
