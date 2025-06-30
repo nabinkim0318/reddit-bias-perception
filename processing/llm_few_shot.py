@@ -102,16 +102,47 @@ def extract_label_and_reasoning(decoded_output):
     }
     """
     try:
-        # Find first JSON block in the output
+        # Clean the output
         cleaned = re.sub(r"```json|```", "", decoded_output).strip()
-        # Try extracting JSON block explicitly
-        json_match = re.search(
-            r"\{\s*\"reasoning\".*?\"label\"\s*:\s*\".*?\"\s*\}", cleaned, re.DOTALL
-        )
-        if not json_match:
-            raise ValueError("No JSON block found")
 
-        json_block = json_match.group(0)
+        # Try multiple JSON extraction patterns
+        json_patterns = [
+            r"\{\s*\"reasoning\".*?\"label\"\s*:\s*\".*?\"\s*\}",  # Strict pattern
+            r"\{[^{}]*\"label\"[^{}]*\}",  # Contains "label" key
+            r"\{.*?\}",  # Any JSON object
+        ]
+
+        json_block = None
+        for pattern in json_patterns:
+            json_match = re.search(pattern, cleaned, re.DOTALL)
+            if json_match:
+                json_block = json_match.group(0)
+                break
+
+        if not json_block:
+            # Try to find label and reasoning in plain text
+            label_match = re.search(
+                r'"label"\s*:\s*"([^"]+)"', decoded_output, re.IGNORECASE
+            )
+            reasoning_match = re.search(
+                r'"reasoning"\s*:\s*"([^"]+)"', decoded_output, re.IGNORECASE
+            )
+
+            if label_match:
+                label = label_match.group(1).strip().lower()
+                reasoning = (
+                    reasoning_match.group(1).strip()
+                    if reasoning_match
+                    else "No reasoning provided"
+                )
+
+                if label in {"bias", "non-bias"}:
+                    return label, reasoning
+                else:
+                    raise ValueError(f"Invalid label: {label}")
+            else:
+                raise ValueError("No JSON block or label found")
+
         parsed = json.loads(json_block)
 
         label = parsed.get("label", "non-bias").strip().lower()
@@ -153,9 +184,13 @@ def generate_outputs(batch_texts, tokenizer, model):
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=120,
+                max_new_tokens=150,
+                temperature=0.0,
+                top_p=1.0,
+                repetition_penalty=1.1,
                 do_sample=False,
                 pad_token_id=tokenizer.eos_token_id,
+                eos_token_id=tokenizer.eos_token_id,
             )
         return tokenizer.batch_decode(outputs, skip_special_tokens=False)
     except Exception as e:
@@ -294,12 +329,13 @@ def classify_single_post(
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=120,
+                max_new_tokens=150,
                 temperature=0.0,
-                top_k=1,
-                repetition_penalty=1.0,
+                top_p=1.0,
+                repetition_penalty=1.1,
                 do_sample=False,
                 pad_token_id=tokenizer.eos_token_id,
+                eos_token_id=tokenizer.eos_token_id,
             )
 
         # Decode result
