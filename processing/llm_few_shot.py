@@ -101,9 +101,9 @@ def extract_label_and_reasoning(decoded_output):
 
         # Try to extract label first
         label_patterns = [
-            r'"label"\s*:\s*"([^"]+)"',  # JSON format
-            r'label\s*:\s*"([^"]+)"',  # Without quotes
-            r"label\s*:\s*([a-zA-Z-]+)",  # Without quotes, alphanumeric
+            r'"Label"\s*:\s*"([^"]+)"',  # JSON format
+            r'Label\s*:\s*"([^"]+)"',  # Without quotes
+            r"Label\s*:\s*([a-zA-Z-]+)",  # Without quotes, alphanumeric
         ]
 
         label = None
@@ -116,13 +116,19 @@ def extract_label_and_reasoning(decoded_output):
         # If no label found, try keyword-based detection
         if not label:
             text_lower = cleaned.lower()
-            if "bias" in text_lower and "non-bias" not in text_lower:
-                label = "bias"
-            elif "non-bias" in text_lower or "nonbias" in text_lower:
-                label = "non-bias"
+            if "non-bias" in text_lower or "nonbias" in text_lower:
+                return "non-bias", f"Fallback parsing: {decoded_output.strip()[:100]}"
+            elif re.search(
+                r"\b(bias|biased|fairness|representation|diversity|stereotype|identity)\b",
+                text_lower,
+            ):
+                return "bias", f"Fallback parsing: {decoded_output.strip()[:100]}"
             else:
-                # Default to non-bias if no clear indication
-                label = "non-bias"
+                # 최종 fallback은 보수적으로 non-bias로 처리
+                return (
+                    "non-bias",
+                    f"Fallback (no strong signal): {decoded_output.strip()[:100]}",
+                )
 
         # Validate label
         if label not in {"bias", "non-bias"}:
@@ -288,7 +294,6 @@ def classify_post_wrapper(batch_input):
 def main():
     logging.info("🔍 Loading data...")
     df = pd.read_csv(CLEANED_DATA)
-    df = df.head(10)
     texts = df["clean_text"].fillna("").astype(str).tolist()
     subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
     ids = df["id"] if "id" in df.columns else [f"unknown_{i}" for i in range(len(df))]
