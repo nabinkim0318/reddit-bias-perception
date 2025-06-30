@@ -86,7 +86,7 @@ def extract_label_and_reasoning(decoded_output, post_text):
         cleaned = re.sub(r"```json|```", "", decoded_output).strip()
 
         # Extract label
-        label_match = re.search(r"(?i)label\s*[:\-]?\s*(yes|no)", cleaned)
+        label_match = re.search(r"(?i)label\s*[:\-=\s]*\s*(yes|no)", cleaned)
         reasoning_match = re.search(r"(?i)reasoning\s*[:\-]?\s*(.+)", cleaned)
 
         label = label_match.group(1).strip().lower() if label_match else None
@@ -190,6 +190,12 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
             label, reasoning, raw_output = extract_label_and_reasoning(
                 response, post_text=batch_texts[i]
             )
+            # 🔍 Debug 출력 추가
+            print("===" * 30)
+            print(f"[DEBUG] Post Text:\n{batch_texts[i]}")
+            print(f"[DEBUG] Raw Output:\n{raw_output}")
+            print(f"[DEBUG] Parsed Label: {label}, Reasoning: {reasoning}")
+            print("===" * 30)
             try:
                 pred_label: Literal["yes", "no"] = label  # type: ignore
                 row = ClassificationResult(
