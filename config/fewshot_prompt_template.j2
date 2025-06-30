@@ -64,10 +64,12 @@ Examples:
 
 ### FORMAT ###
 
-You must respond **strictly using this JSON format**:
+You must return your output as valid JSON only, with no introductory text or markdown. Format:
 
-```json
 {
   "reasoning": "your reasoning (1–2 sentences)",
   "label": "bias" or "non-bias"
 }
+
+Do not add any extra text, titles, comments, markdown (```), or explanations outside the JSON block.
+Your output must begin and end with only `{` and `}`.
