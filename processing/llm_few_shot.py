@@ -117,10 +117,12 @@ def extract_label_and_reasoning(decoded_output):
         # If label is missing or invalid, fallback
         if label not in {"yes", "no"}:
             text_lower = cleaned.lower()
-            if re.search(
-                r"\b(race|gender|diversity|bias|fairness|identity|stereotype|representation|exclusion)\b",
-                text_lower,
-            ):
+            bias_signals = [
+                s
+                for s in re.split(r"[.!?]", text_lower)
+                if "bias" in s and ("image" in s or "representation" in s)
+            ]
+            if len(bias_signals) > 0:
                 label = "yes"
             else:
                 label = "no"
