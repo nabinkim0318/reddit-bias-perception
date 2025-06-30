@@ -158,6 +158,9 @@ def generate_outputs(batch_texts, tokenizer, model):
             decoded = tokenizer.decode(
                 generated_tokens, skip_special_tokens=False
             ).strip()
+            print("===" * 20)
+            print(f"[RAW GENERATED TEXT #{i}]\n{decoded}")
+            print("===" * 20)
             if prompts[i].strip() in decoded:
                 decoded = decoded.replace(prompts[i].strip(), "").strip()
             else:
@@ -186,6 +189,7 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
     rows = []
     for i, decoded in enumerate(decoded_outputs):
         responses = split_multiple_responses(decoded)
+        print(f"[SPLIT RESPONSES]: {responses}")
         for response in responses:
             label, reasoning, raw_output = extract_label_and_reasoning(
                 response, post_text=batch_texts[i]
