@@ -11,7 +11,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from pydantic import ValidationError
 
-from config.config import AI_KEYWORDS, BIAS_KEYWORDS, CLASSIFIED_BIAS, FILTERED_DATA
+from config.config import AI_KEYWORDS, BIAS_KEYWORDS, CLASSIFIED_YES, FILTERED_DATA
 from processing.schema import FilteredAIBiasPost
 
 load_dotenv()
@@ -67,7 +67,7 @@ def filter_posts(posts, bias_keywords_dict, ai_keywords):
 
 
 def main():
-    df = pd.read_csv(CLASSIFIED_BIAS)
+    df = pd.read_csv(CLASSIFIED_YES)
     raw_data = df.to_dict("records")
 
     filtered_data = filter_posts(raw_data, BIAS_KEYWORDS, AI_KEYWORDS)
