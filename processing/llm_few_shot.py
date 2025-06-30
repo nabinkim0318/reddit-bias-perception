@@ -11,7 +11,7 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache  # Lazy load template
 from multiprocessing import Pool
-from typing import Literal, cast
+from typing import List, Literal, cast
 
 import pandas as pd
 import torch
@@ -76,59 +76,48 @@ def build_prompt(post_text):
 
 def extract_label_and_reasoning(decoded_output):
     """
-    Extract label and reasoning by directly looking for lines starting with 'label:' and 'reasoning:'
-    If not found or malformed, fall back to simple keyword heuristics.
+    Extract label and reasoning by parsing LLM output.
+    Returns:
+        label (str): 'yes' or 'no' if found, otherwise 'skip'
+        reasoning (str): Reasoning string if found, else empty
+        raw_output (str): Full decoded output
     """
-
     try:
         cleaned = re.sub(r"```json|```", "", decoded_output).strip()
-        lines = cleaned.splitlines()
 
-        label = None
-        reasoning = None
+        # Extract label
+        label_match = re.search(r"(?i)label\s*[:\-]?\s*(yes|no)", cleaned)
+        reasoning_match = re.search(r"(?i)reasoning\s*[:\-]?\s*(.+)", cleaned)
 
-        for line in lines:
-            if "label:" in line.lower():
-                label = (
-                    re.sub(r"label\s*:\s*", "", line, flags=re.IGNORECASE)
-                    .strip()
-                    .strip("-*")
-                )
-            elif "reasoning:" in line.lower():
-                reasoning = line.split(":", 1)[1].strip()
+        label = label_match.group(1).strip().lower() if label_match else None
+        reasoning = reasoning_match.group(1).strip() if reasoning_match else None
 
-        # If label is missing or invalid, fallback
+        # Validate label
         if label not in {"yes", "no"}:
-            text_lower = cleaned.lower()
-            bias_signals = [
-                s
-                for s in re.split(r"[.!?]", text_lower)
-                if "bias" in s and ("image" in s or "representation" in s)
-            ]
-            if len(bias_signals) > 0:
-                label = "yes"
-            else:
-                label = "no"
-            reasoning = f"[Fallback] No valid label. Full decoded output:\n{decoded_output[:200]}"
+            logging.warning(
+                f"⚠️ Label missing or malformed in output: {decoded_output[:150]}"
+            )
+            return "skip", "", decoded_output
 
-        # If reasoning is placeholder or missing
+        # Validate reasoning
         if not reasoning or reasoning.lower() in {
             "your reasoning in 1-2 sentences",
             "none",
             "n/a",
             "",
         }:
-            reasoning = f"[Fallback] No valid reasoning found. Raw: {decoded_output.strip()[:150]}"
+            logging.warning(
+                f"⚠️ Reasoning missing or invalid in output: {decoded_output[:150]}"
+            )
+            reasoning = ""
 
         return label, reasoning, decoded_output
 
     except Exception as e:
-        logging.warning(f"⚠️ Exception while extracting label/reasoning: {e}")
-        return (
-            "no",
-            f"[Exception fallback] {str(e)} | Raw: {decoded_output[:100]}",
-            decoded_output,
+        logging.warning(
+            f"⚠️ Exception during parsing: {e} | Output: {decoded_output[:100]}"
         )
+        return "skip", "", decoded_output
 
 
 def load_model_and_tokenizer():
@@ -165,11 +154,14 @@ def generate_outputs(batch_texts, tokenizer, model):
             )
         # Remove special tokens and clean up the output
         decoded_outputs = []
+        input_lengths = [len(input_ids) for input_ids in inputs["input_ids"]]
+
         for i, output in enumerate(outputs):
-            decoded = tokenizer.decode(output, skip_special_tokens=True)
-            prompt = prompts[i]
-            if prompt in decoded:
-                decoded = decoded.replace(prompt, "").strip()
+            # Slice off the prompt tokens from the generated output
+            generated_tokens = output[input_lengths[i] :]
+            decoded = tokenizer.decode(
+                generated_tokens, skip_special_tokens=False
+            ).strip()
             decoded_outputs.append(decoded)
         return decoded_outputs
     except Exception as e:
@@ -177,33 +169,43 @@ def generate_outputs(batch_texts, tokenizer, model):
         return [f"Inference error: {e}"] * len(batch_texts)
 
 
+def split_multiple_responses(decoded_output: str) -> List[str]:
+    """
+    Split model output into separate prompt responses based on repeated 'Label:' prefix.
+    Useful when LLM returns multiple completions in a single generation.
+    """
+    blocks = re.split(r"(?i)(?=label\s*:)", decoded_output)
+    return [b.strip() for b in blocks if b.strip().startswith("Label")]
+
+
 def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddits):
     rows = []
     for i, decoded in enumerate(decoded_outputs):
-        label, reasoning, raw_output = extract_label_and_reasoning(decoded)
-        try:
-            pred_label: Literal["yes", "no"] = label  # type: ignore
-            row = ClassificationResult(
-                id=batch_ids[i],
-                subreddit=batch_subreddits[i],
-                clean_text=batch_texts[i],
-                pred_label=pred_label,
-                llm_reasoning=reasoning.strip(),
-                raw_output=raw_output,
-            )
-            rows.append(row.model_dump())
-        except ValidationError as e:
-            logging.error(f"Validation error: {e}")
-            rows.append(
-                {
-                    "id": batch_ids[i],
-                    "subreddit": batch_subreddits[i],
-                    "clean_text": batch_texts[i],
-                    "pred_label": "No",
-                    "llm_reasoning": f"Validation Error: {e}",
-                    "raw_output": "",
-                }
-            )
+        responses = split_multiple_responses(decoded)
+        for response in responses:
+            label, reasoning, raw_output = extract_label_and_reasoning(response)
+            try:
+                pred_label: Literal["yes", "no"] = label  # type: ignore
+                row = ClassificationResult(
+                    id=batch_ids[i],
+                    subreddit=batch_subreddits[i],
+                    clean_text=batch_texts[i],
+                    pred_label=pred_label,
+                    llm_reasoning=reasoning.strip(),
+                    raw_output=raw_output,
+                )
+                rows.append(row.model_dump())
+            except ValidationError as e:
+                logging.error(f"Validation error: {e}")
+                rows.append(
+                    {
+                        "id": batch_ids[i],
+                        "subreddit": batch_subreddits[i],
+                        "clean_text": batch_texts[i],
+                        "pred_label": "no",
+                        "llm_reasoning": f"Validation Error: {e}",
+                    }
+                )
     return rows
 
 
