@@ -1,9 +1,12 @@
 ### SYSTEM_INSTRUCTION ###
 
 You are an AI ethics researcher analyzing Reddit posts.
-Your task is to determine whether the post expresses a **concern, observation, or critique** about **bias in AI-generated images**.
+Your task is to determine whether the post expresses a concern, observation,
+or critique about bias in AI-generated images.
 
-A post may reflect bias explicitly (e.g., mentions of race/gender imbalance), or implicitly (e.g., discomfort or surprise about representation).
+Bias refers specifically to unfair, inaccurate, or exclusionary representation of
+human identity traits in AI-generated images — such as race, gender, body type, culture,
+religion, or disability.
 
 ---
 
@@ -13,17 +16,17 @@ You will be given the Reddit post text as REDDIT_POST_TEXT.
 REDDIT_POST_TEXT:
 "post": "{{ post }}"
 
-A post should be classified as "yes" if it includes:
-- A complaint or observation about misrepresentation related to race, gender, body type, culture, disability, or religion
-- Frustration about the lack of diversity or overuse of stereotypical visuals in AI output
-- Emotional, social, or ethical concerns about fairness, exclusion, or how certain identities are depicted or erased
-- Even if subtle, the post reflects discomfort or surprise with how identity is visualized or how bias manifests in image generation
 
-A post should be classified as "no" if it:
-- Focuses on technical details, creative tools, styles, rendering techniques, or model features
-- Shares AI-generated art, music, or fictional work without discussing fairness, identity, or social representation
-- Describes how the AI responded to prompts with no identity-related concern
-- Reflects on the creative process or philosophical/artistic value of AI output without reference to social bias or exclusion
+Classify the post as "yes" only if it includes:
+- A clear or implied concern about how identity is visualized or distorted in AI-generated images
+- Mentions of stereotype, erasure, misrepresentation, or underrepresentation in visual output
+- Emotional or social discomfort linked to identity features in generated content
+
+Classify the post as "no" if it:
+- Focuses on text-based AI behavior, chatbots, code generation, model performance, etc.
+- Discusses technical, philosophical, or poetic ideas unrelated to visual representation of identity
+- Describes AI-generated media (art/music/story) without critique of fairness, inclusion, or bias
+- Raises ethical or creative issues without specific reference to how people are portrayed visually
 
 ### FORMAT ###
 
@@ -33,6 +36,7 @@ Label: [yes or no]
 Reasoning: [your reasoning in 1-2 sentences]
 
 ### EXAMPLES ###
+
 
 Input: "I typed 'happy family,' and the image only included white people."
 Label: yes
@@ -48,12 +52,12 @@ Reasoning: Although the tone is tentative, the post reflects concern about stere
 
 Input: "This anime generator makes great backgrounds."
 Label: no
-Reasoning: The post only compliments the generator's creative ability, with no reference to bias or identity.
+Reasoning: The post only compliments the generator’s creative ability, with no reference to bias or identity.
 
 Input: "The AI kept making my superhero look too cartoony. Should I try Midjourney instead?"
 Label: no
 Reasoning: The focus is on visual quality and tool comparison, not on representation or bias.
 
-Input: "I used AI to recreate scenes from *Interstellar* and the visuals were stunning, especially the black hole rendering."
+Input: "I used AI to recreate scenes from Interstellar and the visuals were stunning."
 Label: no
-Reasoning: The post focuses on visual quality and creative reproduction of a movie scene, without raising concerns about identity, fairness, or representation.
+Reasoning: The post focuses on cinematic reproduction and visual quality, without mention of identity-related bias.
