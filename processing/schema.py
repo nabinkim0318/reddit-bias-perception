@@ -9,7 +9,7 @@ class ClassificationResult(BaseModel):
     id: str
     subreddit: str
     clean_text: str
-    pred_label: Literal["bias", "non-bias"]
+    pred_label: Literal["yes", "no"]
     llm_reasoning: str
 
 

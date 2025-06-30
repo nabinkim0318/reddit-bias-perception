@@ -23,8 +23,8 @@ from transformers.models.auto.tokenization_auto import AutoTokenizer
 
 from config.config import (
     BATCH_SIZE,
-    CLASSIFIED_BIAS,
-    CLASSIFIED_NONBIAS,
+    CLASSIFIED_NO,
+    CLASSIFIED_YES,
     CLEANED_DATA,
     MODEL_ID,
     TEMPLATE_PATH,
@@ -101,9 +101,9 @@ def extract_label_and_reasoning(decoded_output):
 
         # Try to extract label first
         label_patterns = [
-            r'"Label"\s*:\s*"([^"]+)"',  # JSON format
-            r'Label\s*:\s*"([^"]+)"',  # Without quotes
-            r"Label\s*:\s*([a-zA-Z-]+)",  # Without quotes, alphanumeric
+            r'"label"\s*:\s*"([^"]+)"',  # JSON format
+            r'label\s*:\s*"([^"]+)"',  # Without quotes
+            r"label\s*:\s*([a-zA-Z-]+)",  # Without quotes, alphanumeric
         ]
 
         label = None
@@ -116,23 +116,23 @@ def extract_label_and_reasoning(decoded_output):
         # If no label found, try keyword-based detection
         if not label:
             text_lower = cleaned.lower()
-            if "non-bias" in text_lower or "nonbias" in text_lower:
-                return "non-bias", f"Fallback parsing: {decoded_output.strip()[:100]}"
+            if "no" in text_lower and "yes" not in text_lower:
+                return "no", f"Fallback parsing: {decoded_output.strip()[:100]}"
             elif re.search(
-                r"\b(bias|biased|fairness|representation|diversity|stereotype|identity)\b",
+                r"\b(yes|bias|biased|fairness|representation|diversity|stereotype|identity)\b",
                 text_lower,
             ):
-                return "bias", f"Fallback parsing: {decoded_output.strip()[:100]}"
+                return "yes", f"Fallback parsing: {decoded_output.strip()[:100]}"
             else:
-                # 최종 fallback은 보수적으로 non-bias로 처리
+                # 최종 fallback은 보수적으로 no로 처리
                 return (
-                    "non-bias",
+                    "no",
                     f"Fallback (no strong signal): {decoded_output.strip()[:100]}",
                 )
 
         # Validate label
-        if label not in {"bias", "non-bias"}:
-            label = "non-bias"
+        if label not in {"yes", "no"}:
+            label = "no"
 
         # Try to extract reasoning
         reasoning_patterns = [
@@ -191,10 +191,10 @@ def extract_label_and_reasoning(decoded_output):
 
         # Fallback: try to extract any meaningful information
         text_lower = decoded_output.lower()
-        if "bias" in text_lower and "non-bias" not in text_lower:
-            return "bias", f"Fallback parsing: {decoded_output.strip()[:100]}"
+        if "yes" in text_lower and "no" not in text_lower:
+            return "yes", f"Fallback parsing: {decoded_output.strip()[:100]}"
         else:
-            return "non-bias", f"Fallback parsing: {decoded_output.strip()[:100]}"
+            return "no", f"Fallback parsing: {decoded_output.strip()[:100]}"
 
 
 def load_model_and_tokenizer():
@@ -234,7 +234,8 @@ def generate_outputs(batch_texts, tokenizer, model):
             decoded = tokenizer.decode(output, skip_special_tokens=True)
             # Remove the original prompt from the output
             for prompt in prompts:
-                decoded = decoded.replace(prompt, "").strip()
+                if prompt in decoded:
+                    decoded = decoded.replace(prompt, "").strip()
             decoded_outputs.append(decoded)
         return decoded_outputs
     except Exception as e:
@@ -247,7 +248,7 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
     for i, decoded in enumerate(decoded_outputs):
         label, reasoning = extract_label_and_reasoning(decoded)
         try:
-            pred_label: Literal["bias", "non-bias"] = label  # type: ignore
+            pred_label: Literal["yes", "no"] = label  # type: ignore
             row = ClassificationResult(
                 id=batch_ids[i],
                 subreddit=batch_subreddits[i],
@@ -263,7 +264,7 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
                     "id": batch_ids[i],
                     "subreddit": batch_subreddits[i],
                     "clean_text": batch_texts[i],
-                    "pred_label": "non-bias",
+                    "pred_label": "No",
                     "llm_reasoning": f"Validation Error: {e}",
                 }
             )
@@ -279,7 +280,7 @@ def classify_post_wrapper(batch_input):
                 "id": batch_ids[i],
                 "subreddit": batch_subreddits[i],
                 "clean_text": batch_texts[i],
-                "pred_label": "non-bias",
+                "pred_label": "no",
                 "llm_reasoning": "Model load failed",
             }
             for i in range(len(batch_texts))
@@ -337,12 +338,10 @@ def main():
         for label, count in label_counts.items():
             logging.info(f"  {label}: {count} ({count/len(result_df)*100:.1f}%)")
 
-    result_df[result_df["pred_label"] == "bias"].to_csv(CLASSIFIED_BIAS, index=False)
-    result_df[result_df["pred_label"] == "non-bias"].to_csv(
-        CLASSIFIED_NONBIAS, index=False
-    )
-    logging.info(f"→ {CLASSIFIED_BIAS}")
-    logging.info(f"→ {CLASSIFIED_NONBIAS}")
+    result_df[result_df["pred_label"] == "yes"].to_csv(CLASSIFIED_YES, index=False)
+    result_df[result_df["pred_label"] == "no"].to_csv(CLASSIFIED_NO, index=False)
+    logging.info(f"→ {CLASSIFIED_YES}")
+    logging.info(f"→ {CLASSIFIED_NO}")
 
 
 # === SINGLE POST CLASSIFICATION ===
@@ -423,7 +422,7 @@ def classify_single_post(
             "id": post_id,
             "subreddit": subreddit,
             "clean_text": post_text,
-            "pred_label": "non-bias",
+            "pred_label": "no",
             "llm_reasoning": f"Error: {str(e)}",
         }
 

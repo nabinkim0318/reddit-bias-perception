@@ -33,9 +33,8 @@ AI_KEYWORDS = load_json(os.path.join(CONFIG_DIR, "ai_keywords.json"))
 
 # === LLM Few-Shot OUTPUTS ===
 OUTPUT_DIR = PROCESSED_DIR
-CLASSIFIED_BIAS = os.path.join(OUTPUT_DIR, "classified_bias.csv")
-CLASSIFIED_NONBIAS = os.path.join(OUTPUT_DIR, "classified_nonbias.csv")
-BIAS_UNCERTAIN = os.path.join(OUTPUT_DIR, "bias_uncertain.csv")
+CLASSIFIED_YES = os.path.join(OUTPUT_DIR, "classified_yes.csv")
+CLASSIFIED_NO = os.path.join(OUTPUT_DIR, "classified_no.csv")
 FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv")
 
 # === TEMPLATE & MODEL ===
