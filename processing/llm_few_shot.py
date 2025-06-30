@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache  # Lazy load template
 from multiprocessing import Pool
 from typing import Literal, cast
@@ -43,31 +44,6 @@ load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 logging.info("🔍 Loading model...")
-
-
-def load_model():
-    """
-    Load the Hugging Face tokenizer and model for few-shot classification.
-
-    Args:
-        model_id (str): The identifier for the pre-trained model.
-
-    Returns:
-        tuple: (tokenizer, model) ready for inference.
-    """
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL_ID,
-        device_map="auto",
-        torch_dtype=torch.float16,
-        trust_remote_code=True,
-        max_memory={
-            "cuda:0": "1GiB",
-            "cpu": "60GiB",
-        },
-        offload_buffers=True,
-    )
-    return tokenizer, model
 
 
 @lru_cache
@@ -159,6 +135,7 @@ def load_model_and_tokenizer():
             device_map="auto",
             torch_dtype=torch.float16,
             trust_remote_code=True,
+            offload_buffers=True,
         )
         model.eval()
         return tokenizer, model
@@ -225,21 +202,8 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
     return rows
 
 
-def classify_post_wrapper(batch_input):
+def classify_post_wrapper(batch_input, tokenizer, model):
     batch_texts, batch_ids, batch_subreddits = batch_input
-    tokenizer, model = load_model_and_tokenizer()
-    if tokenizer is None or model is None:
-        return [
-            {
-                "id": batch_ids[i],
-                "subreddit": batch_subreddits[i],
-                "clean_text": batch_texts[i],
-                "pred_label": "no",
-                "llm_reasoning": "Model load failed",
-            }
-            for i in range(len(batch_texts))
-        ]
-
     decoded_outputs = generate_outputs(batch_texts, tokenizer, model)
     return postprocess_outputs(
         decoded_outputs, batch_texts, batch_ids, batch_subreddits
@@ -247,6 +211,7 @@ def classify_post_wrapper(batch_input):
 
 
 def main():
+    tokenizer, model = load_model_and_tokenizer()
     logging.info("🔍 Loading data...")
     df = pd.read_csv(CLEANED_DATA)
     texts = df["clean_text"].fillna("").astype(str).tolist()
@@ -273,13 +238,15 @@ def main():
     num_processes = min(4, os.cpu_count() or 1)
     logging.info(f"Using {num_processes} processes for classification")
 
-    with Pool(processes=num_processes) as pool:
-        for result_batch in tqdm(
-            pool.imap_unordered(classify_post_wrapper, batch_input_list),
-            total=len(batch_input_list),
-            desc="Classifying posts",
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [
+            executor.submit(classify_post_wrapper, batch_input, tokenizer, model)
+            for batch_input in batch_input_list
+        ]
+        for future in tqdm(
+            as_completed(futures), total=len(futures), desc="Classifying posts"
         ):
-            all_results.extend(result_batch)
+            all_results.extend(future.result())
 
     result_df = pd.DataFrame(all_results)
 
