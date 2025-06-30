@@ -109,7 +109,7 @@ def extract_label_and_reasoning(decoded_output):
                 label = "yes"
             else:
                 label = "no"
-            reasoning = f"[Fallback] Could not find label: {decoded_output[:150]}"
+            reasoning = f"[Fallback] No valid label. Full decoded output:\n{decoded_output[:200]}"
 
         # If reasoning is placeholder or missing
         if not reasoning or reasoning.lower() in {
@@ -151,7 +151,7 @@ def generate_outputs(batch_texts, tokenizer, model):
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=200,
+                max_new_tokens=600,
                 do_sample=False,
                 temperature=0.0,
                 top_p=1.0,
@@ -161,12 +161,11 @@ def generate_outputs(batch_texts, tokenizer, model):
             )
         # Remove special tokens and clean up the output
         decoded_outputs = []
-        for output in outputs:
+        for i, output in enumerate(outputs):
             decoded = tokenizer.decode(output, skip_special_tokens=True)
-            # Remove the original prompt from the output
-            for prompt in prompts:
-                if prompt in decoded:
-                    decoded = decoded.replace(prompt, "").strip()
+            prompt = prompts[i]
+            if prompt in decoded:
+                decoded = decoded.replace(prompt, "").strip()
             decoded_outputs.append(decoded)
         return decoded_outputs
     except Exception as e:
@@ -292,17 +291,13 @@ def classify_single_post(
     # If model and tokenizer are not loaded, load them
     if tokenizer is None or model is None:
         logging.info("🔍 Loading model and tokenizer...")
-        tokenizer, model = load_model(MODEL_ID)
+        tokenizer, model = load_model_and_tokenizer()
 
     try:
         # Create prompt
         prompt = build_prompt(post_text)
 
-        # Tokenize
-        inputs = tokenizer(
-            prompt, return_tensors="pt", padding=True, truncation=True, max_length=2048
-        )
-        inputs = {k: v.to(model.device) for k, v in inputs.items()}
+        inputs = batch_tokenize([prompt], tokenizer).to(model.device)
 
         # Perform inference
         with torch.no_grad():
