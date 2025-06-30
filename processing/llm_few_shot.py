@@ -23,7 +23,6 @@ from transformers.models.auto.tokenization_auto import AutoTokenizer
 
 from config.config import (
     BATCH_SIZE,
-    BIAS_UNCERTAIN,
     CLASSIFIED_BIAS,
     CLASSIFIED_NONBIAS,
     CLEANED_DATA,
@@ -104,24 +103,27 @@ def extract_label_and_reasoning(decoded_output):
     """
     try:
         # Find first JSON block in the output
-        json_str_match = re.search(r"\{.*\}", decoded_output, re.DOTALL)
-        if not json_str_match:
+        cleaned = re.sub(r"```json|```", "", decoded_output).strip()
+        # Try extracting JSON block explicitly
+        json_match = re.search(
+            r"\{\s*\"reasoning\".*?\"label\"\s*:\s*\".*?\"\s*\}", cleaned, re.DOTALL
+        )
+        if not json_match:
             raise ValueError("No JSON block found")
 
-        json_block = json_str_match.group(0)
+        json_block = json_match.group(0)
         parsed = json.loads(json_block)
 
-        label = parsed.get("label", "uncertain").strip().lower()
+        label = parsed.get("label", "non-bias").strip().lower()
+        if label not in {"bias", "non-bias"}:
+            raise ValueError(f"Invalid label: {label}")
         reasoning = parsed.get("reasoning", "").strip()
-
-        if label not in ["bias", "non-bias", "uncertain"]:
-            label = "uncertain"
 
         return label, reasoning
 
     except Exception as e:
         logging.warning(f"⚠️ Failed to parse JSON output: {e}")
-        return "uncertain", f"Could not extract JSON: {decoded_output.strip()}"
+        return "error", f"Could not extract JSON: {decoded_output.strip()}"
 
 
 def load_model_and_tokenizer():
@@ -161,11 +163,8 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
     rows = []
     for i, decoded in enumerate(decoded_outputs):
         label, reasoning = extract_label_and_reasoning(decoded)
-        normalized_label = (
-            label if label in ["bias", "non-bias", "uncertain"] else "uncertain"
-        )
         try:
-            pred_label: Literal["bias", "non-bias", "uncertain"] = normalized_label  # type: ignore
+            pred_label: Literal["bias", "non-bias"] = label  # type: ignore
             row = ClassificationResult(
                 id=batch_ids[i],
                 subreddit=batch_subreddits[i],
@@ -181,7 +180,7 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
                     "id": batch_ids[i],
                     "subreddit": batch_subreddits[i],
                     "clean_text": batch_texts[i],
-                    "pred_label": "uncertain",
+                    "pred_label": "non-bias",
                     "llm_reasoning": f"Validation Error: {e}",
                 }
             )
@@ -197,7 +196,7 @@ def classify_post_wrapper(batch_input):
                 "id": batch_ids[i],
                 "subreddit": batch_subreddits[i],
                 "clean_text": batch_texts[i],
-                "pred_label": "uncertain",
+                "pred_label": "non-bias",
                 "llm_reasoning": "Model load failed",
             }
             for i in range(len(batch_texts))
@@ -242,15 +241,10 @@ def main():
     result_df[result_df["pred_label"] == "non-bias"].to_csv(
         CLASSIFIED_NONBIAS, index=False
     )
-    result_df[result_df["pred_label"] == "uncertain"].to_csv(
-        BIAS_UNCERTAIN, index=False
-    )
-
     logging.info("✅ Few-shot classification complete. Files saved:")
     logging.info(f"→ {FEWSHOT_RESULT}")
     logging.info(f"→ {CLASSIFIED_BIAS}")
     logging.info(f"→ {CLASSIFIED_NONBIAS}")
-    logging.info(f"→ {BIAS_UNCERTAIN}")
 
 
 # === SINGLE POST CLASSIFICATION ===
@@ -328,7 +322,6 @@ def classify_single_post(
             "id": post_id,
             "subreddit": subreddit,
             "clean_text": post_text,
-            "pred_label": "uncertain",
             "llm_reasoning": f"Error: {str(e)}",
         }
 
