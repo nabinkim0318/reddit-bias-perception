@@ -174,8 +174,11 @@ def split_multiple_responses(decoded_output: str) -> List[str]:
     Split model output into separate prompt responses based on repeated 'Label:' prefix.
     Useful when LLM returns multiple completions in a single generation.
     """
-    blocks = re.split(r"(?i)(?=label\s*:)", decoded_output)
-    return [b.strip() for b in blocks if b.strip().startswith("Label")]
+    # Remove hallucinated prompt-like patterns first
+    cleaned = re.sub(r"(?i)input\s*:.*?output\s*:", "", decoded_output, flags=re.DOTALL)
+    # Then split cleanly on "Label:"
+    blocks = re.split(r"(?i)(?=label\s*:)", cleaned)
+    return [b.strip() for b in blocks if re.match(r"(?i)label\s*:", b.strip())]
 
 
 def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddits):
@@ -315,7 +318,6 @@ def classify_single_post(
             'llm_reasoning': str
         }
     """
-    # If model and tokenizer are not loaded, load them
     if tokenizer is None or model is None:
         logging.info("🔍 Loading model and tokenizer...")
         tokenizer, model = load_model_and_tokenizer()
@@ -332,12 +334,9 @@ def classify_single_post(
         }
 
     try:
-        # Create prompt
         prompt = build_prompt(post_text)
-
         inputs = batch_tokenize([prompt], tokenizer).to(model.device)
 
-        # Perform inference
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
@@ -350,15 +349,21 @@ def classify_single_post(
                 eos_token_id=tokenizer.eos_token_id,
             )
 
-        # Decode result
-        decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        # Remove the original prompt from the output
-        decoded_output = decoded_output.replace(prompt, "").strip()
+        # 정확하게 프롬프트 이후만 decode
+        input_len = inputs["input_ids"].shape[1]
+        generated_tokens = outputs[0][input_len:]
+        decoded_output = tokenizer.decode(generated_tokens, skip_special_tokens=False)
 
-        # Extract label
+        # Postprocess to remove hallucinations and <eos> tokens
+        decoded_output = re.sub(
+            r"(?i)input\s*:.*?output\s*:", "", decoded_output, flags=re.DOTALL
+        )
+        decoded_output = re.sub(
+            r"<eos>+", "", decoded_output, flags=re.IGNORECASE
+        ).strip()
+
         label, reasoning, raw_output = extract_label_and_reasoning(decoded_output)
 
-        # Construct result
         result = {
             "id": post_id,
             "subreddit": subreddit,
