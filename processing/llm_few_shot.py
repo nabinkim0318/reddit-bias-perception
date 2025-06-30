@@ -74,7 +74,7 @@ def build_prompt(post_text):
     return get_template().render(post=(post_text or "").strip())
 
 
-def extract_label_and_reasoning(decoded_output):
+def extract_label_and_reasoning(decoded_output, post_text):
     """
     Extract label and reasoning by parsing LLM output.
     Returns:
@@ -94,29 +94,21 @@ def extract_label_and_reasoning(decoded_output):
 
         # Validate label
         if label not in {"yes", "no"}:
-            logging.warning(
-                f"⚠️ Label missing or malformed in output: {decoded_output[:150]}"
-            )
+            logging.warning(f"⚠️ Label missing: {decoded_output[:150]}")
             return "skip", "", decoded_output
 
-        # Validate reasoning
         if not reasoning or reasoning.lower() in {
             "your reasoning in 1-2 sentences",
             "none",
             "n/a",
             "",
         }:
-            logging.warning(
-                f"⚠️ Reasoning missing or invalid in output: {decoded_output[:150]}"
-            )
             reasoning = ""
 
         return label, reasoning, decoded_output
 
     except Exception as e:
-        logging.warning(
-            f"⚠️ Exception during parsing: {e} | Output: {decoded_output[:100]}"
-        )
+        logging.warning(f"⚠️ Parsing exception: {e}")
         return "skip", "", decoded_output
 
 
@@ -162,6 +154,11 @@ def generate_outputs(batch_texts, tokenizer, model):
             decoded = tokenizer.decode(
                 generated_tokens, skip_special_tokens=False
             ).strip()
+            if prompts[i].strip() in decoded:
+                decoded = decoded.replace(prompts[i].strip(), "").strip()
+            else:
+                # fallback: 입력 길이만큼 자르기
+                decoded = decoded[len(prompts[i]) :].strip()
             decoded_outputs.append(decoded)
         return decoded_outputs
     except Exception as e:
@@ -186,7 +183,9 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
     for i, decoded in enumerate(decoded_outputs):
         responses = split_multiple_responses(decoded)
         for response in responses:
-            label, reasoning, raw_output = extract_label_and_reasoning(response)
+            label, reasoning, raw_output = extract_label_and_reasoning(
+                response, post_text=batch_texts[i]
+            )
             try:
                 pred_label: Literal["yes", "no"] = label  # type: ignore
                 row = ClassificationResult(
