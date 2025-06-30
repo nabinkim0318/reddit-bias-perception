@@ -120,11 +120,15 @@ def extract_label_and_reasoning(decoded_output):
         }:
             reasoning = f"[Fallback] No valid reasoning found. Raw: {decoded_output.strip()[:150]}"
 
-        return label, reasoning
+        return label, reasoning, decoded_output
 
     except Exception as e:
         logging.warning(f"⚠️ Exception while extracting label/reasoning: {e}")
-        return "no", f"[Exception fallback] {str(e)} | Raw: {decoded_output[:100]}"
+        return (
+            "no",
+            f"[Exception fallback] {str(e)} | Raw: {decoded_output[:100]}",
+            decoded_output,
+        )
 
 
 def load_model_and_tokenizer():
@@ -176,7 +180,7 @@ def generate_outputs(batch_texts, tokenizer, model):
 def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddits):
     rows = []
     for i, decoded in enumerate(decoded_outputs):
-        label, reasoning = extract_label_and_reasoning(decoded)
+        label, reasoning, raw_output = extract_label_and_reasoning(decoded)
         try:
             pred_label: Literal["yes", "no"] = label  # type: ignore
             row = ClassificationResult(
@@ -185,6 +189,7 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
                 clean_text=batch_texts[i],
                 pred_label=pred_label,
                 llm_reasoning=reasoning.strip(),
+                raw_output=raw_output,
             )
             rows.append(row.model_dump())
         except ValidationError as e:
@@ -196,6 +201,7 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
                     "clean_text": batch_texts[i],
                     "pred_label": "No",
                     "llm_reasoning": f"Validation Error: {e}",
+                    "raw_output": "",
                 }
             )
     return rows
@@ -203,6 +209,20 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
 
 def classify_post_wrapper(batch_input, tokenizer, model):
     batch_texts, batch_ids, batch_subreddits = batch_input
+
+    if tokenizer is None or model is None:
+        return [
+            {
+                "id": batch_ids[i],
+                "subreddit": batch_subreddits[i],
+                "clean_text": batch_texts[i],
+                "pred_label": "no",
+                "llm_reasoning": "Model load failed",
+                "raw_output": "",
+            }
+            for i in range(len(batch_texts))
+        ]
+
     decoded_outputs = generate_outputs(batch_texts, tokenizer, model)
     return postprocess_outputs(
         decoded_outputs, batch_texts, batch_ids, batch_subreddits
@@ -211,6 +231,11 @@ def classify_post_wrapper(batch_input, tokenizer, model):
 
 def main():
     tokenizer, model = load_model_and_tokenizer()
+
+    if tokenizer is None or model is None:
+        logging.error("❌ Failed to load model and tokenizer. Exiting.")
+        return
+
     logging.info("🔍 Loading data...")
     df = pd.read_csv(CLEANED_DATA)
     texts = df["clean_text"].fillna("").astype(str).tolist()
@@ -293,6 +318,17 @@ def classify_single_post(
         logging.info("🔍 Loading model and tokenizer...")
         tokenizer, model = load_model_and_tokenizer()
 
+    if tokenizer is None or model is None:
+        logging.error("❌ Failed to load model and tokenizer")
+        return {
+            "id": post_id,
+            "subreddit": subreddit,
+            "clean_text": post_text,
+            "pred_label": "no",
+            "llm_reasoning": "Model load failed",
+            "raw_output": "",
+        }
+
     try:
         # Create prompt
         prompt = build_prompt(post_text)
@@ -318,7 +354,7 @@ def classify_single_post(
         decoded_output = decoded_output.replace(prompt, "").strip()
 
         # Extract label
-        label, reasoning = extract_label_and_reasoning(decoded_output)
+        label, reasoning, raw_output = extract_label_and_reasoning(decoded_output)
 
         # Construct result
         result = {
@@ -327,6 +363,7 @@ def classify_single_post(
             "clean_text": post_text,
             "pred_label": label,
             "llm_reasoning": reasoning,
+            "raw_output": raw_output,
         }
 
         logging.info(f"✅ Classification complete: {label}")
@@ -340,6 +377,7 @@ def classify_single_post(
             "clean_text": post_text,
             "pred_label": "no",
             "llm_reasoning": f"Error: {str(e)}",
+            "raw_output": "",
         }
 
 

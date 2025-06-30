@@ -11,6 +11,7 @@ class ClassificationResult(BaseModel):
     clean_text: str
     pred_label: Literal["yes", "no"]
     llm_reasoning: str
+    raw_output: str
 
 
 class FilteredAIBiasPost(BaseModel):
