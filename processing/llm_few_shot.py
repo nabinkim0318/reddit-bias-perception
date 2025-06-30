@@ -117,11 +117,17 @@ def extract_label_and_reasoning(decoded_output):
         label = parsed.get("label", "non-bias").strip().lower()
         reasoning = parsed.get("reasoning", "").strip()
 
+        if label not in {"bias", "non-bias"}:
+            raise ValueError(f"Invalid label: {label}")
+
         return label, reasoning
 
     except Exception as e:
         logging.warning(f"⚠️ Failed to parse JSON output: {e}")
-        return "error", f"Could not extract JSON: {decoded_output.strip()}"
+        return (
+            "non-bias",
+            f"Parsing failed: {str(e)} | Output: {decoded_output.strip()[:200]}",
+        )
 
 
 def load_model_and_tokenizer():
@@ -320,6 +326,7 @@ def classify_single_post(
             "id": post_id,
             "subreddit": subreddit,
             "clean_text": post_text,
+            "pred_label": "non-bias",
             "llm_reasoning": f"Error: {str(e)}",
         }
 
