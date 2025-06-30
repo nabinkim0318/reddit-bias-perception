@@ -26,7 +26,6 @@ from config.config import (
     CLASSIFIED_BIAS,
     CLASSIFIED_NONBIAS,
     CLEANED_DATA,
-    FEWSHOT_RESULT,
     MODEL_ID,
     TEMPLATE_PATH,
 )
@@ -94,71 +93,102 @@ def build_prompt(post_text):
 
 def extract_label_and_reasoning(decoded_output):
     """
-    Extract both label and reasoning from the model's JSON-formatted output.
-    Assumes the output is a JSON block like:
-    {
-      "reasoning": "...",
-      "label": "bias"
-    }
+    Extract both label and reasoning from the model's output using regex patterns.
     """
     try:
         # Clean the output
         cleaned = re.sub(r"```json|```", "", decoded_output).strip()
 
-        # Try multiple JSON extraction patterns
-        json_patterns = [
-            r"\{\s*\"reasoning\".*?\"label\"\s*:\s*\".*?\"\s*\}",  # Strict pattern
-            r"\{[^{}]*\"label\"[^{}]*\}",  # Contains "label" key
-            r"\{.*?\}",  # Any JSON object
+        # Try to extract label first
+        label_patterns = [
+            r'"label"\s*:\s*"([^"]+)"',  # JSON format
+            r'label\s*:\s*"([^"]+)"',  # Without quotes
+            r"label\s*:\s*([a-zA-Z-]+)",  # Without quotes, alphanumeric
         ]
 
-        json_block = None
-        for pattern in json_patterns:
-            json_match = re.search(pattern, cleaned, re.DOTALL)
-            if json_match:
-                json_block = json_match.group(0)
+        label = None
+        for pattern in label_patterns:
+            match = re.search(pattern, cleaned, re.IGNORECASE)
+            if match:
+                label = match.group(1).strip().lower()
                 break
 
-        if not json_block:
-            # Try to find label and reasoning in plain text
-            label_match = re.search(
-                r'"label"\s*:\s*"([^"]+)"', decoded_output, re.IGNORECASE
-            )
-            reasoning_match = re.search(
-                r'"reasoning"\s*:\s*"([^"]+)"', decoded_output, re.IGNORECASE
-            )
-
-            if label_match:
-                label = label_match.group(1).strip().lower()
-                reasoning = (
-                    reasoning_match.group(1).strip()
-                    if reasoning_match
-                    else "No reasoning provided"
-                )
-
-                if label in {"bias", "non-bias"}:
-                    return label, reasoning
-                else:
-                    raise ValueError(f"Invalid label: {label}")
+        # If no label found, try keyword-based detection
+        if not label:
+            text_lower = cleaned.lower()
+            if "bias" in text_lower and "non-bias" not in text_lower:
+                label = "bias"
+            elif "non-bias" in text_lower or "nonbias" in text_lower:
+                label = "non-bias"
             else:
-                raise ValueError("No JSON block or label found")
+                # Default to non-bias if no clear indication
+                label = "non-bias"
 
-        parsed = json.loads(json_block)
-
-        label = parsed.get("label", "non-bias").strip().lower()
-        reasoning = parsed.get("reasoning", "").strip()
-
+        # Validate label
         if label not in {"bias", "non-bias"}:
-            raise ValueError(f"Invalid label: {label}")
+            label = "non-bias"
+
+        # Try to extract reasoning
+        reasoning_patterns = [
+            r'"reasoning"\s*:\s*"([^"]+)"',  # JSON format
+            r'reasoning\s*:\s*"([^"]+)"',  # Without quotes
+            r"reasoning\s*:\s*([^,\n]+)",  # Without quotes, until comma or newline
+        ]
+
+        reasoning = "No reasoning provided"
+        for pattern in reasoning_patterns:
+            match = re.search(pattern, cleaned, re.IGNORECASE)
+            if match:
+                reasoning = match.group(1).strip()
+                # Remove trailing punctuation
+                reasoning = re.sub(r"[.,;]+$", "", reasoning)
+                break
+
+        # If no reasoning found, try to extract meaningful text
+        if reasoning == "No reasoning provided":
+            # Look for sentences that might contain reasoning
+            sentences = re.split(r"[.!?]", cleaned)
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if len(sentence) > 20 and any(
+                    word in sentence.lower()
+                    for word in [
+                        "because",
+                        "since",
+                        "as",
+                        "due",
+                        "reason",
+                        "concern",
+                        "issue",
+                        "problem",
+                    ]
+                ):
+                    reasoning = sentence
+                    break
 
         return label, reasoning
 
     except Exception as e:
-        logging.warning(f"⚠️ Failed to parse JSON output: {e}")
-        return (
-            "non-bias",
-            f"Parsing failed: {str(e)} | Output: {decoded_output.strip()[:200]}",
-        )
+        # Log the first few failed cases for debugging
+        if not hasattr(extract_label_and_reasoning, "_logged_failures"):
+            extract_label_and_reasoning._logged_failures = 0
+
+        if extract_label_and_reasoning._logged_failures < 3:
+            logging.warning(
+                f"⚠️ Failed to parse output (case {extract_label_and_reasoning._logged_failures + 1}): {e}"
+            )
+            logging.warning(f"Raw output: {decoded_output[:500]}...")
+            extract_label_and_reasoning._logged_failures += 1
+        elif extract_label_and_reasoning._logged_failures == 3:
+            logging.warning("⚠️ Suppressing further parsing failure logs...")
+            extract_label_and_reasoning._logged_failures += 1
+
+        # Fallback: try to extract any meaningful information
+        text_lower = decoded_output.lower()
+        if "bias" in text_lower and "non-bias" not in text_lower:
+            return "bias", f"Fallback parsing: {decoded_output.strip()[:100]}"
+        else:
+            return "non-bias", f"Fallback parsing: {decoded_output.strip()[:100]}"
 
 
 def load_model_and_tokenizer():
@@ -184,15 +214,23 @@ def generate_outputs(batch_texts, tokenizer, model):
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=150,
+                max_new_tokens=200,
+                do_sample=False,
                 temperature=0.0,
                 top_p=1.0,
                 repetition_penalty=1.1,
-                do_sample=False,
                 pad_token_id=tokenizer.eos_token_id,
                 eos_token_id=tokenizer.eos_token_id,
             )
-        return tokenizer.batch_decode(outputs, skip_special_tokens=False)
+        # Remove special tokens and clean up the output
+        decoded_outputs = []
+        for output in outputs:
+            decoded = tokenizer.decode(output, skip_special_tokens=True)
+            # Remove the original prompt from the output
+            for prompt in prompts:
+                decoded = decoded.replace(prompt, "").strip()
+            decoded_outputs.append(decoded)
+        return decoded_outputs
     except Exception as e:
         logging.error(f"Model inference error: {e}")
         return [f"Inference error: {e}"] * len(batch_texts)
@@ -255,7 +293,10 @@ def main():
     subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
     ids = df["id"] if "id" in df.columns else [f"unknown_{i}" for i in range(len(df))]
 
-    batch_size = BATCH_SIZE
+    # Adjust batch size based on data size and available memory
+    batch_size = min(BATCH_SIZE, max(1, len(texts) // 4))
+    logging.info(f"Using batch size: {batch_size}")
+
     batch_input_list = []
     for i in range(0, len(texts), batch_size):
         batch_texts = texts[i : i + batch_size]
@@ -267,21 +308,34 @@ def main():
 
     logging.info("🚀 Starting multiprocessing classification...")
     all_results = []
-    with Pool(processes=4) as pool:  # You can tune this number
+
+    # Adjust number of processes based on system resources
+    num_processes = min(4, os.cpu_count() or 1)
+    logging.info(f"Using {num_processes} processes for classification")
+
+    with Pool(processes=num_processes) as pool:
         for result_batch in tqdm(
             pool.imap_unordered(classify_post_wrapper, batch_input_list),
             total=len(batch_input_list),
+            desc="Classifying posts",
         ):
             all_results.extend(result_batch)
 
     result_df = pd.DataFrame(all_results)
-    result_df.to_csv(FEWSHOT_RESULT, index=False)
+
+    # Print classification statistics
+    logging.info(f"📊 Classification Results:")
+    logging.info(f"Total posts processed: {len(result_df)}")
+    if len(result_df) > 0:
+        label_counts = result_df["pred_label"].value_counts()
+        logging.info(f"Label distribution:")
+        for label, count in label_counts.items():
+            logging.info(f"  {label}: {count} ({count/len(result_df)*100:.1f}%)")
+
     result_df[result_df["pred_label"] == "bias"].to_csv(CLASSIFIED_BIAS, index=False)
     result_df[result_df["pred_label"] == "non-bias"].to_csv(
         CLASSIFIED_NONBIAS, index=False
     )
-    logging.info("✅ Few-shot classification complete. Files saved:")
-    logging.info(f"→ {FEWSHOT_RESULT}")
     logging.info(f"→ {CLASSIFIED_BIAS}")
     logging.info(f"→ {CLASSIFIED_NONBIAS}")
 
@@ -329,7 +383,7 @@ def classify_single_post(
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=150,
+                max_new_tokens=200,
                 temperature=0.0,
                 top_p=1.0,
                 repetition_penalty=1.1,
@@ -339,7 +393,9 @@ def classify_single_post(
             )
 
         # Decode result
-        decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=False)
+        decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        # Remove the original prompt from the output
+        decoded_output = decoded_output.replace(prompt, "").strip()
 
         # Extract label
         label, reasoning = extract_label_and_reasoning(decoded_output)
