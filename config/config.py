@@ -39,7 +39,7 @@ FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv")
 
 # === TEMPLATE & MODEL ===
 TEMPLATE_PATH = os.path.join(CONFIG_DIR, "fewshot_prompt_template.j2")
-MODEL_ID = "google/gemma-2b-it"
+MODEL_ID = "NousResearch/Nous-Hermes-2-Mistral-7B"
 
 # === TOPIC MODELING OUTPUT ===
 TOPIC_OUTPUT = os.path.join(RESULTS_DIR, "bertopic_topic_info.csv")
