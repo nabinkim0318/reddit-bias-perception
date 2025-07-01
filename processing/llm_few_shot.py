@@ -75,7 +75,7 @@ def build_prompt(post_text):
         str: Fully rendered prompt ready for tokenization.
     """
     rendered = get_template().render(post=(post_text or "").strip())
-    if "{{" in rendered or "{" in rendered:
+    if "{{ post_text }}" in rendered:
         logging.warning("⚠️ Template rendering may have failed.")
         logging.warning(f"Rendered output preview:\n{rendered[:300]}")
     return rendered
@@ -239,16 +239,17 @@ def generate_outputs(batch_texts, tokenizer, model):
     try:
         for text in batch_texts:
             prompt = build_prompt(text)
-            messages = [{"role": "user", "content": prompt}]
-
-            # Apply chat template (adds <s>[INST] ... [/INST])
-            input_ids = tokenizer.apply_chat_template(
-                messages, return_tensors="pt", add_generation_prompt=True
+            inputs = tokenizer(
+                prompt,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=2048,
             ).to(model.device)
 
             with torch.no_grad():
                 output_ids = model.generate(
-                    input_ids,
+                    **inputs,
                     max_new_tokens=600,
                     do_sample=False,
                     temperature=0.0,
@@ -260,6 +261,10 @@ def generate_outputs(batch_texts, tokenizer, model):
 
             # Decode and strip any special tokens
             decoded = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+
+            # Remove the original prompt from the output
+            if decoded.startswith(prompt):
+                decoded = decoded[len(prompt) :].strip()
 
             print("\n---")
             print(f"Prompt:\n{prompt[:500]}")
