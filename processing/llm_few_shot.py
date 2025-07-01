@@ -249,6 +249,11 @@ def generate_outputs(batch_texts, tokenizer, model):
         decoded_outputs = []
         for i, output in enumerate(outputs):
             decoded = tokenizer.decode(output, skip_special_tokens=True)
+            print(
+                f"\n---\nPrompt:\n{prompts[i][:500]}\n---\nDecoded:\n{decoded[:500]}\n---"
+            )
+            print(f"Prompt length: {len(prompts[i])}")
+            print(f"Decoded length: {len(decoded)}")
             # Remove the original prompt from the output
             prompt = prompts[i]
             if decoded.startswith(prompt):
