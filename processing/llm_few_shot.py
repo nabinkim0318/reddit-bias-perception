@@ -16,7 +16,7 @@ from typing import List, Literal, cast
 import pandas as pd
 import torch
 from dotenv import load_dotenv
-from jinja2 import Template
+from jinja2 import BaseLoader, Environment, Template
 from pydantic import ValidationError
 from tqdm import tqdm
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
@@ -55,7 +55,13 @@ def get_template():
         Template: Jinja2 template object used to render few-shot prompts.
     """
     with open(TEMPLATE_PATH, "r") as f:
-        return Template(f.read())
+        template_text = f.read()
+        env = Environment(
+            loader=BaseLoader(),
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        return env.from_string(template_text)
 
 
 def build_prompt(post_text):
@@ -68,10 +74,11 @@ def build_prompt(post_text):
     Returns:
         str: Fully rendered prompt ready for tokenization.
     """
-    if not post_text:
-        post_text = ""
-
-    return get_template().render(post=(post_text or "").strip())
+    rendered = get_template().render(post=(post_text or "").strip())
+    if "{{" in rendered or "{" in rendered:
+        logging.warning("⚠️ Template rendering may have failed.")
+        logging.warning(f"Rendered output preview:\n{rendered[:300]}")
+    return rendered
 
 
 def extract_label_and_reasoning(decoded_output):
@@ -96,12 +103,15 @@ def extract_label_and_reasoning(decoded_output):
 
         # Early abort if output is just a repeated prompt (e.g., SYSTEM_INSTRUCTION repeated)
         if (
-            cleaned.lower().startswith("### system_instruction")
-            or "system_instruction" in cleaned.lower()
+            decoded_output.strip().startswith("You are an AI ethics researcher")
+            or "Now classify the following post" in decoded_output
+            or "{{ post }}" in decoded_output
+            or 'Post: "{{' in decoded_output
+            or decoded_output.count("Post:") > 1
         ):
             return (
                 "no",
-                "⚠️ Model repeated the prompt — likely failed to generate reasoning",
+                "⚠️ Model failed — repeated system prompt without generating output",
             )
 
         # Try to extract label first
@@ -435,7 +445,8 @@ def classify_single_post(
         # Decode result
         decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
         # Remove the original prompt from the output
-        decoded_output = decoded_output.replace(prompt, "").strip()
+        if decoded_output.startswith(prompt[:30]):
+            decoded_output = decoded_output[len(prompt) :].strip()
 
         # Extract label
         label, reasoning = extract_label_and_reasoning(decoded_output)
