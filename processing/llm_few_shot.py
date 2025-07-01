@@ -1,4 +1,4 @@
-### processing/llm_few_shot.py
+### processing/llm_few_shot.pyMore actions
 """
 Few-shot classification using Gemma 2B model to determine whether a Reddit post discusses bias in AI-generated images.
 """
@@ -8,10 +8,9 @@ import logging
 import os
 import re
 import traceback
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache  # Lazy load template
 from multiprocessing import Pool
-from typing import List, Literal, cast
+from typing import Literal, cast
 
 import pandas as pd
 import torch
@@ -46,6 +45,24 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 logging.info("🔍 Loading model...")
 
 
+def load_model(model_id):
+    """
+    Load the Hugging Face tokenizer and model for few-shot classification.
+
+    Args:
+        model_id (str): The identifier for the pre-trained model.
+
+    Returns:
+        tuple: (tokenizer, model) ready for inference.
+    """
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id, device_map="auto", torch_dtype=torch.float16, trust_remote_code=True
+    )
+    model = torch.compile(model)
+    return tokenizer, model
+
+
 @lru_cache
 def get_template():
     """
@@ -74,46 +91,110 @@ def build_prompt(post_text):
     return get_template().render(post=(post_text or "").strip())
 
 
-def extract_label_and_reasoning(decoded_output, post_text):
+def extract_label_and_reasoning(decoded_output):
     """
-    Extract label and reasoning by parsing LLM output.
-    Returns:
-        label (str): 'yes' or 'no' if found, otherwise 'skip'
-        reasoning (str): Reasoning string if found, else empty
-        raw_output (str): Full decoded output
+    Extract both label and reasoning from the model's output using regex patterns.
     """
     try:
+        # Clean the output
         cleaned = re.sub(r"```json|```", "", decoded_output).strip()
 
-        # Extract label
-        label_match = re.search(r"(?i)label\s*[:\-=\s]*\s*(yes|no)", cleaned)
-        reasoning_match = re.search(r"(?i)reasoning\s*[:\-]?\s*(.+)", cleaned)
+        # Try to extract label first
+        label_patterns = [
+            r'"label"\s*:\s*"([^"]+)"',  # JSON format
+            r'label\s*:\s*"([^"]+)"',  # Without quotes
+            r"label\s*:\s*([a-zA-Z-]+)",  # Without quotes, alphanumeric
+        ]
 
-        label = label_match.group(1).strip().lower() if label_match else None
-        reasoning = reasoning_match.group(1).strip() if reasoning_match else None
+        label = None
+        for pattern in label_patterns:
+            match = re.search(pattern, cleaned, re.IGNORECASE)
+            if match:
+                label = match.group(1).strip().lower()
+                break
+
+        # If no label found, try keyword-based detection
+        if not label:
+            text_lower = cleaned.lower()
+            if "no" in text_lower and "yes" not in text_lower:
+                return "no", f"Fallback parsing: {decoded_output.strip()[:100]}"
+            elif re.search(
+                r"\b(yes|bias|biased|fairness|representation|diversity|stereotype|identity)\b",
+                text_lower,
+            ):
+                return "yes", f"Fallback parsing: {decoded_output.strip()[:100]}"
+            else:
+                # 최종 fallback은 보수적으로 no로 처리
+                return (
+                    "no",
+                    f"Fallback (no strong signal): {decoded_output.strip()[:100]}",
+                )
 
         # Validate label
         if label not in {"yes", "no"}:
-            logging.warning(f"⚠️ Label missing: {decoded_output[:150]}")
-            print(f"[DEBUG] Post text:\n{post_text}")
-            print(f"[DEBUG] Raw output with missing label:\n{decoded_output}\n")
-            return "skip", "", decoded_output
+            label = "no"
 
-        if not reasoning or reasoning.lower() in {
-            "your reasoning in 1-2 sentences",
-            "none",
-            "n/a",
-            "",
-        }:
-            print(f"[DEBUG] Post text:\n{post_text}")
-            print(f"[DEBUG] Raw output with invalid reasoning:\n{decoded_output}\n")
-            reasoning = ""
+        # Try to extract reasoning
+        reasoning_patterns = [
+            r'"reasoning"\s*:\s*"([^"]+)"',  # JSON format
+            r'reasoning\s*:\s*"([^"]+)"',  # Without quotes
+            r"reasoning\s*:\s*([^,\n]+)",  # Without quotes, until comma or newline
+        ]
 
-        return label, reasoning, decoded_output
+        reasoning = "No reasoning provided"
+        for pattern in reasoning_patterns:
+            match = re.search(pattern, cleaned, re.IGNORECASE)
+            if match:
+                reasoning = match.group(1).strip()
+                # Remove trailing punctuation
+                reasoning = re.sub(r"[.,;]+$", "", reasoning)
+                break
+
+        # If no reasoning found, try to extract meaningful text
+        if reasoning == "No reasoning provided":
+            # Look for sentences that might contain reasoning
+            sentences = re.split(r"[.!?]", cleaned)
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if len(sentence) > 20 and any(
+                    word in sentence.lower()
+                    for word in [
+                        "because",
+                        "since",
+                        "as",
+                        "due",
+                        "reason",
+                        "concern",
+                        "issue",
+                        "problem",
+                    ]
+                ):
+                    reasoning = sentence
+                    break
+
+        return label, reasoning
 
     except Exception as e:
-        logging.warning(f"⚠️ Parsing exception: {e}")
-        return "skip", "", decoded_output
+        # Log the first few failed cases for debugging
+        if not hasattr(extract_label_and_reasoning, "_logged_failures"):
+            extract_label_and_reasoning._logged_failures = 0
+
+        if extract_label_and_reasoning._logged_failures < 3:
+            logging.warning(
+                f"⚠️ Failed to parse output (case {extract_label_and_reasoning._logged_failures + 1}): {e}"
+            )
+            logging.warning(f"Raw output: {decoded_output[:500]}...")
+            extract_label_and_reasoning._logged_failures += 1
+        elif extract_label_and_reasoning._logged_failures == 3:
+            logging.warning("⚠️ Suppressing further parsing failure logs...")
+            extract_label_and_reasoning._logged_failures += 1
+
+        # Fallback: try to extract any meaningful information
+        text_lower = decoded_output.lower()
+        if "yes" in text_lower and "no" not in text_lower:
+            return "yes", f"Fallback parsing: {decoded_output.strip()[:100]}"
+        else:
+            return "no", f"Fallback parsing: {decoded_output.strip()[:100]}"
 
 
 def load_model_and_tokenizer():
@@ -124,7 +205,6 @@ def load_model_and_tokenizer():
             device_map="auto",
             torch_dtype=torch.float16,
             trust_remote_code=True,
-            offload_buffers=True,
         )
         model.eval()
         return tokenizer, model
@@ -140,7 +220,7 @@ def generate_outputs(batch_texts, tokenizer, model):
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=600,
+                max_new_tokens=200,
                 do_sample=False,
                 temperature=0.0,
                 top_p=1.0,
@@ -150,22 +230,12 @@ def generate_outputs(batch_texts, tokenizer, model):
             )
         # Remove special tokens and clean up the output
         decoded_outputs = []
-        input_lengths = [len(input_ids) for input_ids in inputs["input_ids"]]
-
-        for i, output in enumerate(outputs):
-            # Slice off the prompt tokens from the generated output
-            generated_tokens = output[input_lengths[i] :]
-            decoded = tokenizer.decode(
-                generated_tokens, skip_special_tokens=False
-            ).strip()
-            print("===" * 20)
-            print(f"[RAW GENERATED TEXT #{i}]\n{decoded}")
-            print("===" * 20)
-            if prompts[i].strip() in decoded:
-                decoded = decoded.replace(prompts[i].strip(), "").strip()
-            else:
-                # fallback: 입력 길이만큼 자르기
-                decoded = decoded[len(prompts[i]) :].strip()
+        for output in outputs:
+            decoded = tokenizer.decode(output, skip_special_tokens=True)
+            # Remove the original prompt from the output
+            for prompt in prompts:
+                if prompt in decoded:
+                    decoded = decoded.replace(prompt, "").strip()
             decoded_outputs.append(decoded)
         return decoded_outputs
     except Exception as e:
@@ -173,75 +243,38 @@ def generate_outputs(batch_texts, tokenizer, model):
         return [f"Inference error: {e}"] * len(batch_texts)
 
 
-def split_multiple_responses(decoded_output: str) -> List[str]:
-    """
-    Split model output into separate prompt responses based on occurrences of 'Label:'.
-    Handles optional prefixes like 'Output:' and noisy tokens like <eos>.
-    """
-    # Remove hallucinated prompt-like patterns (Input/Output headers)
-    cleaned = re.sub(
-        r"(?i)input\s*:.*?(?=(label|output)\s*:)", "", decoded_output, flags=re.DOTALL
-    )
-    cleaned = cleaned.replace("<eos>", " ")  # Clean eos tokens
-    cleaned = cleaned.strip()
-
-    # Split on occurrences of 'Label:' optionally preceded by 'Output:'
-    blocks = re.split(r"(?i)(?=output\s*:\s*)?(?=label\s*:)", cleaned)
-
-    # Filter blocks that actually start with 'Label:'
-    results = []
-    for b in blocks:
-        b = b.strip()
-        if re.search(r"(?i)^label\s*:", b):
-            results.append(b)
-
-    return results
-
-
 def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddits):
     rows = []
     for i, decoded in enumerate(decoded_outputs):
-        responses = split_multiple_responses(decoded)
-        print(f"[SPLIT RESPONSES]: {responses}")
-        for response in responses:
-            label, reasoning, raw_output = extract_label_and_reasoning(
-                response, post_text=batch_texts[i]
+        label, reasoning = extract_label_and_reasoning(decoded)
+        try:
+            pred_label: Literal["yes", "no"] = label  # type: ignore
+            row = ClassificationResult(
+                id=batch_ids[i],
+                subreddit=batch_subreddits[i],
+                clean_text=batch_texts[i],
+                pred_label=pred_label,
+                llm_reasoning=reasoning.strip(),
+                raw_output=decoded,
             )
-            # 🔍 Debug 출력 추가
-            print("===" * 30)
-            print(f"[DEBUG] Post Text:\n{batch_texts[i]}")
-            print(f"[DEBUG] Raw Output:\n{raw_output}")
-            print(f"[DEBUG] Parsed Label: {label}, Reasoning: {reasoning}")
-            print("===" * 30)
-            try:
-                pred_label: Literal["yes", "no"] = label  # type: ignore
-                row = ClassificationResult(
-                    id=batch_ids[i],
-                    subreddit=batch_subreddits[i],
-                    clean_text=batch_texts[i],
-                    pred_label=pred_label,
-                    llm_reasoning=reasoning.strip(),
-                    raw_output=raw_output,
-                )
-                rows.append(row.model_dump())
-            except ValidationError as e:
-                logging.error(f"Validation error: {e}")
-                rows.append(
-                    {
-                        "id": batch_ids[i],
-                        "subreddit": batch_subreddits[i],
-                        "clean_text": batch_texts[i],
-                        "pred_label": "no",
-                        "llm_reasoning": f"Validation Error: {e}",
-                    }
-                )
-    print(f"[DEBUG] Total valid rows: {len(rows)}")
+            rows.append(row.model_dump())
+        except ValidationError as e:
+            logging.error(f"Validation error: {e}")
+            rows.append(
+                {
+                    "id": batch_ids[i],
+                    "subreddit": batch_subreddits[i],
+                    "clean_text": batch_texts[i],
+                    "pred_label": "No",
+                    "llm_reasoning": f"Validation Error: {e}",
+                }
+            )
     return rows
 
 
-def classify_post_wrapper(batch_input, tokenizer, model):
+def classify_post_wrapper(batch_input):
     batch_texts, batch_ids, batch_subreddits = batch_input
-
+    tokenizer, model = load_model_and_tokenizer()
     if tokenizer is None or model is None:
         return [
             {
@@ -250,7 +283,6 @@ def classify_post_wrapper(batch_input, tokenizer, model):
                 "clean_text": batch_texts[i],
                 "pred_label": "no",
                 "llm_reasoning": "Model load failed",
-                "raw_output": "",
             }
             for i in range(len(batch_texts))
         ]
@@ -262,12 +294,6 @@ def classify_post_wrapper(batch_input, tokenizer, model):
 
 
 def main():
-    tokenizer, model = load_model_and_tokenizer()
-
-    if tokenizer is None or model is None:
-        logging.error("❌ Failed to load model and tokenizer. Exiting.")
-        return
-
     logging.info("🔍 Loading data...")
     df = pd.read_csv(CLEANED_DATA)
     texts = df["clean_text"].fillna("").astype(str).tolist()
@@ -294,23 +320,15 @@ def main():
     num_processes = min(4, os.cpu_count() or 1)
     logging.info(f"Using {num_processes} processes for classification")
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = [
-            executor.submit(classify_post_wrapper, batch_input, tokenizer, model)
-            for batch_input in batch_input_list
-        ]
-        for future in tqdm(
-            as_completed(futures), total=len(futures), desc="Classifying posts"
+    with Pool(processes=num_processes) as pool:
+        for result_batch in tqdm(
+            pool.imap_unordered(classify_post_wrapper, batch_input_list),
+            total=len(batch_input_list),
+            desc="Classifying posts",
         ):
-            all_results.extend(future.result())
+            all_results.extend(result_batch)
 
     result_df = pd.DataFrame(all_results)
-
-    if result_df.empty:
-        logging.error(
-            "❌ No results were generated — check prompt, model, or parser issues."
-        )
-        return  # or sys.exit(1)
 
     # Print classification statistics
     logging.info(f"📊 Classification Results:")
@@ -351,25 +369,22 @@ def classify_single_post(
             'llm_reasoning': str
         }
     """
+    # If model and tokenizer are not loaded, load them
     if tokenizer is None or model is None:
         logging.info("🔍 Loading model and tokenizer...")
-        tokenizer, model = load_model_and_tokenizer()
-
-    if tokenizer is None or model is None:
-        logging.error("❌ Failed to load model and tokenizer")
-        return {
-            "id": post_id,
-            "subreddit": subreddit,
-            "clean_text": post_text,
-            "pred_label": "no",
-            "llm_reasoning": "Model load failed",
-            "raw_output": "",
-        }
+        tokenizer, model = load_model(MODEL_ID)
 
     try:
+        # Create prompt
         prompt = build_prompt(post_text)
-        inputs = batch_tokenize([prompt], tokenizer).to(model.device)
 
+        # Tokenize
+        inputs = tokenizer(
+            prompt, return_tensors="pt", padding=True, truncation=True, max_length=2048
+        )
+        inputs = {k: v.to(model.device) for k, v in inputs.items()}
+
+        # Perform inference
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
@@ -382,28 +397,21 @@ def classify_single_post(
                 eos_token_id=tokenizer.eos_token_id,
             )
 
-        # 정확하게 프롬프트 이후만 decode
-        input_len = inputs["input_ids"].shape[1]
-        generated_tokens = outputs[0][input_len:]
-        decoded_output = tokenizer.decode(generated_tokens, skip_special_tokens=False)
+        # Decode result
+        decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        # Remove the original prompt from the output
+        decoded_output = decoded_output.replace(prompt, "").strip()
 
-        # Postprocess to remove hallucinations and <eos> tokens
-        decoded_output = re.sub(
-            r"(?i)input\s*:.*?output\s*:", "", decoded_output, flags=re.DOTALL
-        )
-        decoded_output = re.sub(
-            r"<eos>+", "", decoded_output, flags=re.IGNORECASE
-        ).strip()
+        # Extract label
+        label, reasoning = extract_label_and_reasoning(decoded_output)
 
-        label, reasoning, raw_output = extract_label_and_reasoning(decoded_output)
-
+        # Construct result
         result = {
             "id": post_id,
             "subreddit": subreddit,
             "clean_text": post_text,
             "pred_label": label,
             "llm_reasoning": reasoning,
-            "raw_output": raw_output,
         }
 
         logging.info(f"✅ Classification complete: {label}")
@@ -417,7 +425,6 @@ def classify_single_post(
             "clean_text": post_text,
             "pred_label": "no",
             "llm_reasoning": f"Error: {str(e)}",
-            "raw_output": "",
         }
 
 
