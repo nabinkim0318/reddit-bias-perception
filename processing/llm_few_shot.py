@@ -216,12 +216,14 @@ def extract_label_and_reasoning(decoded_output):
 
 def load_model_and_tokenizer():
     try:
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+        tokenizer = AutoTokenizer.from_pretrained(
+            MODEL_ID, token=HF_TOKEN, use_fast=False, trust_remote_code=True
+        )
         model = AutoModelForCausalLM.from_pretrained(
             MODEL_ID,
             token=HF_TOKEN,
-            device_map="auto",
             torch_dtype=torch.float16,
+            device_map="auto",
             trust_remote_code=True,
         )
         model.eval()
@@ -232,36 +234,41 @@ def load_model_and_tokenizer():
 
 
 def generate_outputs(batch_texts, tokenizer, model):
-    prompts = [build_prompt(text) for text in batch_texts]
+    decoded_outputs = []
+
     try:
-        inputs = batch_tokenize(prompts, tokenizer).to(model.device)
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=600,
-                do_sample=False,
-                temperature=0.0,
-                top_p=1.0,
-                repetition_penalty=1.25,
-                pad_token_id=tokenizer.eos_token_id,
-                eos_token_id=tokenizer.eos_token_id,
-            )
-        # Remove special tokens and clean up the output
-        decoded_outputs = []
-        for i, output in enumerate(outputs):
-            decoded = tokenizer.decode(output, skip_special_tokens=True)
-            print(
-                f"\n---\nPrompt:\n{prompts[i][:500]}\n---\nDecoded:\n{decoded[:500]}\n---"
-            )
-            print(f"Prompt length: {len(prompts[i])}")
-            print(f"Decoded length: {len(decoded)}")
-            # Remove the original prompt from the output
-            prompt = prompts[i]
-            if decoded.startswith(prompt):
-                decoded = decoded[len(prompt) :].strip()
-            # Also remove any system instruction remnants
-            decoded_outputs.append(decoded.strip())
+        for text in batch_texts:
+            prompt = build_prompt(text)
+            messages = [{"role": "user", "content": prompt}]
+
+            # Apply chat template (adds <s>[INST] ... [/INST])
+            input_ids = tokenizer.apply_chat_template(
+                messages, return_tensors="pt", add_generation_prompt=True
+            ).to(model.device)
+
+            with torch.no_grad():
+                output_ids = model.generate(
+                    input_ids,
+                    max_new_tokens=600,
+                    do_sample=False,
+                    temperature=0.0,
+                    top_p=1.0,
+                    repetition_penalty=1.25,
+                    pad_token_id=tokenizer.eos_token_id,
+                    eos_token_id=tokenizer.eos_token_id,
+                )
+
+            # Decode and strip any special tokens
+            decoded = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+
+            print("\n---")
+            print(f"Prompt:\n{prompt[:500]}")
+            print(f"Decoded:\n{decoded[:500]}")
+            print("---")
+
+            decoded_outputs.append(decoded)
         return decoded_outputs
+
     except Exception as e:
         logging.error(f"Model inference error: {e}")
         return [f"Inference error: {e}"] * len(batch_texts)
