@@ -219,6 +219,7 @@ def load_model_and_tokenizer():
         tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
         model = AutoModelForCausalLM.from_pretrained(
             MODEL_ID,
+            token=HF_TOKEN,
             device_map="auto",
             torch_dtype=torch.float16,
             trust_remote_code=True,
