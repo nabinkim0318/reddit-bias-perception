@@ -82,6 +82,28 @@ def extract_label_and_reasoning(decoded_output):
         # Clean the output
         cleaned = re.sub(r"```json|```", "", decoded_output).strip()
 
+        # Remove system instruction if model repeated it
+        cleaned = re.sub(
+            r"### SYSTEM_INSTRUCTION.*?###",
+            "",
+            cleaned,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+        cleaned = re.sub(
+            r"system_instruction.*?###", "", cleaned, flags=re.DOTALL | re.IGNORECASE
+        )
+        cleaned = cleaned.strip()
+
+        # Early abort if output is just a repeated prompt (e.g., SYSTEM_INSTRUCTION repeated)
+        if (
+            cleaned.lower().startswith("### system_instruction")
+            or "system_instruction" in cleaned.lower()
+        ):
+            return (
+                "no",
+                "⚠️ Model repeated the prompt — likely failed to generate reasoning",
+            )
+
         # Try to extract label first
         label_patterns = [
             r'"label"\s*:\s*"([^"]+)"',  # JSON format
@@ -99,23 +121,38 @@ def extract_label_and_reasoning(decoded_output):
         # If no label found, try keyword-based detection
         if not label:
             text_lower = cleaned.lower()
-            if "no" in text_lower and "yes" not in text_lower:
-                return "no", f"Fallback parsing: {decoded_output.strip()[:100]}"
-            elif re.search(
-                r"\b(yes|bias|biased|fairness|representation|diversity|stereotype|identity)\b",
-                text_lower,
+
+            # Weak fallback: only trigger yes if both 'yes' and a visual identity keyword exists
+            if "yes" in text_lower and any(
+                k in text_lower
+                for k in [
+                    "bias",
+                    "image",
+                    "representation",
+                    "diversity",
+                    "gender",
+                    "race",
+                ]
             ):
-                return "yes", f"Fallback parsing: {decoded_output.strip()[:100]}"
+                return (
+                    "yes",
+                    f"Fallback parsing (weak keyword match): {decoded_output.strip()[:100]}",
+                )
             else:
-                # 최종 fallback은 보수적으로 no로 처리
                 return (
                     "no",
                     f"Fallback (no strong signal): {decoded_output.strip()[:100]}",
                 )
 
-        # Validate label
+        # Validate label - only change if it's completely invalid
         if label not in {"yes", "no"}:
-            label = "no"
+            # Try to normalize common variations
+            if label in {"y", "yes", "true", "1"}:
+                label = "yes"
+            elif label in {"n", "no", "false", "0"}:
+                label = "no"
+            else:
+                label = "no"  # Default fallback
 
         # Try to extract reasoning
         reasoning_patterns = [
@@ -135,25 +172,12 @@ def extract_label_and_reasoning(decoded_output):
 
         # If no reasoning found, try to extract meaningful text
         if reasoning == "No reasoning provided":
-            # Look for sentences that might contain reasoning
-            sentences = re.split(r"[.!?]", cleaned)
-            for sentence in sentences:
-                sentence = sentence.strip()
-                if len(sentence) > 20 and any(
-                    word in sentence.lower()
-                    for word in [
-                        "because",
-                        "since",
-                        "as",
-                        "due",
-                        "reason",
-                        "concern",
-                        "issue",
-                        "problem",
-                    ]
-                ):
-                    reasoning = sentence
-                    break
+            label_pos = re.search(r"label\s*:\s*(yes|no)", cleaned, re.IGNORECASE)
+            if label_pos:
+                after_label = cleaned[label_pos.end() :].strip()
+                candidate = re.split(r"\n+", after_label)[0]
+                if len(candidate) > 10:
+                    reasoning = candidate
 
         return label, reasoning
 
@@ -207,19 +231,20 @@ def generate_outputs(batch_texts, tokenizer, model):
                 do_sample=False,
                 temperature=0.0,
                 top_p=1.0,
-                repetition_penalty=1.1,
+                repetition_penalty=1.25,
                 pad_token_id=tokenizer.eos_token_id,
                 eos_token_id=tokenizer.eos_token_id,
             )
         # Remove special tokens and clean up the output
         decoded_outputs = []
-        for output in outputs:
+        for i, output in enumerate(outputs):
             decoded = tokenizer.decode(output, skip_special_tokens=True)
             # Remove the original prompt from the output
-            for prompt in prompts:
-                if prompt in decoded:
-                    decoded = decoded.replace(prompt, "").strip()
-            decoded_outputs.append(decoded)
+            prompt = prompts[i]
+            if decoded.startswith(prompt):
+                decoded = decoded[len(prompt) :].strip()
+            # Also remove any system instruction remnants
+            decoded_outputs.append(decoded.strip())
         return decoded_outputs
     except Exception as e:
         logging.error(f"Model inference error: {e}")
@@ -231,7 +256,8 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
     for i, decoded in enumerate(decoded_outputs):
         label, reasoning = extract_label_and_reasoning(decoded)
         try:
-            pred_label: Literal["yes", "no"] = label  # type: ignore
+            # Ensure label is properly typed
+            pred_label: Literal["yes", "no"] = cast(Literal["yes", "no"], label)
             row = ClassificationResult(
                 id=batch_ids[i],
                 subreddit=batch_subreddits[i],
@@ -248,8 +274,9 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
                     "id": batch_ids[i],
                     "subreddit": batch_subreddits[i],
                     "clean_text": batch_texts[i],
-                    "pred_label": "No",
+                    "pred_label": label,
                     "llm_reasoning": f"Validation Error: {e}",
+                    "raw_output": decoded,
                 }
             )
     return rows
