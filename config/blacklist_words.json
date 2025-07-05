@@ -1,0 +1,14 @@
+{
+    "technical_blacklist": [
+      "ckpt",
+      "yaml",
+      "diffusers",
+      "api",
+      "automatic1111",
+      "torch",
+      "cuda",
+      "rtx",
+      "comfyui",
+      "checkpoint"
+    ]
+  }
