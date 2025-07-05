@@ -1,19 +1,22 @@
-### processing/llm_few_shot.py
+### processing/llm_few_shot.pyMore actions
 """
 Few-shot classification using Gemma 2B model to determine whether a Reddit post discusses bias in AI-generated images.
 """
 
+import json
 import logging
 import os
 import re
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache  # Lazy load template
-from typing import Literal, cast
+from multiprocessing import Pool
+from typing import List, Literal, cast
 
 import pandas as pd
 import torch
 from dotenv import load_dotenv
-from jinja2 import Template
+from jinja2 import BaseLoader, Environment, Template
 from pydantic import ValidationError
 from tqdm import tqdm
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
@@ -21,41 +24,14 @@ from transformers.models.auto.tokenization_auto import AutoTokenizer
 
 from config.config import (
     BATCH_SIZE,
-    BIAS_UNCERTAIN,
-    CLASSIFIED_BIAS,
-    CLASSIFIED_NONBIAS,
+    CLASSIFIED_NO,
+    CLASSIFIED_YES,
     CLEANED_DATA,
-    FEWSHOT_RESULT,
     MODEL_ID,
-    OUTPUT_DIR,
     TEMPLATE_PATH,
 )
 from processing.schema import ClassificationResult
 from utils.tokenize import batch_tokenize
-
-# Load environment variables
-load_dotenv()
-HF_TOKEN = os.getenv("HF_TOKEN")
-
-# Classification instruction (system prompt)
-SYSTEM_INSTRUCTION = (
-    "You are a helpful assistant. Your job is to classify whether the following Reddit post "
-    "reflects a **concern, observation, or critique about bias** in AI-generated images."
-)
-
-YES_CRITERIA = (
-    "- A complaint or observation about misrepresentation related to race, gender, body type, culture, disability, or religion\n"
-    "- Frustration about the lack of diversity or overuse of stereotypical visuals in AI output\n"
-    "- Emotional, social, or ethical concerns about fairness, exclusion, or how certain identities are depicted or erased\n"
-    "- Even if subtle, the post reflects discomfort or surprise with how identity is visualized or how bias manifests in image generation"
-)
-
-NO_CRITERIA = (
-    "- Focuses on technical details, creative tools, styles, rendering techniques, or model features\n"
-    "- Shares AI-generated art, music, or fictional work without discussing fairness, identity, or social representation\n"
-    "- Describes how the AI responded to prompts with no identity-related concern\n"
-    "- Reflects on the creative process or philosophical/artistic value of AI output without reference to social bias or exclusion"
-)
 
 # Configure logging
 logging.basicConfig(
@@ -63,26 +39,14 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
 )
 
+# Load environment variables
+load_dotenv()
+HF_TOKEN = os.getenv("HF_TOKEN")
+
 logging.info("🔍 Loading model...")
 
 
-def load_model(model_id):
-    """
-    Load the Hugging Face tokenizer and model for few-shot classification.
-
-    Args:
-        model_id (str): The identifier for the pre-trained model.
-
-    Returns:
-        tuple: (tokenizer, model) ready for inference.
-    """
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id, device_map="auto", torch_dtype=torch.float16, trust_remote_code=True
-    )
-    return tokenizer, model
-
-
+# === Utilities ===
 @lru_cache
 def get_template():
     """
@@ -91,148 +55,271 @@ def get_template():
     Returns:
         Template: Jinja2 template object used to render few-shot prompts.
     """
-    with open(TEMPLATE_PATH) as f:
-        return Template(f.read())
+    with open(TEMPLATE_PATH, "r") as f:
+        template_text = f.read()
+        env = Environment(
+            loader=BaseLoader(),
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        return env.from_string(template_text)
 
 
 def build_prompt(post_text):
     """
-    Construct a classification prompt using the system instruction, criteria, and post text.
-
-    Args:
-        post_text (str): Reddit post's cleaned content.
-
-    Returns:
-        str: Fully rendered prompt ready for tokenization.
+    Render the classification prompt using Jinja2 template.
     """
-    return get_template().render(
-        instruction=SYSTEM_INSTRUCTION,
-        yes_criteria=YES_CRITERIA,
-        no_criteria=NO_CRITERIA,
-        post=post_text.strip(),
-        include_yes_criteria=True,
-        include_no_criteria=True,
+    rendered = get_template().render(post_text=(post_text or "").strip())
+    return rendered
+
+
+def clean_output(decoded_output):
+    """Clean the raw model output by removing markdown, system instructions, etc."""
+    cleaned = re.sub(r"```json|```", "", decoded_output).strip()
+    cleaned = re.sub(
+        r"### SYSTEM_INSTRUCTION.*?###",
+        "",
+        cleaned,
+        flags=re.DOTALL | re.IGNORECASE,
     )
-
-
-def extract_label(decoded_output):
-    match = re.search(
-        r"Label:\s*(bias|non-bias|uncertain)", decoded_output, re.IGNORECASE
+    cleaned = re.sub(
+        r"system_instruction.*?###",
+        "",
+        cleaned,
+        flags=re.DOTALL | re.IGNORECASE,
     )
-    return match.group(1).lower() if match else "uncertain"
+    return cleaned.strip()
 
 
-def classify_post(batch_texts, tokenizer, model):
-    """
-    Perform few-shot classification on a batch of Reddit post texts.
-
-    Args:
-        batch_texts (list of str): Cleaned Reddit post texts.
-        tokenizer: Hugging Face tokenizer.
-        model: Hugging Face causal language model.
-
-    Returns:
-        list of tuple: Each tuple is (label, model_output) where label is "Yes", "No", or "Uncertain".
-    """
-    prompts = [build_prompt(text) for text in batch_texts]
-    inputs = batch_tokenize(prompts, tokenizer).to(model.device)
-
-    with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=120,
-            do_sample=False,
-            pad_token_id=tokenizer.eos_token_id,
-        )
-
-    decoded_outputs = tokenizer.batch_decode(outputs, skip_special_tokens=False)
-
-    labels = []
-    for decoded in decoded_outputs:
-        label = extract_label(decoded)
-        labels.append((label, decoded))
-
-    return labels
+def parse_label(cleaned):
+    """Extract label ('yes'/'no') from cleaned output."""
+    label_patterns = [
+        r'"label"\s*:\s*"([^"]+)"',
+        r'label\s*:\s*"([^"]+)"',
+        r"label\s*:\s*([a-zA-Z-]+)",
+    ]
+    for pattern in label_patterns:
+        match = re.search(pattern, cleaned, re.IGNORECASE)
+        if match:
+            label = match.group(1).strip().lower()
+            # Normalize
+            if label in {"y", "yes", "true", "1"}:
+                return "yes"
+            elif label in {"n", "no", "false", "0"}:
+                return "no"
+            elif label in {"yes", "no"}:
+                return label
+    return None  # No label found
 
 
-def main():
-    """
-    Main execution for few-shot classification.
+def parse_reasoning(cleaned):
+    """Extract reasoning from cleaned output."""
+    reasoning_patterns = [
+        r'"reasoning"\s*:\s*"([^"]+)"',
+        r'reasoning\s*:\s*"([^"]+)"',
+        r"reasoning\s*:\s*([^,\n]+)",
+    ]
+    for pattern in reasoning_patterns:
+        match = re.search(pattern, cleaned, re.IGNORECASE)
+        if match:
+            reasoning = match.group(1).strip()
+            reasoning = re.sub(r"[.,;]+$", "", reasoning)
+            return reasoning
+    # Try weak fallback: text after label
+    label_pos = re.search(r"label\s*:\s*(yes|no)", cleaned, re.IGNORECASE)
+    if label_pos:
+        after_label = cleaned[label_pos.end() :].strip()
+        candidate = re.split(r"\n+", after_label)[0]
+        if len(candidate) > 10:
+            return candidate
+    return "No reasoning provided"
 
-    Loads the model and cleaned Reddit data, applies few-shot classification to each post,
-    and writes labeled results into three output files:
-      - classified_bias.csv
-      - classified_nonbias.csv
-      - bias_uncertain.csv
 
-    Output schema:
-        - id (str)
-        - subreddit (str)
-        - clean_text (str)
-        - pred_label (str): 'bias', 'non-bias', or 'uncertain'
-        - llm_reasoning (str): LLM-generated reasoning for the classification
-    """
-    tokenizer, model = load_model(MODEL_ID)
-    df = pd.read_csv(CLEANED_DATA)
-    texts = df["clean_text"].fillna("").astype(str).tolist()
-    subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
-    ids = df["id"] if "id" in df.columns else [f"unknown_{i}" for i in range(len(df))]
+def extract_label_and_reasoning(decoded_output):
+    """Main function: clean, extract label + reasoning with fallbacks."""
+    try:
+        cleaned = clean_output(decoded_output)
 
-    batch_size = BATCH_SIZE
-    results = []
-    for i in tqdm(range(0, len(texts), batch_size)):
-        batch_texts = texts[i : i + batch_size]
-        batch_subreddits = pd.Series(subreddits)[i : i + batch_size].reset_index(
-            drop=True
-        )
-        batch_ids = pd.Series(ids)[i : i + batch_size].reset_index(drop=True)
-
-        try:
-            label_output_pairs = classify_post(batch_texts, tokenizer, model)
-        except Exception:
-            label_output_pairs = [("uncertain", traceback.format_exc())] * len(
-                batch_texts
+        # Check for repeated prompt
+        if (
+            decoded_output.strip().startswith("You are an AI ethics researcher")
+            or "Now classify the following post" in decoded_output
+            or "{{ post }}" in decoded_output
+            or 'Post: "{{' in decoded_output
+            or decoded_output.count("Post:") > 1
+        ):
+            return (
+                "no",
+                "⚠️ Model failed — repeated system prompt without generating output",
             )
 
-        for j, (label, output) in enumerate(label_output_pairs):
-            try:
-                # pred_label validation and normalization
-                normalized_label = (
-                    label.lower() if isinstance(label, str) else "uncertain"
+        label = parse_label(cleaned)
+        reasoning = parse_reasoning(cleaned)
+
+        if not label:
+            # Fallback keyword match
+            text_lower = cleaned.lower()
+            if "yes" in text_lower and any(
+                k in text_lower
+                for k in [
+                    "bias",
+                    "image",
+                    "representation",
+                    "diversity",
+                    "gender",
+                    "race",
+                ]
+            ):
+                return (
+                    "yes",
+                    f"Fallback parsing (weak keyword match): {decoded_output.strip()[:100]}",
                 )
-                if normalized_label not in ["bias", "non-bias", "uncertain"]:
-                    normalized_label = "uncertain"
-
-                # Type checker for casting
-                pred_label: Literal["bias", "non-bias", "uncertain"] = normalized_label  # type: ignore
-
-                row = ClassificationResult(
-                    id=batch_ids[j],
-                    subreddit=batch_subreddits[j],
-                    clean_text=batch_texts[j],
-                    pred_label=pred_label,
-                    llm_reasoning=output,
+            else:
+                return (
+                    "no",
+                    f"Fallback (no strong signal): {decoded_output.strip()[:100]}",
                 )
-                results.append(row.model_dump())
-            except ValidationError as e:
-                logging.error(f"Validation error at row {i + j}: {e}")
 
-    result_df = pd.DataFrame(results)
-    result_df.to_csv(FEWSHOT_RESULT, index=False)
+        return label, reasoning
 
-    result_df[result_df["pred_label"] == "bias"].to_csv(CLASSIFIED_BIAS, index=False)
-    result_df[result_df["pred_label"] == "non-bias"].to_csv(
-        CLASSIFIED_NONBIAS, index=False
+    except Exception as e:
+        # Failure logging (up to 3 cases)
+        if not hasattr(extract_label_and_reasoning, "_logged_failures"):
+            extract_label_and_reasoning._logged_failures = 0
+
+        if extract_label_and_reasoning._logged_failures < 3:
+            logging.warning(
+                f"⚠️ Failed to parse output (case {extract_label_and_reasoning._logged_failures + 1}): {e}"
+            )
+            logging.warning(f"Raw output: {decoded_output[:500]}...")
+            extract_label_and_reasoning._logged_failures += 1
+        elif extract_label_and_reasoning._logged_failures == 3:
+            logging.warning("⚠️ Suppressing further parsing failure logs...")
+            extract_label_and_reasoning._logged_failures += 1
+
+        # Final fallback
+        text_lower = decoded_output.lower()
+        if "yes" in text_lower and "no" not in text_lower:
+            return "yes", f"Fallback parsing: {decoded_output.strip()[:100]}"
+        else:
+            return "no", f"Fallback parsing: {decoded_output.strip()[:100]}"
+
+
+# === MODEL Loading & Inference ===
+def load_model_and_tokenizer():
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, token=HF_TOKEN)
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_ID,
+            token=HF_TOKEN,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+        )
+        model.eval()
+        return tokenizer, model
+    except Exception as e:
+        logging.error(f"Model load error: {e}")
+        return None, None
+
+
+def generate_outputs(batch_texts, tokenizer, model):
+    decoded_outputs = []
+
+    try:
+        for text in batch_texts:
+            prompt = build_prompt(text)
+            messages = [
+                {
+                    "role": "system",
+                    "content": "You are an AI ethics researcher analyzing Reddit posts. Follow the task strictly.",
+                },
+                {"role": "user", "content": prompt},
+            ]
+            input_ids = tokenizer.apply_chat_template(
+                messages, add_generation_prompt=True, return_tensors="pt"
+            ).to(model.device)
+
+            attention_mask = (input_ids != tokenizer.pad_token_id).long()
+
+            with torch.no_grad():
+                outputs = model.generate(
+                    input_ids,
+                    attention_mask=attention_mask,
+                    max_new_tokens=600,
+                    do_sample=False,
+                    eos_token_id=[
+                        tokenizer.eos_token_id,
+                        tokenizer.convert_tokens_to_ids("<|eot_id|>"),
+                    ],
+                    repetition_penalty=1.1,
+                )
+
+            # Decode and strip any special tokens
+            response = outputs[0][input_ids.shape[-1] :]  # prompt 이후만 추출
+            decoded = tokenizer.decode(response, skip_special_tokens=True).strip()
+
+            decoded_outputs.append(decoded)
+        return decoded_outputs
+
+    except Exception as e:
+        logging.error(f"Model inference error: {e}")
+        return [f"Inference error: {e}"] * len(batch_texts)
+
+
+# === Postprocessing ===
+def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddits):
+    rows = []
+    for i, decoded in enumerate(decoded_outputs):
+        label, reasoning = extract_label_and_reasoning(decoded)
+        try:
+            # Ensure label is properly typed
+            pred_label: Literal["yes", "no"] = cast(Literal["yes", "no"], label)
+            row = ClassificationResult(
+                id=batch_ids[i],
+                subreddit=batch_subreddits[i],
+                clean_text=batch_texts[i],
+                pred_label=pred_label,
+                llm_reasoning=reasoning.strip(),
+                raw_output=decoded,
+            )
+            rows.append(row.model_dump())
+        except ValidationError as e:
+            logging.error(f"Validation error for ID {batch_ids[i]}: {e}")
+            logging.error(f"Raw output: {decoded}")
+            rows.append(
+                {
+                    "id": batch_ids[i],
+                    "subreddit": batch_subreddits[i],
+                    "clean_text": batch_texts[i],
+                    "pred_label": label,
+                    "llm_reasoning": f"Validation Error: {e}",
+                    "raw_output": decoded,
+                }
+            )
+    return rows
+
+
+def classify_post_wrapper(batch_input, tokenizer, model):
+    batch_texts, batch_ids, batch_subreddits = batch_input
+    if tokenizer is None or model is None:
+        return [
+            {
+                "id": batch_ids[i],
+                "subreddit": batch_subreddits[i],
+                "clean_text": batch_texts[i],
+                "pred_label": "no",
+                "llm_reasoning": "Model load failed",
+                "raw_output": "",
+            }
+            for i in range(len(batch_texts))
+        ]
+
+    decoded_outputs = generate_outputs(batch_texts, tokenizer, model)
+    return postprocess_outputs(
+        decoded_outputs, batch_texts, batch_ids, batch_subreddits
     )
-    result_df[result_df["pred_label"] == "uncertain"].to_csv(
-        BIAS_UNCERTAIN, index=False
-    )
-
-    logging.info("Few-shot classification complete. Saved:")
-    logging.info("- fewshot_classification_results.csv")
-    logging.info("- classified_bias.csv")
-    logging.info("- classified_nonbias.csv")
-    logging.info("- bias_uncertain.csv")
 
 
 # === SINGLE POST CLASSIFICATION ===
@@ -262,7 +349,18 @@ def classify_single_post(
     # If model and tokenizer are not loaded, load them
     if tokenizer is None or model is None:
         logging.info("🔍 Loading model and tokenizer...")
-        tokenizer, model = load_model(MODEL_ID)
+        tokenizer, model = load_model_and_tokenizer()
+
+    # Check if model loading failed
+    if tokenizer is None or model is None:
+        logging.error("❌ Failed to load model and tokenizer")
+        return {
+            "id": post_id,
+            "subreddit": subreddit,
+            "clean_text": post_text,
+            "pred_label": "no",
+            "llm_reasoning": "Model load failed",
+        }
 
     try:
         # Create prompt
@@ -278,16 +376,24 @@ def classify_single_post(
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=120,
+                max_new_tokens=200,
+                repetition_penalty=1.1,
                 do_sample=False,
-                pad_token_id=tokenizer.eos_token_id,
+                pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+                eos_token_id=[
+                    tokenizer.eos_token_id,
+                    tokenizer.convert_tokens_to_ids("<|eot_id|>"),
+                ],
             )
 
         # Decode result
-        decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=False)
+        decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        # Remove the original prompt from the output
+        decoded_output = decoded_output.replace(prompt, "").strip()
+        print(f"Decoded output: {decoded_output}")
 
         # Extract label
-        label = extract_label(decoded_output)
+        label, reasoning = extract_label_and_reasoning(decoded_output)
 
         # Construct result
         result = {
@@ -295,7 +401,7 @@ def classify_single_post(
             "subreddit": subreddit,
             "clean_text": post_text,
             "pred_label": label,
-            "llm_reasoning": decoded_output,
+            "llm_reasoning": reasoning,
         }
 
         logging.info(f"✅ Classification complete: {label}")
@@ -307,7 +413,7 @@ def classify_single_post(
             "id": post_id,
             "subreddit": subreddit,
             "clean_text": post_text,
-            "pred_label": "uncertain",
+            "pred_label": "no",
             "llm_reasoning": f"Error: {str(e)}",
         }
 
@@ -323,8 +429,8 @@ def example_single_classification():
     This feels really biased and doesn't represent the diversity we see in real healthcare.
     """
 
-    print("🔍 Running example of single post classification...")
-    print(f"📝 Input text: {example_text.strip()}")
+    print("Running example of single post classification...\n")
+    print(f"Input text: {example_text.strip()}")
 
     # Classification run
     result = classify_single_post(
@@ -335,12 +441,82 @@ def example_single_classification():
     print(f"Label: {result['pred_label']}\n")
     print(f"Subreddit: {result['subreddit']}\n")
     print(f"ID: {result['id']}\n")
-    print(f"LLM reasoning: {result['llm_reasoning'][:200]}...")
+    print(
+        json.dumps(
+            {"label": result["pred_label"], "reasoning": result["llm_reasoning"]},
+            indent=2,
+        )
+    )
 
     return result
 
 
+# === Pipeline Entry Point ===
+def main():
+    tokenizer, model = load_model_and_tokenizer()
+
+    if tokenizer is None or model is None:
+        logging.error("❌ Failed to load model and tokenizer. Exiting.")
+        return
+
+    logging.info("🔍 Loading data...")
+    df = pd.read_csv(CLEANED_DATA)
+    texts = df["clean_text"].fillna("").astype(str).tolist()
+    subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
+    ids = df["id"] if "id" in df.columns else [f"unknown_{i}" for i in range(len(df))]
+
+    # Adjust batch size based on data size and available memory
+    batch_size = min(BATCH_SIZE, max(1, len(texts) // 4))
+    logging.info(f"Using batch size: {batch_size}")
+
+    batch_input_list = []
+    for i in range(0, len(texts), batch_size):
+        batch_texts = texts[i : i + batch_size]
+        batch_ids = pd.Series(ids[i : i + batch_size]).reset_index(drop=True)
+        batch_subreddits = pd.Series(subreddits[i : i + batch_size]).reset_index(
+            drop=True
+        )
+        batch_input_list.append((batch_texts, batch_ids, batch_subreddits))
+
+    logging.info("🚀 Starting multiprocessing classification...")
+    all_results = []
+
+    # Adjust number of processes based on system resources
+    num_processes = min(4, os.cpu_count() or 1)
+    logging.info(f"Using {num_processes} processes for classification")
+
+    with ThreadPoolExecutor(max_workers=num_processes) as executor:
+        futures = [
+            executor.submit(classify_post_wrapper, batch_input, tokenizer, model)
+            for batch_input in batch_input_list
+        ]
+        for future in tqdm(
+            as_completed(futures), total=len(futures), desc="Classifying posts"
+        ):
+            all_results.extend(future.result())
+
+    result_df = pd.DataFrame(all_results)
+
+    if result_df.empty:
+        logging.error(
+            "❌ No results were generated — check prompt, model, or parser issues."
+        )
+        return
+
+    # Print classification statistics
+    logging.info(f"📊 Classification Results:")
+    logging.info(f"Total posts processed: {len(result_df)}")
+    if len(result_df) > 0:
+        label_counts = result_df["pred_label"].value_counts()
+        logging.info(f"Label distribution:")
+        for label, count in label_counts.items():
+            logging.info(f"  {label}: {count} ({count/len(result_df)*100:.1f}%)")
+
+    result_df[result_df["pred_label"] == "yes"].to_csv(CLASSIFIED_YES, index=False)
+    result_df[result_df["pred_label"] == "no"].to_csv(CLASSIFIED_NO, index=False)
+    logging.info(f"→ {CLASSIFIED_YES}")
+    logging.info(f"→ {CLASSIFIED_NO}")
+
+
 if __name__ == "__main__":
-    # main()
-    result = example_single_classification()
-    print(result)
+    main()

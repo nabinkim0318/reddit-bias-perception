@@ -33,14 +33,13 @@ AI_KEYWORDS = load_json(os.path.join(CONFIG_DIR, "ai_keywords.json"))
 
 # === LLM Few-Shot OUTPUTS ===
 OUTPUT_DIR = PROCESSED_DIR
-CLASSIFIED_BIAS = os.path.join(OUTPUT_DIR, "classified_bias.csv")
-CLASSIFIED_NONBIAS = os.path.join(OUTPUT_DIR, "classified_nonbias.csv")
-BIAS_UNCERTAIN = os.path.join(OUTPUT_DIR, "bias_uncertain.csv")
+CLASSIFIED_YES = os.path.join(OUTPUT_DIR, "classified_yes.csv")
+CLASSIFIED_NO = os.path.join(OUTPUT_DIR, "classified_no.csv")
 FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv")
 
 # === TEMPLATE & MODEL ===
 TEMPLATE_PATH = os.path.join(CONFIG_DIR, "fewshot_prompt_template.j2")
-MODEL_ID = "google/gemma-2b-it"
+MODEL_ID = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 # === TOPIC MODELING OUTPUT ===
 TOPIC_OUTPUT = os.path.join(RESULTS_DIR, "bertopic_topic_info.csv")
@@ -63,4 +62,4 @@ VADER_PLOT_PATH = os.path.join(RESULTS_DIR, "vader_dist.png")
 RANDOM_SEED = 42
 SUBREDDIT_GROUPS_PATH = os.path.join(CONFIG_DIR, "subreddit_groups.json")
 TOP_COMMENT_NUM = 10
-BATCH_SIZE = 16
+BATCH_SIZE = 4

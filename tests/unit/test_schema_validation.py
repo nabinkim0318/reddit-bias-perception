@@ -1,4 +1,4 @@
-## tests/unit/test_schema_validation.py
+"""## tests/unit/test_schema_validation.py
 
 import ast
 import json
@@ -226,3 +226,4 @@ def test_fewshot_classification_counts_and_schema(caplog):
     # Optional log capture
     if caplog.text:
         print("📋 Log output during test:\n", caplog.text)
+"""

@@ -9,8 +9,9 @@ class ClassificationResult(BaseModel):
     id: str
     subreddit: str
     clean_text: str
-    pred_label: Literal["bias", "non-bias", "uncertain"]
+    pred_label: Literal["yes", "no"]
     llm_reasoning: str
+    raw_output: str
 
 
 class FilteredAIBiasPost(BaseModel):

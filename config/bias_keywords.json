@@ -1,41 +1,65 @@
 {
-    "gender": [
-      "gender", "woman", "man", "female", "male", "beauty", "attractive",
-      "sexist", "misogyny", "misandry"
-    ],
-    "age": [
-      "age", "old", "young", "elderly", "middle-aged", "youth", "teen", "senior"
-    ],
-    "disability": [
-      "disability", "disabled", "wheelchair", "blind", "deaf", "handicap"
-    ],
-    "race": [
-      "race", "racial", "asian", "black", "white", "ethnicity", "ethnic"
-    ],
-    "class": [
-      "rich", "poor", "income", "job", "profession", "unemployed", "worker", "class"
-    ],
-    "education": [
-      "education", "graduate", "school", "college", "degree"
-    ],
-    "religion": [
-      "religion", "muslim", "christian", "jewish", "temple", "hijab", "islam", "bible"
-    ],
-    "body_modification": [
-      "tattoo", "piercing", "body modification"
-    ],
-    "name": [
-      "name", "laura", "mohammed", "kevin", "akhil", "kim", "ali"
-    ],
-    "lgbtq": [
-      "gay", "lesbian", "queer", "lgbtq", "trans", "nonbinary"
-    ],
-    "location": [
-      "urban", "rural", "developed country", "developing world", "africa", "europe", "america"
-    ],
-    "general_bias": [
-      "bias", "biased", "biases", "biasing", "stereotype", "stereotypical",
-      "prejudice", "prejudiced", "discrimination", "discriminatory", "unfair"
-    ]
-  }
-  
+  "gender": [
+    "gender", "woman", "man", "female", "male", "beauty", "attractive", "sexist", "misogyny", "misandry",
+    "feminine", "masculine", "patriarchy", "feminism", "gender identity", "gender role", "ladylike", "manly",
+    "genderfluid", "androgynous", "transgender", "nonbinary", "cisgender", "genderqueer", "agender",
+    "tomboy", "metrosexual", "butch", "effeminate", "androgyne"
+  ],
+  "age": [
+    "age", "old", "young", "elderly", "middle-aged", "youth", "teen", "senior", "child", "kid",
+    "baby", "infant", "adolescent", "toddler", "minor", "juvenile", "mature", "adult", "geriatric",
+    "pensioner", "retiree", "grandparent", "grandchild", "centenarian", "millennial", "gen z", "gen x",
+    "baby boomer", "ageism", "teenager"
+  ],
+  "disability": [
+    "disability", "disabled", "wheelchair", "blind", "deaf", "handicap", "mobility aid", "prosthetic", "crutch", "hearing aid",
+    "guide dog", "braille", "paralyzed", "autism", "dyslexia", "amputee", "speech disorder", "mental disability", "learning disability", "accessible",
+    "neurodivergent", "visual impairment", "cognitive disability", "developmental delay", "physical therapy", "occupational therapy", "prosthesis",
+    "orthopedic", "ALS", "cerebral palsy"
+  ],
+  "race": [
+    "race", "racial", "asian", "black", "white", "ethnicity", "ethnic", "hispanic", "latino", "african",
+    "caucasian", "indigenous", "native", "minority", "biracial", "multiracial", "heritage", "ancestry", "melanin", "skin tone",
+    "afro", "mongoloid", "mestizo", "desi", "slavic", "arab", "jewish", "latina", "afro-caribbean", "albino"
+  ],
+  "class": [
+    "rich", "poor", "income", "job", "profession", "unemployed", "worker", "class", "middle class", "upper class",
+    "lower class", "working class", "wealthy", "billionaire", "poverty", "blue collar", "white collar", "salary", "wage", "homeless",
+    "capitalist", "landlord", "tenant", "entrepreneur", "heir", "trust fund", "laborer", "servant", "peasant", "underprivileged"
+  ],
+  "education": [
+    "education", "graduate", "school", "college", "degree", "university", "student", "scholarship", "academic", "literacy",
+    "dropout", "phd", "doctoral", "bachelor's", "master's", "alumni", "campus", "professor", "lecturer", "curriculum",
+    "tuition", "exam", "diploma", "homework", "classroom", "kindergarten", "private school", "boarding school", "online learning", "valedictorian"
+  ],
+  "religion": [
+    "religion", "muslim", "christian", "jewish", "temple", "hijab", "islam", "bible", "church", "mosque",
+    "synagogue", "faith", "belief", "prayer", "atheist", "agnostic", "spirituality", "holy", "sacred", "religious symbol",
+    "cross", "crescent", "star of david", "yoga", "meditation", "karma", "monastery", "nun", "priest", "monk"
+  ],
+  "body_modification": [
+    "tattoo", "piercing", "body modification", "scarification", "branding", "cosmetic surgery", "plastic surgery", "dermal", "implant", "stretching",
+    "microdermal", "body suspension", "gauge", "inked", "septum piercing", "nose ring", "lip piercing", "ear plug", "beading", "subdermal implant",
+    "rhinoplasty", "liposuction", "facelift", "botox", "filler", "bleaching", "tanning", "cosmetic tattoo", "permanent makeup", "vampire facial"
+  ],
+  "name": [
+    "name", "laura", "mohammed", "kevin", "akhil", "kim", "ali", "jessica", "john", "maria",
+    "lee", "chen", "patel", "hassan", "rodriguez", "smith", "jackson", "wang", "garcia", "ramirez",
+    "ivan", "giovanni", "miguel", "david", "satoshi", "yusuf", "olga", "fatima", "pedro", "samira"
+  ],
+  "lgbtq": [
+    "gay", "lesbian", "queer", "lgbtq", "trans", "nonbinary", "bisexual", "pansexual", "asexual", "genderqueer",
+    "genderfluid", "intersex", "closeted", "coming out", "transition", "drag", "pronouns", "two-spirit", "homosexual", "heterosexual",
+    "demisexual", "polyamorous", "aromantic", "gender questioning", "crossdresser", "top surgery", "bottom surgery", "binders", "queerplatonic", "camp"
+  ],
+  "location": [
+    "urban", "rural", "developed country", "developing world", "africa", "europe", "america", "asia", "latin america", "slum",
+    "ghetto", "city", "village", "downtown", "suburb", "province", "district", "region", "metropolis", "continent",
+    "island", "mountainous", "coastal", "desert", "rainforest", "countryside", "farmland", "inner city", "border town", "megacity"
+  ],
+  "general_bias": [
+    "bias", "biased", "biases", "biasing", "stereotype", "stereotypical", "prejudice", "prejudiced", "discrimination", "discriminatory",
+    "unfair", "inequality", "marginalization", "exclusion", "microaggression", "implicit bias", "social stigma", "favoritism", "systemic bias", "unconscious bias",
+    "colorism", "tokenism", "xenophobia", "ableism", "sexism", "classism", "homophobia", "transphobia", "fatphobia", "ageism"
+  ]
+}
