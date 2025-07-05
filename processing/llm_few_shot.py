@@ -241,16 +241,19 @@ def generate_outputs(batch_texts, tokenizer, model):
                 messages, add_generation_prompt=True, return_tensors="pt"
             ).to(model.device)
 
+            attention_mask = (input_ids != tokenizer.pad_token_id).long()
+
             with torch.no_grad():
                 outputs = model.generate(
                     input_ids,
+                    attention_mask=attention_mask,
                     max_new_tokens=600,
                     do_sample=False,
-                    temperature=0.0,
                     eos_token_id=[
                         tokenizer.eos_token_id,
                         tokenizer.convert_tokens_to_ids("<|eot_id|>"),
                     ],
+                    repetition_penalty=1.1,
                 )
 
             # Decode and strip any special tokens
@@ -374,12 +377,13 @@ def classify_single_post(
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=200,
-                temperature=0.0,
-                top_p=1.0,
                 repetition_penalty=1.1,
                 do_sample=False,
-                pad_token_id=tokenizer.eos_token_id,
-                eos_token_id=tokenizer.eos_token_id,
+                pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+                eos_token_id=[
+                    tokenizer.eos_token_id,
+                    tokenizer.convert_tokens_to_ids("<|eot_id|>"),
+                ],
             )
 
         # Decode result
