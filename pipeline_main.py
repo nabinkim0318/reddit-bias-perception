@@ -21,8 +21,8 @@ def timed_step(label, func):
 
 def main():
     # timed_step("1. Reddit Crawling", crawl_reddit)
-    timed_step("2. Text Cleaning", clean_text)
-    timed_step("3. LLM Filtering", llm_filter)
+    # timed_step("2. Text Cleaning", clean_text)
+    # timed_step("3. LLM Filtering", llm_filter)
     timed_step("4. Keyword Filtering", keyword_filter)
 
     print("\n🎉 Pipeline completed successfully!")
