@@ -7,6 +7,8 @@ Fetches posts + comments from subreddits and saves to JSON.
 import asyncio
 import logging
 
+from tqdm import tqdm
+
 from config.config import RAW_REDDIT_DATA
 from reddit_crawler.reddit_client import get_reddit_client
 from reddit_crawler.subreddit_fetcher import fetch_all
@@ -25,7 +27,9 @@ async def run_crawler(limit=250, output=RAW_REDDIT_DATA, sleep=2):
     try:
         all_data = await fetch_all(reddit, all_subs, limit=limit, sleep_sec=sleep)
         save_json(output, all_data)
-        print(f"✅ Finished. Saved {len(all_data)} posts to {output}")
+        print(
+            f"✅ Finished. Saved {len(all_subs)} subreddits processed, {len(all_data)} posts saved to {output}"
+        )
     finally:
         await reddit.close()
 

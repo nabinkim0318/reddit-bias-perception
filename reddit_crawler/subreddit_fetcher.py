@@ -3,6 +3,8 @@
 import asyncio
 import logging
 
+from tqdm import tqdm
+
 from processing.utils_technical_filter import is_blacklist_post
 
 
@@ -14,8 +16,19 @@ async def fetch_posts(reddit, subreddit_name: str, limit: int = 200) -> list:
     submissions = subreddit.new(limit=limit)
     results = []
 
+    # Convert async generator to list for tqdm
+    posts_list = []
     async for post in submissions:
+        posts_list.append(post)
+
+    # Process posts with progress bar
+    for post in tqdm(posts_list, desc=f"📥 Fetching r/{subreddit_name}", unit="post"):
         await post.load()
+
+        # Set comment sort method explicitly
+        post.comment_sort = (
+            "top"  # 'confidence' (default), 'new', 'top', 'controversial', 'old', 'qa'
+        )
 
         # Filtering: Exclude technical posts
         combined_text = f"{post.title} {post.selftext}"
@@ -28,7 +41,7 @@ async def fetch_posts(reddit, subreddit_name: str, limit: int = 200) -> list:
         if hasattr(post, "comments") and post.comments is not None:
             try:
                 await post.comments.replace_more(limit=0)
-                # comments: first 10 comments (any depth, sequential order) for random sampling
+                # comments: first 10 comments (now explicitly sorted by 'top') regardless of depth
                 comments = [c.body for c in post.comments[:10]]
 
                 # top_comments: top 5 highest-scoring top-level comments
@@ -70,8 +83,7 @@ async def fetch_all(
     """
 
     all_data = []
-    for sub in subreddits:
-        logging.info(f"📥 Fetching from r/{sub}...")
+    for sub in tqdm(subreddits, desc="🌐 Crawling subreddits", unit="subreddit"):
         try:
             posts = await fetch_posts(reddit, sub, limit)
             all_data.extend(posts)
