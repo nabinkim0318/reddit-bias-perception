@@ -11,7 +11,12 @@ import pandas as pd
 from dotenv import load_dotenv
 from pydantic import ValidationError
 
-from config.config import AI_KEYWORDS, BIAS_KEYWORDS, CLASSIFIED_YES, FILTERED_DATA
+from config.config import (
+    AI_KEYWORDS,
+    BIAS_KEYWORDS,
+    CLEANED_DATA,
+    KEYWORDS_FILTERED_DATA,
+)
 from processing.schema import FilteredAIBiasPost
 
 load_dotenv()
@@ -35,7 +40,7 @@ def infer_bias_types(text, bias_keywords_dict):
     return matched_types
 
 
-def filter_posts(posts, bias_keywords_dict, ai_keywords):
+def filter_posts_by_keywords(posts, bias_keywords_dict, ai_keywords):
     filtered = []
     ai_flat = flatten_keywords({"ai": ai_keywords})
 
@@ -67,23 +72,25 @@ def filter_posts(posts, bias_keywords_dict, ai_keywords):
 
 
 def main():
-    df = pd.read_csv(CLASSIFIED_YES)
+    df = pd.read_csv(CLEANED_DATA)
     raw_data = df.to_dict("records")
 
-    filtered_data = filter_posts(raw_data, BIAS_KEYWORDS, AI_KEYWORDS)
+    keywords_filtered_data = filter_posts_by_keywords(
+        raw_data, BIAS_KEYWORDS, AI_KEYWORDS
+    )
 
     # === Save filtered results to JSON for compatibility ===
-    with open(FILTERED_DATA, "w", encoding="utf-8") as f:
-        json.dump(filtered_data, f, ensure_ascii=False, indent=2)
+    with open(KEYWORDS_FILTERED_DATA, "w", encoding="utf-8") as f:
+        json.dump(keywords_filtered_data, f, ensure_ascii=False, indent=2)
 
     # === Also save to CSV for downstream analysis (e.g., topic distribution, sentiment) ===
-    df_filtered = pd.DataFrame(filtered_data)
-    filtered_csv_path = FILTERED_DATA.replace(".json", ".csv")
+    df_filtered = pd.DataFrame(keywords_filtered_data)
+    filtered_csv_path = KEYWORDS_FILTERED_DATA.replace(".json", ".csv")
     df_filtered.to_csv(filtered_csv_path, index=False)
 
     print(
-        f"Filtered {len(filtered_data)} posts → saved to:\n"
-        f"- JSON: {FILTERED_DATA}\n"
+        f"Filtered {len(keywords_filtered_data)} posts → saved to:\n"
+        f"- JSON: {KEYWORDS_FILTERED_DATA}\n"
         f"- CSV : {filtered_csv_path}"
     )
 

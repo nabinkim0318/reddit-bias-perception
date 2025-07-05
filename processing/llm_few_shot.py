@@ -26,7 +26,7 @@ from config.config import (
     BATCH_SIZE,
     CLASSIFIED_NO,
     CLASSIFIED_YES,
-    CLEANED_DATA,
+    KEYWORDS_FILTERED_DATA,
     MODEL_ID,
     TEMPLATE_PATH,
 )
@@ -460,7 +460,7 @@ def main():
         return
 
     logging.info("🔍 Loading data...")
-    df = pd.read_csv(CLEANED_DATA)
+    df = pd.read_csv(KEYWORDS_FILTERED_DATA)
     texts = df["clean_text"].fillna("").astype(str).tolist()
     subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
     ids = df["id"] if "id" in df.columns else [f"unknown_{i}" for i in range(len(df))]
