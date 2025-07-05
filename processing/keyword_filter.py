@@ -16,6 +16,7 @@ from config.config import (
     BIAS_KEYWORDS,
     CLEANED_DATA,
     KEYWORDS_FILTERED_DATA,
+    SUBREDDIT_GROUPS_PATH,
 )
 from processing.schema import FilteredAIBiasPost
 
@@ -31,6 +32,19 @@ def match_keywords(text, keywords):
     return [kw for kw in keywords if kw in text]
 
 
+def load_subreddit_groups() -> dict:
+    with open(SUBREDDIT_GROUPS_PATH, "r") as f:
+        return json.load(f)
+
+
+def get_subreddit_category(subreddit: str, subreddit_groups: dict) -> str:
+    subreddit = subreddit.lower()
+    for category, subs in subreddit_groups.items():
+        if subreddit in subs:
+            return category
+    return "unknown"
+
+
 def infer_bias_types(text, bias_keywords_dict):
     text = str(text).lower()
     matched_types = []
@@ -43,31 +57,45 @@ def infer_bias_types(text, bias_keywords_dict):
 def filter_posts_by_keywords(posts, bias_keywords_dict, ai_keywords):
     filtered = []
     ai_flat = flatten_keywords({"ai": ai_keywords})
+    bias_flat = flatten_keywords(bias_keywords_dict)
+    subreddit_groups = load_subreddit_groups()
 
     for post in posts:
         content = f"{post.get('title', '')} {post.get('selftext', '')} {' '.join(post.get('comments', []))}".lower()
 
-        matched_bias_keywords = match_keywords(
-            content, flatten_keywords(bias_keywords_dict)
-        )
+        # ==== Keywords Matching ===
+        matched_bias_keywords = match_keywords(content, bias_flat)
         matched_ai_keywords = match_keywords(content, ai_flat)
         bias_types = infer_bias_types(content, bias_keywords_dict)
 
-        if matched_bias_keywords and matched_ai_keywords:
+        # ==== Required Keywords based on Subreddit Category ===
+        subreddit = post["subreddit"]
+        category = get_subreddit_category(subreddit, subreddit_groups)
+
+        if category == "casual":
+            condition = bool(matched_bias_keywords and matched_ai_keywords)
+        elif category == "expert":
+            condition = bool(matched_bias_keywords)
+        else:
+            condition = False
+
+        if condition:
             try:
                 enriched = {
                     "id": post["id"],
-                    "subreddit": post["subreddit"],
+                    "subreddit": subreddit,
                     "clean_text": post["clean_text"],
+                    "bias_types": bias_types,
                     "matched_keywords": list(
                         set(matched_bias_keywords + matched_ai_keywords)
                     ),
-                    "bias_types": bias_types,
                 }
                 validated = FilteredAIBiasPost(**enriched)
                 filtered.append(validated.model_dump())
             except ValidationError as e:
-                print(f"❌ Validation error for post {post.get('id')}: {e}")
+                print(
+                    f"❌ Validation error for post {post.get('id')} from r/{subreddit}: {e}"
+                )
     return filtered
 
 
