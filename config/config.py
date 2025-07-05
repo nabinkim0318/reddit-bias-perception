@@ -39,7 +39,7 @@ FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv")
 
 # === TEMPLATE & MODEL ===
 TEMPLATE_PATH = os.path.join(CONFIG_DIR, "fewshot_prompt_template.j2")
-MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.2"
+MODEL_ID = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 # === TOPIC MODELING OUTPUT ===
 TOPIC_OUTPUT = os.path.join(RESULTS_DIR, "bertopic_topic_info.csv")
