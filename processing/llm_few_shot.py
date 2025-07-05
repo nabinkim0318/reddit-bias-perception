@@ -448,73 +448,182 @@ def example_single_classification():
 
 
 # === Pipeline Entry Point ===
-def main():
-    tokenizer, model = load_model_and_tokenizer()
+# def main():
+#     tokenizer, model = load_model_and_tokenizer()
 
-    if tokenizer is None or model is None:
-        logging.error("❌ Failed to load model and tokenizer. Exiting.")
-        return
+#     if tokenizer is None or model is None:
+#         logging.error("❌ Failed to load model and tokenizer. Exiting.")
+#         return
 
-    logging.info("🔍 Loading data...")
-    df = pd.read_csv(CLEANED_DATA)
-    texts = df["clean_text"].fillna("").astype(str).tolist()
-    subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
-    ids = df["id"] if "id" in df.columns else [f"unknown_{i}" for i in range(len(df))]
+#     logging.info("🔍 Loading data...")
+#     df = pd.read_csv(CLEANED_DATA)
+#     texts = df["clean_text"].fillna("").astype(str).tolist()
+#     subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
+#     ids = df["id"] if "id" in df.columns else [f"unknown_{i}" for i in range(len(df))]
 
-    # Adjust batch size based on data size and available memory
-    batch_size = min(BATCH_SIZE, max(1, len(texts) // 4))
-    logging.info(f"Using batch size: {batch_size}")
+#     # Adjust batch size based on data size and available memory
+#     batch_size = min(BATCH_SIZE, max(1, len(texts) // 4))
+#     logging.info(f"Using batch size: {batch_size}")
 
-    batch_input_list = []
-    for i in range(0, len(texts), batch_size):
-        batch_texts = texts[i : i + batch_size]
-        batch_ids = pd.Series(ids[i : i + batch_size]).reset_index(drop=True)
-        batch_subreddits = pd.Series(subreddits[i : i + batch_size]).reset_index(
-            drop=True
+#     batch_input_list = []
+#     for i in range(0, len(texts), batch_size):
+#         batch_texts = texts[i : i + batch_size]
+#         batch_ids = pd.Series(ids[i : i + batch_size]).reset_index(drop=True)
+#         batch_subreddits = pd.Series(subreddits[i : i + batch_size]).reset_index(
+#             drop=True
+#         )
+#         batch_input_list.append((batch_texts, batch_ids, batch_subreddits))
+
+#     logging.info("🚀 Starting multiprocessing classification...")
+#     all_results = []
+
+#     # Adjust number of processes based on system resources
+#     num_processes = min(4, os.cpu_count() or 1)
+#     logging.info(f"Using {num_processes} processes for classification")
+
+#     with ThreadPoolExecutor(max_workers=num_processes) as executor:
+#         futures = [
+#             executor.submit(classify_post_wrapper, batch_input, tokenizer, model)
+#             for batch_input in batch_input_list
+#         ]
+#         for future in tqdm(
+#             as_completed(futures), total=len(futures), desc="Classifying posts"
+#         ):
+#             all_results.extend(future.result())
+
+#     result_df = pd.DataFrame(all_results)
+
+#     if result_df.empty:
+#         logging.error(
+#             "❌ No results were generated — check prompt, model, or parser issues."
+#         )
+#         return
+
+#     # Print classification statistics
+#     logging.info(f"📊 Classification Results:")
+#     logging.info(f"Total posts processed: {len(result_df)}")
+#     if len(result_df) > 0:
+#         label_counts = result_df["pred_label"].value_counts()
+#         logging.info(f"Label distribution:")
+#         for label, count in label_counts.items():
+#             logging.info(f"  {label}: {count} ({count/len(result_df)*100:.1f}%)")
+
+#     result_df[result_df["pred_label"] == "yes"].to_csv(CLASSIFIED_YES, index=False)
+#     result_df[result_df["pred_label"] == "no"].to_csv(CLASSIFIED_NO, index=False)
+#     logging.info(f"→ {CLASSIFIED_YES}")
+#     logging.info(f"→ {CLASSIFIED_NO}")
+
+
+test_cases = [
+    # Definite yes cases (MUST pass)
+    (
+        "I noticed that whenever I generate AI images of scientists, they almost always appear as white men. It's troubling how biased these models are toward certain demographics.",
+        "yes",
+    ),
+    (
+        "Why do all the AI-generated images of athletes show only muscular, young people? There's no diversity in body types at all.",
+        "yes",
+    ),
+    (
+        "When I tried generating images of weddings, the couples were always heterosexual and from the same race. This feels really exclusionary.",
+        "yes",
+    ),
+    (
+        "It's strange that AI art tools rarely create characters with disabilities. It makes me wonder whether such representation was ever included in the training data.",
+        "yes",
+    ),
+    # Borderline cases (for manual check)
+    (
+        "I keep seeing AI images where people all look pretty much the same. Does anyone else think this is weird?",
+        "borderline",
+    ),
+    (
+        "AI-generated images of festivals often look very generic. They don’t seem to capture cultural diversity at all.",
+        "borderline",
+    ),
+    (
+        "I asked the AI to create a street scene, but the people looked weird and unrealistic. It's like they can't capture natural human appearances.",
+        "borderline",
+    ),
+    (
+        "Is it just me, or do AI images of CEOs always look the same? I feel like they're stuck on some stereotype.",
+        "borderline",
+    ),
+]
+
+
+def run_tests_with_existing_pipeline(
+    test_cases, tokenizer, model, save_csv=False, csv_path="llm_test_results.csv"
+):
+    """
+    Run test cases through the existing LLM pipeline and optionally save results to CSV.
+
+    Args:
+        test_cases (list): List of tuples (post_text, expected_label)
+        tokenizer: Hugging Face tokenizer
+        model: Hugging Face model
+        save_csv (bool): Whether to save the test results to CSV.
+        csv_path (str): Path for saving the CSV file.
+    """
+    batch_texts = [case[0] for case in test_cases]
+    expected_labels = [case[1] for case in test_cases]
+
+    decoded_outputs = generate_outputs(batch_texts, tokenizer, model)
+
+    passed = 0
+    failed = 0
+    rows = []
+
+    for idx, (decoded, expected, post_text) in enumerate(
+        zip(decoded_outputs, expected_labels, batch_texts), 1
+    ):
+        label, reasoning = extract_label_and_reasoning(decoded)
+
+        if expected == "yes":
+            if label == "yes":
+                passed += 1
+                logging.info(
+                    f"[PASSED ✅] Test Case {idx} - Correctly classified as 'yes'"
+                )
+            else:
+                failed += 1
+                logging.error(
+                    f"[FAILED ❌] Test Case {idx} - Expected 'yes' but got '{label}'"
+                )
+                logging.error(f"Post:\n{post_text}\nModel Reasoning:\n{reasoning}\n")
+        else:
+            logging.info(f"[BORDERLINE] Test Case {idx}")
+            logging.info(
+                f"Post:\n{post_text}\nPredicted Label: {label}\nReasoning: {reasoning}\n"
+            )
+
+        # ✅ Record results
+        rows.append(
+            {
+                "case_id": idx,
+                "post_text": post_text,
+                "expected_label": expected,
+                "predicted_label": label,
+                "reasoning": reasoning,
+                "raw_output": decoded,
+            }
         )
-        batch_input_list.append((batch_texts, batch_ids, batch_subreddits))
 
-    logging.info("🚀 Starting multiprocessing classification...")
-    all_results = []
+    logging.info(
+        f"\n=== TEST SUMMARY ===\nPassed: {passed} / {passed + failed} definite 'yes' cases"
+    )
+    if failed > 0:
+        logging.warning("⚠️ Some 'yes' cases failed. Review model or prompt.")
 
-    # Adjust number of processes based on system resources
-    num_processes = min(4, os.cpu_count() or 1)
-    logging.info(f"Using {num_processes} processes for classification")
-
-    with ThreadPoolExecutor(max_workers=num_processes) as executor:
-        futures = [
-            executor.submit(classify_post_wrapper, batch_input, tokenizer, model)
-            for batch_input in batch_input_list
-        ]
-        for future in tqdm(
-            as_completed(futures), total=len(futures), desc="Classifying posts"
-        ):
-            all_results.extend(future.result())
-
-    result_df = pd.DataFrame(all_results)
-
-    if result_df.empty:
-        logging.error(
-            "❌ No results were generated — check prompt, model, or parser issues."
-        )
-        return
-
-    # Print classification statistics
-    logging.info(f"📊 Classification Results:")
-    logging.info(f"Total posts processed: {len(result_df)}")
-    if len(result_df) > 0:
-        label_counts = result_df["pred_label"].value_counts()
-        logging.info(f"Label distribution:")
-        for label, count in label_counts.items():
-            logging.info(f"  {label}: {count} ({count/len(result_df)*100:.1f}%)")
-
-    result_df[result_df["pred_label"] == "yes"].to_csv(CLASSIFIED_YES, index=False)
-    result_df[result_df["pred_label"] == "no"].to_csv(CLASSIFIED_NO, index=False)
-    logging.info(f"→ {CLASSIFIED_YES}")
-    logging.info(f"→ {CLASSIFIED_NO}")
+    # ✅ Save CSV
+    if save_csv:
+        df = pd.DataFrame(rows)
+        df.to_csv(csv_path, index=False)
+        logging.info(f"✅ Test results saved to {csv_path}")
 
 
 if __name__ == "__main__":
-    main()
+    tokenizer, model = load_model_and_tokenizer()
+    run_tests_with_existing_pipeline(test_cases, tokenizer, model)
     # result = example_single_classification()
     # print(result)
