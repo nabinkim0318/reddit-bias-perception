@@ -156,7 +156,7 @@ def main(input_path=None):
         posts = json.load(f)
 
     df = pd.DataFrame(posts)
-    df = preprocess_dataframe(df[:10])
+    df = preprocess_dataframe(df)
     df.to_csv(CLEANED_DATA, index=False)
     logging.info(f"✅ Preprocessed text saved to {CLEANED_DATA}")
     print(f"✅ Preprocessed text saved to {CLEANED_DATA}")
