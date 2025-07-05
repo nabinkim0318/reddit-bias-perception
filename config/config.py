@@ -17,8 +17,15 @@ CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 # === INPUT FILES ===
 RAW_REDDIT_DATA = os.path.join(RAW_DIR, "reddit_raw.json")
 CLEANED_DATA = os.path.join(PROCESSED_DIR, "reddit_bias_data_clean.csv")
-FILTERED_DATA = os.path.join(PROCESSED_DIR, "filtered_ai_bias.csv")
-FINAL_ANALYSIS_INPUT = FILTERED_DATA
+FILTERED_DATA = os.path.join(PROCESSED_DIR, "keywords_filtered_ai_bias.csv")
+
+# === LLM Few-Shot OUTPUTS ===
+OUTPUT_DIR = PROCESSED_DIR
+CLASSIFIED_YES = os.path.join(OUTPUT_DIR, "filtered_ai_bias.csv")
+CLASSIFIED_NO = os.path.join(OUTPUT_DIR, "filtered_ai_non_bias.csv")
+FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "llm_classification_results.csv")
+
+FINAL_ANALYSIS_INPUT = CLASSIFIED_YES
 
 
 # === KEYWORDS ===
@@ -30,12 +37,6 @@ def load_json(path):
 BIAS_KEYWORDS = load_json(os.path.join(CONFIG_DIR, "bias_keywords.json"))
 AI_KEYWORDS = load_json(os.path.join(CONFIG_DIR, "ai_keywords.json"))
 
-
-# === LLM Few-Shot OUTPUTS ===
-OUTPUT_DIR = PROCESSED_DIR
-CLASSIFIED_YES = os.path.join(OUTPUT_DIR, "classified_yes.csv")
-CLASSIFIED_NO = os.path.join(OUTPUT_DIR, "classified_no.csv")
-FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "fewshot_classification_results.csv")
 
 # === TEMPLATE & MODEL ===
 TEMPLATE_PATH = os.path.join(CONFIG_DIR, "fewshot_prompt_template.j2")

@@ -1,11 +1,17 @@
 {
   "expert": [
     "MachineLearning",
+    "artificial",
     "ArtificialInteligence",
+    "deeplearning",
+    "computervision",
+    "ChatGPT",
+    "PromptDesign",
+    "GenerativeAI",
     "aiArt",
+    "AIGenArt",
     "midjourney",
-    "StableDiffusion",
-    "ChatGPT"
+    "StableDiffusion"
   ],
   "casual": [
     "todayilearned",
