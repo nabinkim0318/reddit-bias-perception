@@ -67,18 +67,9 @@ def get_template():
 
 def build_prompt(post_text):
     """
-    Construct a classification prompt using the system instruction, criteria, and post text.
-
-    Args:
-        post_text (str): Reddit post's cleaned content.
-
-    Returns:
-        str: Fully rendered prompt ready for tokenization.
+    Render the classification prompt using Jinja2 template.
     """
-    rendered = get_template().render(post=(post_text or "").strip())
-    if "{{ post_text }}" in rendered:
-        logging.warning("⚠️ Template rendering may have failed.")
-        logging.warning(f"Rendered output preview:\n{rendered[:300]}")
+    rendered = get_template().render(post_text=(post_text or "").strip())
     return rendered
 
 
@@ -223,7 +214,7 @@ def load_model_and_tokenizer():
         model = AutoModelForCausalLM.from_pretrained(
             MODEL_ID,
             token=HF_TOKEN,
-            torch_dtype=torch.float16,
+            torch_dtype=torch.bfloat16,
             device_map="auto",
         )
         model.eval()
@@ -239,37 +230,32 @@ def generate_outputs(batch_texts, tokenizer, model):
     try:
         for text in batch_texts:
             prompt = build_prompt(text)
-            inputs = tokenizer(
-                prompt,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-                max_length=2048,
+            messages = [
+                {
+                    "role": "system",
+                    "content": "You are an AI ethics researcher analyzing Reddit posts. Follow the task strictly.",
+                },
+                {"role": "user", "content": prompt},
+            ]
+            input_ids = tokenizer.apply_chat_template(
+                messages, add_generation_prompt=True, return_tensors="pt"
             ).to(model.device)
 
             with torch.no_grad():
-                output_ids = model.generate(
-                    **inputs,
+                outputs = model.generate(
+                    input_ids,
                     max_new_tokens=600,
                     do_sample=False,
                     temperature=0.0,
-                    top_p=1.0,
-                    repetition_penalty=1.25,
-                    pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
-                    eos_token_id=tokenizer.eos_token_id,
+                    eos_token_id=[
+                        tokenizer.eos_token_id,
+                        tokenizer.convert_tokens_to_ids("<|eot_id|>"),
+                    ],
                 )
 
             # Decode and strip any special tokens
-            decoded = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
-
-            # Remove the original prompt from the output
-            if decoded.startswith(prompt):
-                decoded = decoded[len(prompt) :].strip()
-
-            print("\n---")
-            print(f"Prompt:\n{prompt[:500]}")
-            print(f"Decoded:\n{decoded[:500]}")
-            print("---")
+            response = outputs[0][input_ids.shape[-1] :]  # prompt 이후만 추출
+            decoded = tokenizer.decode(response, skip_special_tokens=True).strip()
 
             decoded_outputs.append(decoded)
         return decoded_outputs
@@ -297,7 +283,8 @@ def postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddit
             )
             rows.append(row.model_dump())
         except ValidationError as e:
-            logging.error(f"Validation error: {e}")
+            logging.error(f"Validation error for ID {batch_ids[i]}: {e}")
+            logging.error(f"Raw output: {decoded}")
             rows.append(
                 {
                     "id": batch_ids[i],
