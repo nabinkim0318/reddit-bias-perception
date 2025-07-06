@@ -17,7 +17,7 @@ from reddit_crawler.utils import load_subreddit_groups, save_json
 logging.basicConfig(level=logging.INFO)
 
 
-async def run_crawler(limit=250, output=RAW_REDDIT_DATA, sleep=2):
+async def run_crawler(limit=500, output=RAW_REDDIT_DATA, sleep=10):
     expert_subs, casual_subs = load_subreddit_groups()
     all_subs = expert_subs + casual_subs
 

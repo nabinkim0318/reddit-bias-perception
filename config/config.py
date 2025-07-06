@@ -17,7 +17,10 @@ CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 # === INPUT FILES ===
 RAW_REDDIT_DATA = os.path.join(RAW_DIR, "reddit_raw.json")
 CLEANED_DATA = os.path.join(PROCESSED_DIR, "reddit_bias_data_clean.csv")
-FILTERED_DATA = os.path.join(PROCESSED_DIR, "keywords_filtered_ai_bias.csv")
+KEYWORDS_FILTERED_DATA = os.path.join(PROCESSED_DIR, "keywords_filtered_ai_bias.json")
+
+# === Subreddit-specific CSV output ===
+SUBREDDIT_CSV_DIR = os.path.join(PROCESSED_DIR, "subreddit_csv")
 
 # === LLM Few-Shot OUTPUTS ===
 OUTPUT_DIR = PROCESSED_DIR
