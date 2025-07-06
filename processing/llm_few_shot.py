@@ -7,16 +7,14 @@ import json
 import logging
 import os
 import re
-import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache  # Lazy load template
-from multiprocessing import Pool
-from typing import List, Literal, cast
+from typing import Literal, cast
 
 import pandas as pd
 import torch
 from dotenv import load_dotenv
-from jinja2 import BaseLoader, Environment, Template
+from jinja2 import BaseLoader, Environment
 from pydantic import ValidationError
 from tqdm import tqdm
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
@@ -31,7 +29,6 @@ from config.config import (
     TEMPLATE_PATH,
 )
 from processing.schema import ClassificationResult
-from utils.tokenize import batch_tokenize
 
 # Configure logging
 logging.basicConfig(

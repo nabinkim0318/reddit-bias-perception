@@ -28,7 +28,7 @@ async def safe_fetch(fetch_func, *args, retries=3, sleep_sec=10, **kwargs):
 
 
 async def fetch_posts_general(
-    reddit, subreddit_name, limit=200, use_pagination=False, page_size=100
+    reddit, subreddit_name, limit=2000, use_pagination=False, page_size=100
 ):
     if use_pagination:
         return await safe_fetch(
@@ -71,6 +71,7 @@ async def fetch_posts_with_pagination(
     return posts
 
 
+# Fallback method - fetch all posts at once without pagination
 async def fetch_posts(reddit, subreddit_name: str, limit: int = 200) -> list:
     """
     Fetch recent posts and top comments from a subreddit.
@@ -156,6 +157,7 @@ async def fetch_all(
 
             # Save per-subreddit CSV
             df = pd.DataFrame(posts)
+            df.drop_duplicates(subset=["id"], inplace=True)  # duplicates removal
             sanitized_sub = sub.replace("/", "_")  # safe file name
             csv_path = f"{output_dir}/{sanitized_sub}.csv"
             df.to_csv(csv_path, index=False)
