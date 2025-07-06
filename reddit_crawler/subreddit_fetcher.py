@@ -27,44 +27,36 @@ async def safe_fetch(fetch_func, *args, retries=3, sleep_sec=10, **kwargs):
                 raise e
 
 
-async def fetch_posts_general(
-    reddit, subreddit_name, limit=2000, use_pagination=False, page_size=100
-):
+async def fetch_posts_general(reddit, subreddit_name, limit=2000, use_pagination=False):
     if use_pagination:
         return await safe_fetch(
-            fetch_posts_with_pagination,
-            reddit,
-            subreddit_name,
-            total_limit=limit,
-            page_size=page_size,
+            fetch_posts_with_pagination, reddit, subreddit_name, total_limit=limit
         )
     else:
         return await safe_fetch(fetch_posts, reddit, subreddit_name, limit)
 
 
 async def fetch_posts_with_pagination(
-    reddit, subreddit_name: str, total_limit: int = 1000, page_size: int = 100
+    reddit, subreddit_name: str, total_limit: int = 1000
 ):
-    """
-    Fetch posts with pagination from a subreddit.
-    total_limit: total number of posts to fetch
-    page_size: number of posts to fetch per page (usually 100~200)
-    """
     subreddit = await reddit.subreddit(subreddit_name)
     posts = []
-    after = None
     fetched = 0
 
-    while fetched < total_limit:
-        submissions = subreddit.new(limit=page_size, params={"after": after})
-        async for post in submissions:
-            posts.append(post)
-            fetched += 1
-            after = post.fullname  # Reddit pagination key
-            if fetched >= total_limit:
-                break
+    async for post in subreddit.new(limit=total_limit):
+        post.comment_sort = "top"
+        await post.load()
 
-        if fetched == len(posts):
+        combined_text = f"{post.title} {post.selftext}"
+        if is_blacklist_post(combined_text):
+            continue
+
+        comments, top_comments = await extract_comments(post)
+        post_data = serialize_post(post, subreddit_name, comments, top_comments)
+        posts.append(post_data)
+        fetched += 1
+
+        if fetched >= total_limit:
             break
 
     print(f"✅ Fetched {len(posts)} posts from r/{subreddit_name}")
@@ -157,7 +149,13 @@ async def fetch_all(
 
             # Save per-subreddit CSV
             df = pd.DataFrame(posts)
-            df.drop_duplicates(subset=["id"], inplace=True)  # duplicates removal
+
+            # 🔍 Check first before deduplication
+            if "id" in df.columns:
+                df.drop_duplicates(subset=["id"], inplace=True)
+            else:
+                print("⚠️ Skipped deduplication: 'id' column not found in DataFrame")
+
             sanitized_sub = sub.replace("/", "_")  # safe file name
             csv_path = f"{output_dir}/{sanitized_sub}.csv"
             df.to_csv(csv_path, index=False)
