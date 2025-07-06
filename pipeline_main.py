@@ -23,7 +23,7 @@ def main():
     timed_step("1. Reddit Crawling", crawl_reddit)
     timed_step("2. Text Cleaning", clean_text)
     timed_step("3. Keyword Filtering", keyword_filter)
-    timed_step("4. LLM Filtering", llm_filter)
+    # timed_step("4. LLM Filtering", llm_filter)
 
     print("\n🎉 Pipeline completed successfully!")
 
