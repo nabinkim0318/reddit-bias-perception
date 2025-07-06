@@ -29,7 +29,17 @@ def flatten_keywords(keyword_dict):
 
 def match_keywords(text, keywords):
     text = str(text).lower()
-    return [kw for kw in keywords if kw in text]
+    matched = []
+    for kw in keywords:
+        if len(kw) <= 4 or kw in {"copilot", "dalle"}:
+            # Word boundary match for short keywords or ambiguous ones
+            if re.search(rf"\b{re.escape(kw)}\b", text):
+                matched.append(kw)
+        else:
+            # Substring match for longer keywords
+            if kw in text:
+                matched.append(kw)
+    return matched
 
 
 def load_subreddit_groups() -> dict:
