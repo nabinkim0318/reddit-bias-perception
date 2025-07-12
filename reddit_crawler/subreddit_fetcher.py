@@ -2,8 +2,10 @@
 
 import asyncio
 import logging
+import time
 
 import pandas as pd
+import requests
 from tqdm import tqdm
 
 from config.config import SUBREDDIT_CSV_DIR
@@ -165,3 +167,106 @@ async def fetch_all(
             logging.warning(f"⚠️ Failed to fetch r/{sub}: {e}")
         await asyncio.sleep(sleep_sec)  # Sleep between subreddits
     return all_data
+
+
+def fetch_reddit_posts(subreddit, max_posts=500, sleep_sec=2):
+    url = f"https://www.reddit.com/r/{subreddit}/new.json"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    posts = []
+    after = None
+
+    while len(posts) < max_posts:
+        params = {"limit": 100}
+        if after:
+            params["after"] = after
+
+        try:
+            res = requests.get(url, headers=headers, params=params)
+            if res.status_code != 200:
+                print(f"⚠️ Failed with status code {res.status_code}")
+                break
+
+            data = res.json()
+            children = data["data"]["children"]
+
+            for item in children:
+                post = item["data"]
+                posts.append(
+                    {
+                        "id": post["id"],
+                        "title": post["title"],
+                        "selftext": post["selftext"],
+                        "created_utc": post["created_utc"],
+                        "score": post["score"],
+                        "num_comments": post["num_comments"],
+                    }
+                )
+
+            after = data["data"]["after"]
+            if not after:
+                break  # 더 이상 가져올 게 없음
+            print(f"✅ Retrieved {len(posts)} posts so far...")
+
+            time.sleep(sleep_sec)  # Reddit 서버에 부담 주지 않도록 쉬어줌
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+            break
+
+    return pd.DataFrame(posts)
+
+
+def fetch_reddit_posts_v2(subreddit, max_posts=3000, sleep_sec=10):
+    url = f"https://www.reddit.com/r/{subreddit}/new.json"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    posts = []
+    after = None
+    fetched = 0
+
+    while fetched < max_posts:
+        limit = min(100, max_posts - fetched)  # 한 번에 최대 100개
+        params = {"limit": limit}
+        if after:
+            params["after"] = after
+
+        try:
+            res = requests.get(url, headers=headers, params=params)
+            if res.status_code != 200:
+                print(f"⚠️ Status code {res.status_code} — stopping.")
+                break
+
+            data = res.json()
+            children = data["data"]["children"]
+            if not children:
+                print("⚠️ No more posts to fetch.")
+                break
+
+            for item in children:
+                post = item["data"]
+                posts.append(
+                    {
+                        "id": post["id"],
+                        "title": post.get("title", ""),
+                        "selftext": post.get("selftext", ""),
+                        "created_utc": post.get("created_utc", 0),
+                        "score": post.get("score", 0),
+                        "num_comments": post.get("num_comments", 0),
+                        "upvote_ratio": post.get("upvote_ratio", 0),
+                        "subreddit": post.get("subreddit", subreddit),
+                    }
+                )
+
+            fetched += len(children)
+            after = data["data"].get("after")
+            print(f"✅ Fetched {fetched} posts from r/{subreddit}...")
+
+            if not after:
+                break  # 더 이상 없을 때
+
+            time.sleep(sleep_sec)  # 서버 보호
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+            break
+
+    return pd.DataFrame(posts)
