@@ -1,18 +1,23 @@
 import os
 
+import duckdb
 import pandas as pd
 
-import duckdb
-
 os.makedirs("data/filtered", exist_ok=True)
-POSTS_PATH = "data/raw/askreddit.jsonl"
-KEYWORDS_CSV = "duckdb/bias_keywords.csv"
-SUBREDDIT_GROUPS_CSV = "duckdb/subreddit_groups.csv"
+POSTS_PATH = "data/extracted/aiwars.jsonl"
+KEYWORDS_CSV = "torrent/bias_keywords.csv"
+SUBREDDIT_GROUPS_CSV = "torrent/subreddit_groups.csv"
 OUTPUT_PATH = "data/filtered/full_filtered_posts.csv"
 
 
 def load_posts(path=POSTS_PATH):
-    return pd.read_json(path, lines=True)
+    df_posts = pd.read_json(path, lines=True)
+    print(df_posts.shape)
+    print(df_posts.head())
+    # print(df_posts["created_utc"].min(), df_posts["created_utc"].max())
+    # print(df_posts["created_utc"].describe())
+
+    return df_posts
 
 
 def connect_duckdb(db_path="reddit.duckdb"):
@@ -21,18 +26,25 @@ def connect_duckdb(db_path="reddit.duckdb"):
 
 def register_tables(conn, df_posts, keywords_csv, subreddit_groups_csv):
     conn.register("df_posts", df_posts)
+    print("the number of rows in df_posts")
+    print(len(df_posts))
+
+    print(df_posts[["title", "selftext"]].isna().sum())
+
+    # print("the number of nulls in title and selftext")
+    # print(df_posts[["title", "selftext"]].applymap(lambda x: str(x).strip().lower()).value_counts())
 
     conn.execute(
         f"""
-    CREATE OR REPLACE TABLE keywords AS
-    SELECT * FROM '{keywords_csv}' (AUTO_DETECT TRUE);
+        CREATE OR REPLACE TABLE keywords AS
+        SELECT * FROM read_csv_auto('{keywords_csv}');
     """
     )
 
     conn.execute(
         f"""
-    CREATE OR REPLACE TABLE subreddit_groups AS
-    SELECT * FROM '{subreddit_groups_csv}' (AUTO_DETECT TRUE);
+        CREATE OR REPLACE TABLE subreddit_groups AS
+        SELECT * FROM read_csv_auto('{subreddit_groups_csv}');
     """
     )
 
@@ -90,7 +102,7 @@ def create_filtered_view(conn):
     """
     )
 
-    # 이 아래에서 조건 분기 + 필터링된 뷰를 추가로 만들어줌
+    # make filtered_posts view
     conn.execute(
         """
     CREATE OR REPLACE VIEW filtered_posts AS
@@ -112,6 +124,71 @@ def export_filtered_posts(conn, output_path=OUTPUT_PATH):
     return df_filtered
 
 
+def statistics(conn, df_filtered):
+    print("\n📊 🔎 Analysis Summary ========================")
+
+    # ✅ Total posts
+    total_posts = conn.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
+    print(f"Total posts: {total_posts:,}")
+
+    # ✅ Filtered posts
+    filtered_posts = len(df_filtered)
+    print(f"Filtered posts: {filtered_posts:,}")
+
+    # ✅ Filtered percentage
+    percentage = (filtered_posts / total_posts) * 100
+    print(f"Filtered percentage: {percentage:.2f}%")
+
+    # ✅ subreddit_group distribution
+    print("\n📊 subreddit_group distribution:")
+    print(
+        conn.execute(
+            """
+        SELECT subreddit_group, COUNT(*) AS count
+        FROM filtered_posts
+        GROUP BY subreddit_group
+        ORDER BY count DESC;
+    """
+        ).fetchdf()
+    )
+
+    # ✅ Most frequent bias types
+    print("\n📌 Most frequent bias types:")
+    print(
+        conn.execute(
+            """
+        SELECT bias_type, COUNT(*) AS count
+        FROM (
+            SELECT UNNEST(matched_bias_types) AS bias_type
+            FROM filtered_posts
+        )
+        GROUP BY bias_type
+        ORDER BY count DESC
+        LIMIT 10;
+    """
+        ).fetchdf()
+    )
+
+    # ✅ Most frequent keywords
+    print("\n📌 Most frequent keywords:")
+    print(
+        conn.execute(
+            """
+        SELECT k.category, k.keyword, COUNT(*) AS count
+        FROM (
+            SELECT UNNEST(matched_keywords) AS keyword
+            FROM filtered_posts
+        ) AS u
+        JOIN keywords k
+        ON LOWER(u.keyword) = LOWER(k.keyword)
+        GROUP BY k.category, k.keyword
+        ORDER BY count DESC
+        LIMIT 20;
+    """
+        ).fetchdf()
+    )
+
+
 def main():
     os.makedirs("data/filtered", exist_ok=True)
     df_posts = load_posts()
@@ -119,7 +196,22 @@ def main():
     register_tables(conn, df_posts, KEYWORDS_CSV, SUBREDDIT_GROUPS_CSV)
     create_post_views(conn)
     create_filtered_view(conn)
+
+    # 🔍 Debugging SQL log
+    print("\n🔍 Check the joined subreddit and group:")
+    print(
+        conn.execute(
+            """
+        SELECT subreddit, subreddit_group
+        FROM posts_with_group_and_keywords
+        ORDER BY subreddit_group
+        LIMIT 20;
+    """
+        ).fetchdf()
+    )
+
     df = export_filtered_posts(conn)
+    statistics(conn, df)
     print(df.head(10))
     conn.close()
 
@@ -127,7 +219,7 @@ def main():
 if __name__ == "__main__":
     main()
 """
-    ✅ 중간 결과 저장 (duckdb 파일로)
+    ✅ Save intermediate results (duckdb file)
 python
 Copy
 Edit

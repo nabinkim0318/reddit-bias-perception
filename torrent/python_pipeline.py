@@ -1,6 +1,6 @@
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
-import duckdb
+import torrent
 
 # ✅ 예: stopwords 제거만 Python으로 처리 추가
 stopwords = set(ENGLISH_STOP_WORDS)
@@ -11,7 +11,7 @@ def remove_stopwords(text):
 
 
 # DuckDB로 정제된 텍스트 → Python으로 stopwords 제거
-df = duckdb.query("SELECT id, clean_text FROM posts").to_df()
+df = torrent.query("SELECT id, clean_text FROM posts").to_df()
 df["clean_text"] = df["clean_text"].apply(remove_stopwords)
 
 # 후처리 추가
