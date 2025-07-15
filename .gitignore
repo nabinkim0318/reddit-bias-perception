@@ -23,4 +23,4 @@ venv/
 # __pycache__
 __pycache__/
 *.pyc
-data/extracted/technology.jsonl
+data/extracted/*.jsonl
