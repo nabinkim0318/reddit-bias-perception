@@ -27,18 +27,26 @@ def flatten_keywords(keyword_dict):
     return list({kw.lower() for values in keyword_dict.values() for kw in values})
 
 
+import re
+
+
 def match_keywords(text, keywords):
     text = str(text).lower()
+
+    def is_strict_match(kw):
+        return kw in {"copilot", "dalle"}
+
     matched = []
     for kw in keywords:
-        if len(kw) <= 4 or kw in {"copilot", "dalle"}:
-            # Word boundary match for short keywords or ambiguous ones
-            if re.search(rf"\b{re.escape(kw)}\b", text):
-                matched.append(kw)
+        base = re.escape(kw)
+        if is_strict_match(kw):
+            pattern = rf"\b{base}\b"
         else:
-            # Substring match for longer keywords
-            if kw in text:
-                matched.append(kw)
+            # expansion: words incluing s, es, ed, al, ical, y (e.g. dalle -> dalles, dalle's)
+            pattern = rf"\b{base}(?:es|s|ed|al|ical|y)?\b"
+        if re.search(pattern, text):
+            matched.append(kw)
+
     return matched
 
 
