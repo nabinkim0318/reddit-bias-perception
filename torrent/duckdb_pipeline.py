@@ -9,6 +9,37 @@ KEYWORDS_CSV = "torrent/bias_keywords.csv"
 SUBREDDIT_GROUPS_CSV = "torrent/subreddit_groups.csv"
 OUTPUT_PATH = "data/filtered/full_filtered_posts.csv"
 
+ai_keywords = [
+    "ai",
+    "artificial intelligence",
+    "ai art",
+    "ai image",
+    "ai image generated",
+    "ai pictures",
+    "ai photos",
+    "ai content",
+    "prompt",
+    "prompting",
+    "ai filter",
+    "deepfake",
+    "face swap",
+    "diffusion",
+    "deep learning",
+    "machine learning",
+    "neural network",
+    "stable diffusion",
+    "dalle",
+    "midjourney",
+    "openai",
+    "text-to-image",
+    "image generation",
+    "chatgpt",
+    "gpt",
+    "llm",
+    "copilot",
+    "gemini",
+]
+
 
 def load_posts(path=POSTS_PATH):
     df_posts = pd.read_json(path, lines=True)
@@ -81,9 +112,9 @@ def create_post_views(conn):
     )
 
 
-def create_filtered_view(conn):
-    conn.execute(
-        """
+def create_filtered_view(conn, ai_keywords):
+    # 1. 먼저 posts_with_group_and_keywords 뷰 생성
+    posts_with_keywords_view = """
     CREATE OR REPLACE VIEW posts_with_group_and_keywords AS
     SELECT
         p.id,
@@ -100,22 +131,28 @@ def create_filtered_view(conn):
         ON p.clean_text LIKE '%' || k.keyword || '%'
     GROUP BY p.id, p.subreddit, p.clean_text, p.full_text, sg.group;
     """
+    conn.execute(posts_with_keywords_view)
+
+    # 2. ai_keywords 조건을 SQL WHERE 절로 생성
+    keyword_condition = " OR ".join(
+        [f"p.clean_text LIKE '%{kw.lower()}%'" for kw in ai_keywords]
     )
 
-    # make filtered_posts view
-    conn.execute(
-        """
+    # 3. filtered_posts 뷰 생성 (bias keyword 포함 조건 추가)
+    filtered_posts_view = f"""
     CREATE OR REPLACE VIEW filtered_posts AS
     SELECT *
-    FROM posts_with_group_and_keywords
+    FROM posts_with_group_and_keywords p
     WHERE
-        CASE
+        ({keyword_condition})
+        AND ARRAY_LENGTH(matched_bias_types) > 0
+        AND CASE
             WHEN subreddit_group = 'casual' THEN ARRAY_LENGTH(matched_keywords) >= 2
             WHEN subreddit_group = 'expert' THEN ARRAY_LENGTH(matched_keywords) >= 1
             ELSE FALSE
         END;
     """
-    )
+    conn.execute(filtered_posts_view)
 
 
 def export_filtered_posts(conn, output_path=OUTPUT_PATH):
@@ -195,7 +232,7 @@ def main():
     conn = connect_duckdb()
     register_tables(conn, df_posts, KEYWORDS_CSV, SUBREDDIT_GROUPS_CSV)
     create_post_views(conn)
-    create_filtered_view(conn)
+    create_filtered_view(conn, ai_keywords)
 
     # 🔍 Debugging SQL log
     print("\n🔍 Check the joined subreddit and group:")
@@ -218,12 +255,39 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # test_filtered_view_sample()
 """
     ✅ Save intermediate results (duckdb file)
-python
-Copy
-Edit
 duckdb.query("CREATE TABLE mytable AS SELECT * FROM 'filtered.jsonl'")
 duckdb.query("EXPORT DATABASE 'my_analysis.duckdb' (FORMAT PARQUET);")
 
 """
+
+
+def load_sample_posts(path=POSTS_PATH, n=10):
+    df_posts = pd.read_json(path, lines=True)
+    df_sample = df_posts.head(n)
+    print(df_sample[["title", "selftext"]])
+    return df_sample
+
+
+def test_filtered_view_sample():
+    df_sample = load_sample_posts(n=10)
+    conn = duckdb.connect()
+
+    # Register table
+    conn.register("df_posts", df_sample)
+
+    # Register tables
+    register_tables(conn, df_sample, KEYWORDS_CSV, SUBREDDIT_GROUPS_CSV)
+
+    # Create views
+    create_post_views(conn)
+    create_filtered_view(conn, ai_keywords)
+
+    # Check results
+    df_result = conn.execute("SELECT * FROM filtered_posts").df()
+    print("\n🎯 Sample Test Result:")
+    print(df_result)
+
+    conn.close()
