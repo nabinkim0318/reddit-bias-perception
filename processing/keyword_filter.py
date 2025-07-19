@@ -86,17 +86,31 @@ def filter_posts_by_keywords(posts, bias_keywords_dict, ai_keywords):
         matched_ai_keywords = match_keywords(content, ai_flat)
         bias_types = infer_bias_types(content, bias_keywords_dict)
 
-        # ==== Required Keywords based on Subreddit Category ===
+        # ==== Subreddit Category ===
         subreddit = post["subreddit"]
         category = get_subreddit_category(subreddit, subreddit_groups)
 
-        if category == "casual":
-            condition = bool(matched_bias_keywords and matched_ai_keywords)
-        elif category == "expert":
+        # ==== Filtering Logic ===
+        if category == "technical":
             condition = bool(matched_bias_keywords)
+
+        elif category == "creative_AI_communities":
+            condition = bool(matched_bias_keywords)
+
+        elif category == "critical_discussion":
+            if subreddit.lower() == "twoxchromosomes":
+                condition = bool(matched_bias_keywords and matched_ai_keywords)
+            else:
+                condition = bool(matched_bias_keywords)
+
+        elif category == "general_reddit":
+            condition = bool(matched_bias_keywords and matched_ai_keywords)
+
         else:
+            # Unknown category: skip
             condition = False
 
+        # ==== Save if Passed ===
         if condition:
             try:
                 enriched = {

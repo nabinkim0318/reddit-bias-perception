@@ -76,8 +76,8 @@ def extract_only(paths):
 
     
 def load_and_preview_jsonl(subreddit: str, num_lines: int = 10):
-    file_path = f"{BASE_DIR}/extracted/{subreddit}.jsonl.zst"
-    extracted_path = f"{BASE_DIR}/extracted/{subreddit}.jsonl"
+    file_path = f"{BASE_DIR}/extracted/{subreddit}_submissions.zst"
+    extracted_path = f"{BASE_DIR}/extracted/{subreddit}_posts.jsonl"
 
     decompress_zstd(file_path, extracted_path, prefer_cli=True)
 
