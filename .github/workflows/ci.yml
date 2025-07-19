@@ -18,11 +18,10 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: Install Poetry
-      run: pip install poetry
-
-    - name: Install dependencies via Makefile
-      run: make install
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio black isort
 
     - name: Run format and static checks via Makefile
       run: make check
