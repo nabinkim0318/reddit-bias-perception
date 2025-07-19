@@ -237,7 +237,7 @@ def get_model_and_tokenizer():
         yield None, None
 
 
-def generate_outputs_batch(batch_texts: List[str], tokenizer, model) -> List[str]:
+def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
     """
     Generate outputs for a batch of texts with improved memory management.
     """
@@ -360,7 +360,7 @@ def classify_post_wrapper(batch_input: Tuple[List[str], List[str], List[str]]) -
                 for i in range(len(batch_texts))
             ]
 
-        decoded_outputs = generate_outputs_batch(batch_texts, tokenizer, model)
+        decoded_outputs = generate_outputs(batch_texts, tokenizer, model)
         return postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddits)
 
 
