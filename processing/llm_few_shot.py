@@ -14,6 +14,8 @@ import threading
 import time
 from multiprocessing import Pool, cpu_count
 from contextlib import contextmanager
+import multiprocessing
+import gc
 
 import pandas as pd
 import torch
@@ -608,4 +610,5 @@ def main():
 
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method("spawn", force=True)
     main()
