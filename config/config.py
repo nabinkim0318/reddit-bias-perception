@@ -67,3 +67,5 @@ RANDOM_SEED = 42
 SUBREDDIT_GROUPS_PATH = os.path.join(CONFIG_DIR, "subreddit_groups.json")
 TOP_COMMENT_NUM = 10
 BATCH_SIZE = 4
+ZSTD_DECOMPRESS_THREADS = 4
+VALID_TEXT_VALUES = ["[deleted]", "[removed]", "", None, "null"]

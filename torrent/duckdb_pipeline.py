@@ -1,14 +1,16 @@
+# torrent/duckdb_pipeline.py
 import os
-
+import logging
 import duckdb
 import pandas as pd
+from torrent.duckdb_processing import decompress_zstd, extract_only, load_and_preview_jsonl
+from config.config import BASE_DIR
 
-os.makedirs("data/filtered", exist_ok=True)
-subreddit = "aiwars"
-POSTS_PATH = f"data/extracted/{subreddit}.jsonl"
-KEYWORDS_CSV = f"torrent/bias_keywords.csv"
-SUBREDDIT_GROUPS_CSV = f"torrent/subreddit_groups.csv"
-OUTPUT_PATH = f"data/filtered/{subreddit}_full_filtered_posts.csv"
+logging.basicConfig(level=logging.INFO)
+
+
+KEYWORDS_CSV = f"{BASE_DIR}/processed/bias_keywords.csv"
+SUBREDDIT_GROUPS_CSV = f"{BASE_DIR}/processed/subreddit_groups.csv"
 
 
 ai_keywords = [
@@ -43,12 +45,16 @@ ai_keywords = [
 ]
 
 
-def load_posts(subreddit, path=POSTS_PATH):
-    df_posts = pd.read_json(path.format(subreddit=subreddit), lines=True)
-    print(df_posts.shape)
-    print(df_posts.head())
-    # print(df_posts["created_utc"].min(), df_posts["created_utc"].max())
-    # print(df_posts["created_utc"].describe())
+def load_posts(path):
+    logging.info(f"Loading posts from {path}...")
+    try:
+        df_posts = pd.read_json(path, lines=True)
+        logging.info(df_posts.shape)
+        logging.info(df_posts.head())
+        logging.info(f"Loaded {len(df_posts)} posts")
+    except Exception as e:
+        logging.error(f"Compressed file not found: {e}")
+        raise
 
     return df_posts
 
@@ -59,10 +65,10 @@ def connect_duckdb(db_path="reddit.duckdb"):
 
 def register_tables(conn, df_posts, keywords_csv, subreddit_groups_csv):
     conn.register("df_posts", df_posts)
-    print("the number of rows in df_posts")
-    print(len(df_posts))
+    logging.info("the number of rows in df_posts")
+    logging.info(len(df_posts))
 
-    print(df_posts[["title", "selftext"]].isna().sum())
+    logging.info(df_posts[["title", "selftext"]].isna().sum())
 
     # print("the number of nulls in title and selftext")
     # print(df_posts[["title", "selftext"]].applymap(lambda x: str(x).strip().lower()).value_counts())
@@ -135,12 +141,12 @@ def create_filtered_view(conn, ai_keywords):
     """
     conn.execute(posts_with_keywords_view)
 
-    # 2. ai_keywords 조건을 SQL WHERE 절로 생성
+    # 2. automatically generate ai_keywords condition as SQL WHERE clause
     keyword_condition = " OR ".join(
         [f"p.clean_text LIKE '%{kw.lower()}%'" for kw in ai_keywords]
     )
 
-    # 3. filtered_posts 뷰 생성 (bias keyword 포함 조건 추가)
+    # 3. create filtered_posts view (add bias keyword condition)
     filtered_posts_view = f"""
     CREATE OR REPLACE VIEW filtered_posts AS
     SELECT *
@@ -157,29 +163,29 @@ def create_filtered_view(conn, ai_keywords):
     conn.execute(filtered_posts_view)
 
 
-def export_filtered_posts(conn, subreddit, output_path=OUTPUT_PATH):
+def export_filtered_posts(conn, subreddit, output_path):
     df_filtered = conn.execute("SELECT * FROM filtered_posts").df()
     df_filtered.to_csv(output_path.format(subreddit=subreddit), index=False)
     return df_filtered
 
 
 def statistics(conn, df_filtered):
-    print("\n📊 🔎 Analysis Summary ========================")
+    logging.info("\n📊 🔎 Analysis Summary ========================")
 
     # ✅ Total posts
     total_posts = conn.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
-    print(f"Total posts: {total_posts:,}")
+    logging.info(f"Total posts: {total_posts:,}")
 
     # ✅ Filtered posts
     filtered_posts = len(df_filtered)
-    print(f"Filtered posts: {filtered_posts:,}")
+    logging.info(f"Filtered posts: {filtered_posts:,}")
 
     # ✅ Filtered percentage
     percentage = (filtered_posts / total_posts) * 100
-    print(f"Filtered percentage: {percentage:.2f}%")
+    logging.info(f"Filtered percentage: {percentage:.2f}%")
 
     # ✅ subreddit_group distribution
-    print("\n📊 subreddit_group distribution:")
+    logging.info("\n📊 subreddit_group distribution:")
     print(
         conn.execute(
             """
@@ -192,8 +198,8 @@ def statistics(conn, df_filtered):
     )
 
     # ✅ Most frequent bias types
-    print("\n📌 Most frequent bias types:")
-    print(
+    logging.info("\n📌 Most frequent bias types:")
+    logging.info(
         conn.execute(
             """
         SELECT bias_type, COUNT(*) AS count
@@ -209,8 +215,8 @@ def statistics(conn, df_filtered):
     )
 
     # ✅ Most frequent keywords
-    print("\n📌 Most frequent keywords:")
-    print(
+    logging.info("\n📌 Most frequent keywords:")
+    logging.info(
         conn.execute(
             """
         SELECT k.category, k.keyword, COUNT(*) AS count
@@ -229,16 +235,25 @@ def statistics(conn, df_filtered):
 
 
 def main(subreddit):
-    os.makedirs("data/filtered", exist_ok=True)
-    df_posts = load_posts(subreddit)
+    os.makedirs(f"{BASE_DIR}/processed/filtered", exist_ok=True)
+    os.makedirs(os.path.dirname(f"{BASE_DIR}/extracted/{subreddit}.jsonl"), exist_ok=True)
+
+    # decompress zstd
+    compressed_path = f"{BASE_DIR}/extracted/{subreddit}.jsonl.zst"
+    extracted_path = f"{BASE_DIR}/extracted/{subreddit}.jsonl"
+    if not os.path.exists(extracted_path):
+        decompress_zstd(compressed_path, extracted_path, prefer_cli=True)
+
+    # load posts
+    df_posts = load_posts(extracted_path)
     conn = connect_duckdb()
     register_tables(conn, df_posts, KEYWORDS_CSV, SUBREDDIT_GROUPS_CSV)
     create_post_views(conn)
     create_filtered_view(conn, ai_keywords)
 
-    # 🔍 Debugging SQL log
-    print("\n🔍 Check the joined subreddit and group:")
-    print(
+    # Debugging SQL log
+    logging.info("\n🔍 Check the joined subreddit and group:")
+    logging.info(
         conn.execute(
             """
         SELECT subreddit, subreddit_group
@@ -249,15 +264,16 @@ def main(subreddit):
         ).fetchdf()
     )
 
-    df = export_filtered_posts(conn, subreddit)
+    # export filtered posts
+    df = export_filtered_posts(conn, subreddit, f"{BASE_DIR}/processed/filtered/{subreddit}_full_filtered_posts.csv")
     statistics(conn, df)
-    print(df.head(10))
+    logging.info(df.head(10))
     conn.close()
 
-
 if __name__ == "__main__":
-    main("aiwars")
-    # test_filtered_view_sample()
+    subreddit = "aiwars"
+    main(subreddit)
+    # test_filtered_view_sample(subreddit)
 """
     ✅ Save intermediate results (duckdb file)
 duckdb.query("CREATE TABLE mytable AS SELECT * FROM 'filtered.jsonl'")
@@ -266,15 +282,15 @@ duckdb.query("EXPORT DATABASE 'my_analysis.duckdb' (FORMAT PARQUET);")
 """
 
 
-def load_sample_posts(path=POSTS_PATH, n=10):
+def load_sample_posts(path, n=10):
     df_posts = pd.read_json(path, lines=True)
     df_sample = df_posts.head(n)
-    print(df_sample[["title", "selftext"]])
+    logging.info(df_sample[["title", "selftext"]])
     return df_sample
 
 
-def test_filtered_view_sample():
-    df_sample = load_sample_posts(n=10)
+def test_filtered_view_sample(subreddit):
+    df_sample = load_sample_posts(f"{BASE_DIR}/extracted/{subreddit}.jsonl", n=10)
     conn = duckdb.connect()
 
     # Register table
@@ -289,7 +305,7 @@ def test_filtered_view_sample():
 
     # Check results
     df_result = conn.execute("SELECT * FROM filtered_posts").df()
-    print("\n🎯 Sample Test Result:")
-    print(df_result)
+    logging.info("\n🎯 Sample Test Result:")
+    logging.info(df_result)
 
     conn.close()
