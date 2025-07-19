@@ -32,7 +32,7 @@ def get_primary_emotion(emotion_list: Union[list, str]) -> str:
     """Extract the top emotion from list (or return as-is)."""
     if isinstance(emotion_list, list) and len(emotion_list) > 0:
         return emotion_list[0]
-    return emotion_list
+    return str(emotion_list)
 
 
 def flatten_nested_list(nested_list: Union[list, str]) -> List[str]:
