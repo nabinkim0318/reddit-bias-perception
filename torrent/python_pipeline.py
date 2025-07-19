@@ -1,16 +1,18 @@
 # torrent/python_pipeline.py
 import logging
+
 import pandas as pd
-from tqdm import tqdm
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+from tqdm import tqdm
+
 from config.config import BASE_DIR
 
 stopwords = set(ENGLISH_STOP_WORDS)
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
+
 
 def remove_stopwords(text):
     return " ".join([w for w in text.split() if w not in stopwords])

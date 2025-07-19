@@ -1,10 +1,16 @@
 # torrent/duckdb_pipeline.py
-import os
 import logging
+import os
+
 import duckdb
 import pandas as pd
-from torrent.duckdb_processing import decompress_zstd, extract_only, load_and_preview_jsonl
+
 from config.config import BASE_DIR
+from torrent.duckdb_processing import (
+    decompress_zstd,
+    extract_only,
+    load_and_preview_jsonl,
+)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -244,7 +250,9 @@ def statistics(conn, df_filtered):
 
 def main(subreddit):
     os.makedirs(f"{BASE_DIR}/processed/filtered", exist_ok=True)
-    os.makedirs(os.path.dirname(f"{BASE_DIR}/extracted/{subreddit}.jsonl"), exist_ok=True)
+    os.makedirs(
+        os.path.dirname(f"{BASE_DIR}/extracted/{subreddit}.jsonl"), exist_ok=True
+    )
 
     # decompress zstd
     compressed_path = f"{BASE_DIR}/extracted/{subreddit}_submissions.zst"
@@ -273,10 +281,15 @@ def main(subreddit):
     )
 
     # export filtered posts
-    df = export_filtered_posts(conn, subreddit, f"{BASE_DIR}/processed/filtered/{subreddit}_full_filtered_posts.csv")
+    df = export_filtered_posts(
+        conn,
+        subreddit,
+        f"{BASE_DIR}/processed/filtered/{subreddit}_full_filtered_posts.csv",
+    )
     statistics(conn, df)
     logging.info(df.head(10))
     conn.close()
+
 
 if __name__ == "__main__":
     subreddit = "aiwars"
