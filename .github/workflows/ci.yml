@@ -26,6 +26,9 @@ jobs:
     - name: Install dependencies (including dev)
       run: poetry install --with=dev
 
+    - name: Install pytest separately
+      run: pip install pytest pytest-asyncio
+
     - name: Run format and static checks
       run: |
         poetry check
