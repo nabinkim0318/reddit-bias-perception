@@ -1,8 +1,10 @@
+# torrent/keywords_processing.py
 import csv
 import json
 import logging
 import os
 from pathlib import Path
+from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,7 +26,9 @@ def process_bias_keywords():
         writer.writerow(["category", "keyword"])
 
         for category, keywords in bias_keywords_dict.items():
-            for keyword in keywords:
+            for keyword in tqdm(keywords, 
+                                desc="Processing bias keywords", 
+                                total=len(keywords)):
                 cleaned = keyword.strip().lower()
                 if cleaned:
                     writer.writerow([category, cleaned])
@@ -37,18 +41,22 @@ def process_subreddit_groups():
     with open(subreddit_csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["subreddit", "group"])
-        for group, subreddits in group_data.items():
-            for sub in subreddits:
+        for group, subreddits in tqdm(group_data.items(), 
+                                    desc="Processing subreddit groups", 
+                                    total=len(group_data)):
+            for sub in tqdm(subreddits, 
+                            desc="Processing subreddit groups", 
+                            total=len(subreddits)):
                 writer.writerow([sub.lower(), group])
 
 
 def main():
-    print("📦 Processing bias keywords and subreddit groups...")
+    logging.info("📦 Processing bias keywords and subreddit groups...")
     process_bias_keywords()
     process_subreddit_groups()
-    print("✅ Files saved to:")
-    print(f"  - {bias_csv_path}")
-    print(f"  - {subreddit_csv_path}")
+    logging.info("✅ Files saved to:")
+    logging.info(f"  - {bias_csv_path}")
+    logging.info(f"  - {subreddit_csv_path}")
 
 
 if __name__ == "__main__":
