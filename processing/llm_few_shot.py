@@ -50,6 +50,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 _model_cache = {}
 _model_lock = threading.Lock()
 
+multiprocessing.set_start_method("spawn", force=True)
 
 def log_device_info():
     """Log current device information."""
