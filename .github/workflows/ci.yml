@@ -33,4 +33,4 @@ jobs:
         poetry run isort --check-only .
 
     - name: Run all tests
-      run: poetry run pytest tests/ --disable-warnings
+      run: PYTHONPATH=. python -m pytest tests/ --disable-warnings
