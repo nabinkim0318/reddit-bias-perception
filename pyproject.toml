@@ -62,8 +62,8 @@ markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
 
-[tool.poetry.plugins."poetry.plugin"]
-"export" = "poetry_plugin_export.plugin:ExportPlugin"
+# [tool.poetry.plugins."poetry.plugin"]
+# "export" = "poetry_plugin_export.plugin:ExportPlugin"
 
 [build-system]
 requires = ["poetry-core"]
