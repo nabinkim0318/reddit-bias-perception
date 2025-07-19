@@ -1,6 +1,7 @@
-import torch
 import logging
 import os
+
+import torch
 
 from config.config import OUTPUT_DIR
 

@@ -1,9 +1,9 @@
-from functools import lru_cache
-from jinja2 import Environment, BaseLoader
 import logging
+from functools import lru_cache
+
+from jinja2 import BaseLoader, Environment
 
 from config.config import TEMPLATE_PATH
-
 
 
 # === Utilities ===

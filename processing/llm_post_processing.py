@@ -1,7 +1,8 @@
-import re
-from typing import Optional, List, Dict, Any, Literal, cast, Tuple
-from pydantic import ValidationError
 import logging
+import re
+from typing import Any, Dict, List, Literal, Optional, Tuple, cast
+
+from pydantic import ValidationError
 
 from processing.schema import ClassificationResult
 
@@ -72,7 +73,6 @@ def parse_label_and_reasoning(decoded_output: str) -> Tuple[str, str]:
             return "yes", f"Fallback parsing: {decoded_output.strip()[:100]}"
         else:
             return "no", f"Fallback parsing: {decoded_output.strip()[:100]}"
-
 
 
 def clean_output(decoded_output: str) -> str:

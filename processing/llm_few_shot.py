@@ -8,6 +8,7 @@ import logging
 import multiprocessing
 import os
 import threading
+import warnings
 from multiprocessing import Pool
 from typing import Any, Dict, List, Tuple
 
@@ -19,10 +20,12 @@ from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.tokenization_auto import AutoTokenizer
 
 from config.config import BATCH_SIZE, MODEL_ID
+from processing.llm_post_processing import (
+    parse_label_and_reasoning,
+    postprocess_outputs,
+)
 from processing.llm_propmts import build_prompt
-from processing.llm_post_processing import parse_label_and_reasoning, postprocess_outputs
 from utils.llm_utils import get_paths_for_subreddit, log_device_info, log_gpu_memory
-import warnings
 
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
 
