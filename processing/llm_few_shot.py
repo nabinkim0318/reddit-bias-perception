@@ -48,6 +48,28 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 _model_cache = {}
 _model_lock = threading.Lock()
 
+
+def log_device_info():
+    """Log current device information."""
+    if torch.cuda.is_available():
+        device_count = torch.cuda.device_count()
+        current_device = torch.cuda.current_device()
+        device_name = torch.cuda.get_device_name(current_device)
+        memory_total = torch.cuda.get_device_properties(current_device).total_memory / 1024**3
+        logging.info(f"🚀 Using GPU: {device_name} ({memory_total:.1f}GB)")
+        logging.info(f"   Available GPUs: {device_count}")
+    else:
+        logging.info("💻 Using CPU for inference")
+
+
+def log_gpu_memory():
+    """Log current GPU memory usage."""
+    if torch.cuda.is_available():
+        allocated = torch.cuda.memory_allocated() / 1024**3
+        cached = torch.cuda.memory_reserved() / 1024**3
+        logging.info(f"📊 GPU Memory: {allocated:.2f}GB allocated, {cached:.2f}GB cached")
+
+
 # === Utilities ===
 @lru_cache(maxsize=1)
 def get_template():
@@ -197,12 +219,11 @@ def extract_label_and_reasoning(decoded_output: str) -> Tuple[str, str]:
 
 
 # === MODEL Loading & Inference ===
-@contextmanager
 def get_model_and_tokenizer():
     """
-    Context manager for model and tokenizer with caching.
+    Loading model and tokenizer with caching.
     
-    Yields:
+    Returns:
         Tuple[Optional[AutoTokenizer], Optional[AutoModelForCausalLM]]: 
         Tokenizer and model, or (None, None) if loading failed
     """
@@ -234,11 +255,7 @@ def get_model_and_tokenizer():
                 _model_cache['tokenizer'] = None
                 _model_cache['model'] = None
     
-    try:
-        yield _model_cache['tokenizer'], _model_cache['model']
-    except Exception as e:
-        logging.error(f"❌ Error during model inference: {e}")
-        yield None, None
+    return _model_cache['tokenizer'], _model_cache['model']
 
 
 def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
@@ -297,6 +314,9 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
                 del outputs, input_ids, attention_mask
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
+                    # Log memory usage every 10 batches
+                    if i % 10 == 0:
+                        log_gpu_memory()
             
             decoded_outputs.extend(sub_outputs)
             
@@ -351,23 +371,34 @@ def classify_post_wrapper(batch_input: Tuple[List[str], List[str], List[str]]) -
     try:
         batch_texts, batch_ids, batch_subreddits = batch_input
         
-        with get_model_and_tokenizer() as (tokenizer, model):
-            if tokenizer is None or model is None:
-                return [
-                    {
-                        "id": batch_ids[i],
-                        "subreddit": batch_subreddits[i],
-                        "clean_text": batch_texts[i],
-                        "pred_label": "no",
-                        "llm_reasoning": "Model load failed",
-                        "raw_output": "",
-                    }
-                    for i in range(len(batch_texts))
-                ]
+        tokenizer, model = get_model_and_tokenizer()
+        if tokenizer is None or model is None:
+            return [
+                {
+                    "id": batch_ids[i],
+                    "subreddit": batch_subreddits[i],
+                    "clean_text": batch_texts[i],
+                    "pred_label": "no",
+                    "llm_reasoning": "Model load failed",
+                    "raw_output": "",
+                }
+                for i in range(len(batch_texts))
+            ]
 
+        try:
             decoded_outputs = generate_outputs(batch_texts, tokenizer, model)
             return postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddits)
-
+        except Exception as e:
+            logging.exception("❌ Error during decoding or postprocessing inside classify_post_wrapper")
+            return [{
+                "id": str(batch_ids[i]) if i < len(batch_ids) else f"unknown_{i}",
+                "subreddit": str(batch_subreddits[i]) if i < len(batch_subreddits) else "unknown",
+                "clean_text": batch_texts[i] if i < len(batch_texts) else "",
+                "pred_label": "no",
+                "llm_reasoning": f"Postprocessing failed: {str(e)}",
+                "raw_output": "",
+            } for i in range(len(batch_texts))]
+                
     except Exception as e:
         logging.exception("❌ classify_post_wrapper failed with exception")
         return [{
@@ -388,77 +419,77 @@ def classify_single_post(
     """
     Perform bias classification for a single Reddit post with optimized model loading.
     """
-    with get_model_and_tokenizer() as (tokenizer, model):
-        if tokenizer is None or model is None:
-            logging.error("❌ Failed to load model and tokenizer")
-            return {
-                "id": post_id,
-                "subreddit": subreddit,
-                "clean_text": post_text,
-                "pred_label": "no",
-                "llm_reasoning": "Model load failed",
-            }
+    tokenizer, model = get_model_and_tokenizer()
+    if tokenizer is None or model is None:
+        logging.error("❌ Failed to load model and tokenizer")
+        return {
+            "id": post_id,
+            "subreddit": subreddit,
+            "clean_text": post_text,
+            "pred_label": "no",
+            "llm_reasoning": "Model load failed",
+        }
 
-        try:
-            # Create prompt
-            prompt = build_prompt(post_text)
+    try:
+        # Create prompt
+        prompt = build_prompt(post_text)
 
-            # Tokenize with memory optimization
-            inputs = tokenizer(
-                prompt, 
-                return_tensors="pt", 
-                padding=True, 
-                truncation=True, 
-                max_length=2048
+        # Tokenize with memory optimization
+        inputs = tokenizer(
+            prompt, 
+            return_tensors="pt", 
+            padding=True, 
+            truncation=True, 
+            max_length=2048
+        )
+        inputs = {k: v.to(model.device) for k, v in inputs.items()}
+
+        # Perform inference
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=200,
+                repetition_penalty=1.1,
+                do_sample=False,
+                pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+                eos_token_id=[
+                    tokenizer.eos_token_id,
+                    tokenizer.convert_tokens_to_ids("<|eot_id|>"),
+                ],
             )
-            inputs = {k: v.to(model.device) for k, v in inputs.items()}
 
-            # Perform inference
-            with torch.no_grad():
-                outputs = model.generate(
-                    **inputs,
-                    max_new_tokens=200,
-                    repetition_penalty=1.1,
-                    do_sample=False,
-                    pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
-                    eos_token_id=[
-                        tokenizer.eos_token_id,
-                        tokenizer.convert_tokens_to_ids("<|eot_id|>"),
-                    ],
-                )
+        # Decode result
+        decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        decoded_output = decoded_output.replace(prompt, "").strip()
 
-            # Decode result
-            decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
-            decoded_output = decoded_output.replace(prompt, "").strip()
+        # Extract label
+        label, reasoning = extract_label_and_reasoning(decoded_output)
 
-            # Extract label
-            label, reasoning = extract_label_and_reasoning(decoded_output)
+        # Clear memory
+        del outputs, inputs
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
-            # Clear memory
-            del outputs, inputs
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+        result = {
+            "id": post_id,
+            "subreddit": subreddit,
+            "clean_text": post_text,
+            "pred_label": label,
+            "llm_reasoning": reasoning,
+        }
 
-            result = {
-                "id": post_id,
-                "subreddit": subreddit,
-                "clean_text": post_text,
-                "pred_label": label,
-                "llm_reasoning": reasoning,
-            }
+        logging.info(f"✅ Classification complete: {label}")
+        return result
 
-            logging.info(f"✅ Classification complete: {label}")
-            return result
-
-        except Exception as e:
-            logging.error(f"❌ Error during classification: {e}")
-            return {
-                "id": post_id,
-                "subreddit": subreddit,
-                "clean_text": post_text,
-                "pred_label": "no",
-                "llm_reasoning": f"Error: {str(e)}",
-            }
+    except Exception as e:
+        logging.error(f"❌ Error during classification: {e}")
+        return {
+            "id": post_id,
+            "subreddit": subreddit,
+            "clean_text": post_text,
+            "pred_label": "no",
+            "llm_reasoning": f"Error: {str(e)}",
+        }
 
 
 def example_single_classification() -> Dict[str, Any]:
@@ -495,6 +526,9 @@ def main():
     """
     Main pipeline with improved memory management and error handling.
     """
+    # Log device information
+    log_device_info()
+    
     file_path = "data/filtered/aiwars_full_filtered_posts_cleaned_posts.csv"
     
     # Check if file exists
@@ -521,8 +555,8 @@ def main():
     batch_input_list = []
     for i in range(0, len(texts), optimal_batch_size):
         batch_texts = texts[i : i + optimal_batch_size]
-        batch_ids = ids[i : i + optimal_batch_size]
-        batch_subreddits = subreddits[i : i + optimal_batch_size]
+        batch_ids = list(ids[i : i + optimal_batch_size])
+        batch_subreddits = list(subreddits[i : i + optimal_batch_size])
         batch_input_list.append((batch_texts, batch_ids, batch_subreddits))
 
     logging.info("🚀 Starting multiprocessing classification...")
