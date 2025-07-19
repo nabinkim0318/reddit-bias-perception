@@ -201,6 +201,10 @@ def extract_label_and_reasoning(decoded_output: str) -> Tuple[str, str]:
 def get_model_and_tokenizer():
     """
     Context manager for model and tokenizer with caching.
+    
+    Yields:
+        Tuple[Optional[AutoTokenizer], Optional[AutoModelForCausalLM]]: 
+        Tokenizer and model, or (None, None) if loading failed
     """
     global _model_cache
     
@@ -344,25 +348,36 @@ def classify_post_wrapper(batch_input: Tuple[List[str], List[str], List[str]]) -
     """
     Wrapper function for multiprocessing with improved error handling.
     """
-    batch_texts, batch_ids, batch_subreddits = batch_input
-    
-    with get_model_and_tokenizer() as (tokenizer, model):
-        if tokenizer is None or model is None:
-            return [
-                {
-                    "id": batch_ids[i],
-                    "subreddit": batch_subreddits[i],
-                    "clean_text": batch_texts[i],
-                    "pred_label": "no",
-                    "llm_reasoning": "Model load failed",
-                    "raw_output": "",
-                }
-                for i in range(len(batch_texts))
-            ]
+    try:
+        batch_texts, batch_ids, batch_subreddits = batch_input
+        
+        with get_model_and_tokenizer() as (tokenizer, model):
+            if tokenizer is None or model is None:
+                return [
+                    {
+                        "id": batch_ids[i],
+                        "subreddit": batch_subreddits[i],
+                        "clean_text": batch_texts[i],
+                        "pred_label": "no",
+                        "llm_reasoning": "Model load failed",
+                        "raw_output": "",
+                    }
+                    for i in range(len(batch_texts))
+                ]
 
-        decoded_outputs = generate_outputs(batch_texts, tokenizer, model)
-        return postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddits)
+            decoded_outputs = generate_outputs(batch_texts, tokenizer, model)
+            return postprocess_outputs(decoded_outputs, batch_texts, batch_ids, batch_subreddits)
 
+    except Exception as e:
+        logging.exception("❌ classify_post_wrapper failed with exception")
+        return [{
+            "id": f"unknown_{i}",
+            "subreddit": "unknown",
+            "clean_text": "",
+            "pred_label": "no",
+            "llm_reasoning": f"Batch failed: {str(e)}",
+            "raw_output": "",
+        } for i in range(len(batch_input[0]))]
 
 # === SINGLE POST CLASSIFICATION ===
 def classify_single_post(
@@ -519,10 +534,10 @@ def main():
 
     try:
         with Pool(processes=num_processes) as pool:
-            results = list(tqdm(
-                pool.imap(classify_post_wrapper, batch_input_list),
-                total=len(batch_input_list),
-                desc="Classifying posts"
+            results = pool.map(classify_post_wrapper, tqdm(
+                batch_input_list,
+                desc="Classifying posts",
+                total=len(batch_input_list)
             ))
             for batch_result in results:
                 all_results.extend(batch_result)
