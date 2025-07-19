@@ -4,10 +4,11 @@ import duckdb
 import pandas as pd
 
 os.makedirs("data/filtered", exist_ok=True)
-POSTS_PATH = "data/extracted/aiwars.jsonl"
-KEYWORDS_CSV = "torrent/bias_keywords.csv"
-SUBREDDIT_GROUPS_CSV = "torrent/subreddit_groups.csv"
-OUTPUT_PATH = "data/filtered/full_filtered_posts.csv"
+
+POSTS_PATH = "data/extracted/{subreddit}.jsonl"
+KEYWORDS_CSV = "torrent/bias_keywords_{subreddit}.csv"
+SUBREDDIT_GROUPS_CSV = "torrent/subreddit_groups_{subreddit}.csv"
+OUTPUT_PATH = "data/filtered/{subreddit}_full_filtered_posts.csv"
 
 ai_keywords = [
     "ai",
@@ -41,8 +42,8 @@ ai_keywords = [
 ]
 
 
-def load_posts(path=POSTS_PATH):
-    df_posts = pd.read_json(path, lines=True)
+def load_posts(subreddit, path=POSTS_PATH):
+    df_posts = pd.read_json(path.format(subreddit=subreddit), lines=True)
     print(df_posts.shape)
     print(df_posts.head())
     # print(df_posts["created_utc"].min(), df_posts["created_utc"].max())
@@ -155,9 +156,9 @@ def create_filtered_view(conn, ai_keywords):
     conn.execute(filtered_posts_view)
 
 
-def export_filtered_posts(conn, output_path=OUTPUT_PATH):
+def export_filtered_posts(conn, subreddit, output_path=OUTPUT_PATH):
     df_filtered = conn.execute("SELECT * FROM filtered_posts").df()
-    df_filtered.to_csv(output_path, index=False)
+    df_filtered.to_csv(output_path.format(subreddit=subreddit), index=False)
     return df_filtered
 
 
@@ -227,8 +228,9 @@ def statistics(conn, df_filtered):
 
 
 def main():
+    subreddit = "aiwars"
     os.makedirs("data/filtered", exist_ok=True)
-    df_posts = load_posts()
+    df_posts = load_posts(subreddit)
     conn = connect_duckdb()
     register_tables(conn, df_posts, KEYWORDS_CSV, SUBREDDIT_GROUPS_CSV)
     create_post_views(conn)
@@ -247,7 +249,7 @@ def main():
         ).fetchdf()
     )
 
-    df = export_filtered_posts(conn)
+    df = export_filtered_posts(conn, subreddit)
     statistics(conn, df)
     print(df.head(10))
     conn.close()
