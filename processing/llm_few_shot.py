@@ -450,6 +450,7 @@ def example_single_classification():
 
 # === Pipeline Entry Point ===
 def main():
+    file_path = "data/filtered/aiwars_full_filtered_posts_cleaned_posts.csv"
     tokenizer, model = load_model_and_tokenizer()
 
     if tokenizer is None or model is None:
@@ -457,7 +458,7 @@ def main():
         return
 
     logging.info("🔍 Loading data...")
-    df = pd.read_csv(KEYWORDS_FILTERED_DATA)
+    df = pd.read_csv(file_path)
     texts = df["clean_text"].fillna("").astype(str).tolist()
     subreddits = df["subreddit"] if "subreddit" in df.columns else ["unknown"] * len(df)
     ids = df["id"] if "id" in df.columns else [f"unknown_{i}" for i in range(len(df))]
