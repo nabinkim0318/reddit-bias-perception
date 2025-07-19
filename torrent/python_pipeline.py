@@ -1,8 +1,6 @@
+import pandas as pd
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
-import torrent
-
-# ✅ Example: stopwords removal only (Will add more postprocessing later)
 stopwords = set(ENGLISH_STOP_WORDS)
 
 
@@ -11,18 +9,20 @@ def remove_stopwords(text):
 
 
 # DuckDB → Python: remove stopwords
-df = torrent.query("SELECT id, clean_text FROM posts").to_df()
-df["clean_text"] = df["clean_text"].apply(remove_stopwords)
+def main():
+    subreddit = "aiwars"
+    df = pd.read_csv(f"data/filtered/{subreddit}_full_filtered_posts.csv")
+    df["clean_text"] = df["clean_text"].apply(remove_stopwords)
+    df["matched_categories"] = df["matched_categories"].apply(
+        lambda x: ", ".join(x) if x else ""
+    )
+    df["matched_keywords"] = df["matched_keywords"].apply(
+        lambda x: ", ".join(x) if x else ""
+    )
+    df.to_csv(
+        f"data/filtered/{subreddit}_full_filtered_posts_cleaned_posts.csv", index=False
+    )
 
-# Add postprocessing
-# df["matched_categories"] = df["matched_categories"].apply(lambda x: ", ".join(x) if x else "")
-# df["matched_keywords"] = df["matched_keywords"].apply(lambda x: ", ".join(x) if x else "")
 
-
-# Add expected columns
-for col in expected_columns:
-    if col not in df.columns:
-        df[col] = None
-
-# Save
-df.to_csv("cleaned_output.csv", index=False)
+if __name__ == "__main__":
+    main()

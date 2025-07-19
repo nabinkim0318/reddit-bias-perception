@@ -13,52 +13,170 @@ gender,feminine
 gender,masculine
 gender,patriarchy
 gender,feminism
-gender,gender identity
 gender,gender role
 gender,ladylike
 gender,manly
-gender,genderfluid
-gender,androgynous
-gender,transgender
-gender,nonbinary
-gender,cisgender
-gender,genderqueer
-gender,agender
+gender,androgyne
 gender,tomboy
 gender,metrosexual
 gender,butch
 gender,effeminate
 gender,androgyne
+gender,nurse
+gender,engineer
+gender,homemaker
+gender,boss
+gender,secretary
+gender,ceo
+gender,teacher
+gender,soldier
+gender,model
+gender,emotional
+gender,rational
+gender,strong
+gender,soft
+gender,aggressive
+gender,nurturing
+gender,submissive
+gender,dominant
 age,age
-age,old
 age,young
-age,elderly
 age,middle-aged
-age,youth
-age,teen
+age,old
+age,elderly
 age,senior
+age,mature
+age,adult
+age,juvenile
+age,teen
+age,teenager
+age,adolescent
+age,youth
 age,child
 age,kid
 age,baby
-age,infant
-age,adolescent
 age,toddler
-age,minor
-age,juvenile
-age,mature
-age,adult
+age,infant
 age,geriatric
 age,pensioner
 age,retiree
 age,grandparent
 age,grandchild
 age,centenarian
-age,millennial
-age,gen z
-age,gen x
+age,boomer
 age,baby boomer
 age,ageism
-age,teenager
+age,nursing home
+age,retirement home
+age,walking cane
+age,wrinkles
+age,grey hair
+age,frail
+age,slow
+age,senile
+age,dependent
+age,old-fashioned
+facial_features,symmetrical face
+facial_features,asymmetrical face
+facial_features,thin face
+facial_features,round face
+facial_features,square jaw
+facial_features,double chin
+facial_features,big eyes
+facial_features,small eyes
+facial_features,monolid
+facial_features,hooded eyes
+facial_features,almond eyes
+facial_features,straight nose
+facial_features,wide nose
+facial_features,crooked nose
+facial_features,button nose
+facial_features,full lips
+facial_features,thin lips
+facial_features,plump lips
+facial_features,cleft lip
+facial_features,high cheekbones
+facial_features,flat cheeks
+facial_features,freckles
+facial_features,birthmark
+facial_features,scar
+facial_features,wrinkles
+facial_features,sagging skin
+facial_features,dimple
+facial_features,beauty mark
+facial_features,protruding ears
+facial_features,large forehead
+facial_features,jawline
+facial_features,chin dimple
+facial_features,unattractive
+facial_features,ugly
+facial_features,plain looking
+facial_features,average face
+facial_features,aging face
+body_type,slim
+body_type,skinny
+body_type,fit
+body_type,athletic
+body_type,toned
+body_type,muscular
+body_type,six-pack
+body_type,lean
+body_type,obese
+body_type,fat
+body_type,overweight
+body_type,underweight
+body_type,chubby
+body_type,curvy
+body_type,plus-size
+body_type,thick
+body_type,body positivity
+body_type,body shaming
+body_type,eating disorder
+body_type,anorexia
+body_type,bulimia
+body_type,body dysmorphia
+body_type,self-esteem
+body_type,ideal body
+body_type,thinspiration
+body_type,fitspiration
+body_type,big body
+body_type,petite
+body_type,broad shoulders
+hair,curly hair
+hair,kinky hair
+hair,coily hair
+hair,afro
+hair,natural hair
+hair,textured hair
+hair,dreadlocks
+hair,braids
+hair,cornrows
+hair,twists
+hair,bantu knots
+hair,locs
+hair,protective style
+hair,straight hair
+hair,wavy hair
+hair,messy hair
+hair,unkempt hair
+hair,nappy hair
+hair,dyed hair
+hair,colored hair
+hair,bleached hair
+hair,blonde
+hair,brunette
+hair,black hair
+hair,red hair
+hair,platinum hair
+hair,ombre
+hair,bald
+hair,shaved head
+hair,buzz cut
+hair,mohawk
+hair,hair extensions
+hair,wig
+hair,weave
+hair,hair loss
 disability,disability
 disability,disabled
 disability,wheelchair
@@ -89,6 +207,14 @@ disability,prosthesis
 disability,orthopedic
 disability,als
 disability,cerebral palsy
+disability,crazy
+disability,insane
+disability,depressed
+disability,anxious
+disability,therapy
+disability,mental illness
+disability,bipolar
+disability,schizophrenia
 race,race
 race,racial
 race,asian
@@ -118,67 +244,62 @@ race,arab
 race,jewish
 race,latina
 race,afro-caribbean
-race,albino
-class,rich
-class,poor
-class,income
-class,job
-class,profession
-class,unemployed
-class,worker
-class,class
-class,middle class
-class,upper class
-class,lower class
-class,working class
-class,wealthy
-class,billionaire
-class,poverty
-class,blue collar
-class,white collar
-class,salary
-class,wage
-class,homeless
-class,capitalist
-class,landlord
-class,tenant
-class,entrepreneur
-class,heir
-class,trust fund
-class,laborer
-class,servant
-class,peasant
-class,underprivileged
-education,education
-education,graduate
-education,school
-education,college
-education,degree
-education,university
-education,student
-education,scholarship
-education,academic
-education,literacy
-education,dropout
-education,phd
-education,doctoral
-education,bachelor's
-education,master's
-education,alumni
-education,campus
-education,professor
-education,lecturer
-education,curriculum
-education,tuition
-education,exam
-education,diploma
-education,homework
-education,classroom
-education,kindergarten
-education,private school
-education,boarding school
-education,online learning
-education,valedictorian
+race,white normativity
+race,western norm
+race,anglo-centric
+race,colonial
+race,eurocentric
+race,whitewashed
+race,tribal
+race,exotic
+race,ghetto
+race,slum
+race,yellowface
+race,blackface
+income,rich
+income,poor
+income,income
+income,salary
+income,wage
+income,wealthy
+income,billionaire
+income,poverty
+income,middle class
+income,upper class
+income,lower class
+income,working class
+income,underprivileged
+income,trust fund
+income,heir
+income,homeless
+income,capitalist
+income,landlord
+income,entrepreneur
+income,peasant
+study,education
+study,school
+study,college
+study,university
+study,campus
+study,degree
+study,diploma
+study,graduate
+study,bachelor's
+study,master's
+study,phd
+study,academic
+study,scholarship
+study,valedictorian
+study,professor
+study,lecturer
+study,dropout
+study,ged
+study,alternative education
+study,vocational training
+study,curriculum
+study,private school
+study,boarding school
+study,online learning
 religion,religion
 religion,muslim
 religion,christian
@@ -202,13 +323,20 @@ religion,religious symbol
 religion,cross
 religion,crescent
 religion,star of david
-religion,yoga
-religion,meditation
-religion,karma
 religion,monastery
 religion,nun
 religion,priest
 religion,monk
+religion,burqa
+religion,rosary
+religion,imam
+religion,rabbi
+religion,chant
+religion,pilgrimage
+religion,fasting
+religion,mecca
+religion,halal
+religion,kosher
 body_modification,tattoo
 body_modification,piercing
 body_modification,body modification
@@ -239,36 +367,119 @@ body_modification,tanning
 body_modification,cosmetic tattoo
 body_modification,permanent makeup
 body_modification,vampire facial
-name,name
-name,laura
-name,mohammed
-name,kevin
-name,akhil
-name,kim
-name,ali
-name,jessica
-name,john
-name,maria
-name,lee
-name,chen
-name,patel
-name,hassan
-name,rodriguez
-name,smith
-name,jackson
-name,wang
-name,garcia
-name,ramirez
-name,ivan
-name,giovanni
-name,miguel
-name,david
-name,satoshi
-name,yusuf
-name,olga
-name,fatima
-name,pedro
-name,samira
+body_modification,earring
+body_modification,tongue piercing
+body_modification,body art
+body_modification,ink
+body_modification,acrylic nails
+body_modification,nail art
+body_modification,hair dye
+body_modification,colored hair
+body_modification,alternative style
+body_modification,nose job
+body_modification,lip job
+body_modification,face job
+occupation,occupation
+occupation,job
+occupation,career
+occupation,profession
+occupation,worker
+occupation,employee
+occupation,engineer
+occupation,doctor
+occupation,scientist
+occupation,professor
+occupation,architect
+occupation,pilot
+occupation,lawyer
+occupation,secretary
+occupation,receptionist
+occupation,administrative assistant
+occupation,salesperson
+occupation,cashier
+occupation,telemarketer
+occupation,customer service
+occupation,marketing
+occupation,finance
+occupation,accountant
+occupation,data entry
+occupation,consultant
+occupation,construction worker
+occupation,janitor
+occupation,mechanic
+occupation,plumber
+occupation,factory worker
+occupation,cleaner
+occupation,maid
+occupation,farmer
+occupation,delivery driver
+occupation,nurse
+occupation,teacher
+occupation,model
+occupation,babysitter
+occupation,chef
+occupation,firefighter
+occupation,soldier
+occupation,police officer
+occupation,bus driver
+occupation,flight attendant
+occupation,manager
+occupation,executive
+occupation,ceo
+occupation,founder
+occupation,intern
+occupation,freelancer
+occupation,entrepreneur
+occupation,blue collar
+occupation,white collar
+occupation,maid
+occupation,janitor
+occupation,ceo
+occupation,model
+occupation,teacher
+occupation,engineer
+occupation,nurse
+occupation,rich job
+occupation,low-status job
+naming,emily
+naming,john
+naming,jamal
+naming,aisha
+naming,mohammed
+naming,fatima
+naming,chen
+naming,mei
+naming,satoshi
+naming,yuki
+naming,juan
+naming,maria
+naming,ali
+naming,ahmed
+naming,hassan
+naming,sophie
+naming,michael
+naming,jessica
+naming,hiroshi
+naming,tyrone
+naming,deshawn
+naming,charlotte
+naming,brayden
+naming,elizabeth
+naming,kaylee
+naming,lakshmi
+naming,wei
+naming,pierre
+naming,giovanni
+naming,anastasia
+naming,igor
+naming,amir
+naming,zainab
+naming,name-based
+naming,ethnic name
+naming,foreign name
+naming,common name
+naming,unique name
+naming,name stereotype
 lgbtq,gay
 lgbtq,lesbian
 lgbtq,queer
@@ -290,6 +501,7 @@ lgbtq,two-spirit
 lgbtq,homosexual
 lgbtq,heterosexual
 lgbtq,demisexual
+lgbtq,stigmatized
 lgbtq,polyamorous
 lgbtq,aromantic
 lgbtq,gender questioning
@@ -299,46 +511,55 @@ lgbtq,bottom surgery
 lgbtq,binders
 lgbtq,queerplatonic
 lgbtq,camp
+lgbtq,outing
+lgbtq,conversion therapy
+lgbtq,safe space
+lgbtq,pride parade
 location,urban
 location,rural
-location,developed country
-location,developing world
-location,africa
-location,europe
-location,america
-location,asia
-location,latin america
-location,slum
-location,ghetto
 location,city
 location,village
 location,downtown
 location,suburb
+location,countryside
+location,inner city
+location,border town
+location,megacity
 location,province
 location,district
 location,region
 location,metropolis
-location,continent
 location,island
 location,mountainous
 location,coastal
 location,desert
 location,rainforest
-location,countryside
 location,farmland
-location,inner city
-location,border town
-location,megacity
+location,cultural stereotype
+location,ethnic dress
+location,traditional clothing
+location,local custom
+location,folk festival
+location,national costume
+location,cultural appropriation
+location,slum
+location,ghetto
+location,tribal
+location,nomadic
+location,indigenous land
+location,native village
+location,exotic
+location,oriental
+location,tropical paradise
+location,underdeveloped
+location,backward region
 general_bias,bias
 general_bias,biased
 general_bias,biases
-general_bias,biasing
 general_bias,stereotype
 general_bias,stereotypical
 general_bias,prejudice
-general_bias,prejudiced
 general_bias,discrimination
-general_bias,discriminatory
 general_bias,unfair
 general_bias,inequality
 general_bias,marginalization
@@ -347,15 +568,3 @@ general_bias,microaggression
 general_bias,implicit bias
 general_bias,social stigma
 general_bias,favoritism
-general_bias,systemic bias
-general_bias,unconscious bias
-general_bias,colorism
-general_bias,tokenism
-general_bias,xenophobia
-general_bias,ableism
-general_bias,sexism
-general_bias,classism
-general_bias,homophobia
-general_bias,transphobia
-general_bias,fatphobia
-general_bias,ageism

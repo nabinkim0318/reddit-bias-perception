@@ -11,8 +11,8 @@ logging.basicConfig(level=logging.INFO)
 bias_json_path = Path("config/bias_keywords.json")
 subreddit_json_path = Path("config/subreddit_groups.json")
 
-bias_csv_path = Path("duckdb/bias_keywords.csv")
-subreddit_csv_path = Path("duckdb/subreddit_groups.csv")
+bias_csv_path = Path("torrent/bias_keywords.csv")
+subreddit_csv_path = Path("torrent/subreddit_groups.csv")
 
 
 def process_bias_keywords():
