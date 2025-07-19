@@ -12,7 +12,7 @@ authors = [
 packages = [{ include = "analysis" }]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 
 # Core data handling & visualization
 pandas = "^2.2.2"

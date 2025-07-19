@@ -1,6 +1,5 @@
 subreddit,group
 machinelearning,expert
-artificial,expert
 artificialinteligence,expert
 deeplearning,expert
 computervision,expert
@@ -14,12 +13,12 @@ stablediffusion,expert
 todayilearned,casual
 movies,casual
 worldnews,casual
-news,casual
+news_r,casual
 art,casual
 futurology,casual
 askreddit,casual
 showerthoughts,casual
 memes,casual
 science,casual
-technology,casual
+technology_,casual
 pics,casual

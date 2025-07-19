@@ -4,11 +4,12 @@ import duckdb
 import pandas as pd
 
 os.makedirs("data/filtered", exist_ok=True)
+subreddit = "aiwars"
+POSTS_PATH = f"data/extracted/{subreddit}.jsonl"
+KEYWORDS_CSV = f"torrent/bias_keywords.csv"
+SUBREDDIT_GROUPS_CSV = f"torrent/subreddit_groups.csv"
+OUTPUT_PATH = f"data/filtered/{subreddit}_full_filtered_posts.csv"
 
-POSTS_PATH = "data/extracted/{subreddit}.jsonl"
-KEYWORDS_CSV = "torrent/bias_keywords_{subreddit}.csv"
-SUBREDDIT_GROUPS_CSV = "torrent/subreddit_groups_{subreddit}.csv"
-OUTPUT_PATH = "data/filtered/{subreddit}_full_filtered_posts.csv"
 
 ai_keywords = [
     "ai",
@@ -227,8 +228,7 @@ def statistics(conn, df_filtered):
     )
 
 
-def main():
-    subreddit = "aiwars"
+def main(subreddit):
     os.makedirs("data/filtered", exist_ok=True)
     df_posts = load_posts(subreddit)
     conn = connect_duckdb()
@@ -256,7 +256,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main("aiwars")
     # test_filtered_view_sample()
 """
     ✅ Save intermediate results (duckdb file)

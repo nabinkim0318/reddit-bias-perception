@@ -70,7 +70,10 @@ def extract_only(paths):
 
 
 def load_and_preview_jsonl(subreddit: str, num_lines: int = 10):
-    file_path = f"../data/extracted/{subreddit}.jsonl"
+    file_path = f"../data/extracted/{subreddit}.jsonl.zst"
+    extracted_path = f"../data/extracted/{subreddit}.jsonl"
+
+    decompress_zstd(file_path, extracted_path, prefer_cli=True)
 
     all_lines = []
     with open(file_path, "r") as f:
@@ -112,10 +115,10 @@ def load_and_preview_jsonl(subreddit: str, num_lines: int = 10):
     return df
 
 
-def main():
-    subreddit = "technology"
-    df_preview = load_and_preview_jsonl(subreddit, num_lines=10)
+def main(subreddit):
+    df_preview = load_and_preview_jsonl(subreddit)
+    print(df_preview.head())
 
 
 if __name__ == "__main__":
-    main()
+    main("technology")

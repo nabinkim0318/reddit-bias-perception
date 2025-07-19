@@ -1,13 +1,12 @@
 {
   "expert": [
     "MachineLearning",
-    "artificial",
     "ArtificialInteligence",
     "deeplearning",
     "computervision",
     "ChatGPT",
-    "PromptDesign",
-    "GenerativeAI",
+    "aiwars",
+    "dalle2",
     "aiArt",
     "AIGenArt",
     "midjourney",
@@ -17,14 +16,14 @@
     "todayilearned",
     "movies",
     "worldnews",
-    "news",
+    "news_r",
     "Art",
     "Futurology",
     "AskReddit",
     "Showerthoughts",
     "memes",
     "science",
-    "technology",
+    "Technology_",
     "pics"
   ]
 }
