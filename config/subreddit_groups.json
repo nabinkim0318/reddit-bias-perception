@@ -1,29 +1,38 @@
 {
-  "expert": [
+  "technical": [
     "MachineLearning",
     "ArtificialInteligence",
     "deeplearning",
     "computervision",
-    "ChatGPT",
-    "aiwars",
-    "dalle2",
+    "ChatGPT"
+  ],
+  "creative_AI_communities": [
     "aiArt",
     "AIGenArt",
     "midjourney",
+    "dalle2",
     "StableDiffusion"
   ],
-  "casual": [
+  "critical_discussion": [
+    "aiwars",
+    "ArtistHate",
+    "DefendingAIArt",
+    "MediaSynthesis",
+    "TwoXChromosomes"
+  ],
+  "general_reddit": [
+    "Art",
+    "Futurology",
+    "InternetIsBeautiful",
+    "AskReddit",
+    "Showerthoughts",
     "todayilearned",
     "movies",
     "worldnews",
     "news_r",
-    "Art",
-    "Futurology",
-    "AskReddit",
-    "Showerthoughts",
-    "memes",
-    "science",
     "Technology_",
-    "pics"
+    "memes",
+    "pics",
+    "science"
   ]
 }

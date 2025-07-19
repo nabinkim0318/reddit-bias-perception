@@ -155,8 +155,16 @@ def create_filtered_view(conn, ai_keywords):
         ({keyword_condition})
         AND ARRAY_LENGTH(matched_bias_types) > 0
         AND CASE
-            WHEN subreddit_group = 'casual' THEN ARRAY_LENGTH(matched_keywords) >= 2
-            WHEN subreddit_group = 'expert' THEN ARRAY_LENGTH(matched_keywords) >= 1
+            WHEN LOWER(subreddit) = 'twoxchromosomes' THEN ARRAY_LENGTH(matched_keywords) >= 2
+
+            WHEN subreddit_group = 'technical' THEN ARRAY_LENGTH(matched_bias_keywords) > 0
+
+            WHEN subreddit_group = 'creative_AI_communities' THEN ARRAY_LENGTH(matched_bias_keywords) > 0
+
+            WHEN subreddit_group = 'critical_discussion' THEN ARRAY_LENGTH(matched_bias_keywords) > 0
+
+            WHEN subreddit_group = 'general_reddit' THEN ARRAY_LENGTH(matched_keywords) >= 2
+
             ELSE FALSE
         END;
     """
@@ -239,8 +247,8 @@ def main(subreddit):
     os.makedirs(os.path.dirname(f"{BASE_DIR}/extracted/{subreddit}.jsonl"), exist_ok=True)
 
     # decompress zstd
-    compressed_path = f"{BASE_DIR}/extracted/{subreddit}.jsonl.zst"
-    extracted_path = f"{BASE_DIR}/extracted/{subreddit}.jsonl"
+    compressed_path = f"{BASE_DIR}/extracted/{subreddit}_submissions.zst"
+    extracted_path = f"{BASE_DIR}/extracted/{subreddit}_posts.jsonl"
     if not os.path.exists(extracted_path):
         decompress_zstd(compressed_path, extracted_path, prefer_cli=True)
 
@@ -290,7 +298,7 @@ def load_sample_posts(path, n=10):
 
 
 def test_filtered_view_sample(subreddit):
-    df_sample = load_sample_posts(f"{BASE_DIR}/extracted/{subreddit}.jsonl", n=10)
+    df_sample = load_sample_posts(f"{BASE_DIR}/extracted/{subreddit}_posts.jsonl", n=10)
     conn = duckdb.connect()
 
     # Register table
