@@ -42,6 +42,11 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
 )
 
+# Suppress TensorFlow warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
+
 # Load environment variables
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
@@ -70,7 +75,7 @@ def log_gpu_memory():
     if torch.cuda.is_available():
         allocated = torch.cuda.memory_allocated() / 1024**3
         cached = torch.cuda.memory_reserved() / 1024**3
-        logging.info(f"📊 GPU Memory: {allocated:.2f}GB allocated, {cached:.2f}GB cached")
+        logging.debug(f"📊 GPU Memory: {allocated:.2f}GB allocated, {cached:.2f}GB cached")
 
 
 # === Utilities ===
@@ -317,8 +322,8 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
                 del outputs, input_ids, attention_mask
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
-                    # Log memory usage every 10 batches
-                    if i % 10 == 0:
+                    # Log memory usage every 100 batches (reduced frequency)
+                    if len(decoded_outputs) % 100 == 0:
                         log_gpu_memory()
             
             decoded_outputs.extend(sub_outputs)
