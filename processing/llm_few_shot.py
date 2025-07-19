@@ -26,14 +26,7 @@ from tqdm import tqdm
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.tokenization_auto import AutoTokenizer
 
-from config.config import (
-    BATCH_SIZE,
-    CLASSIFIED_NO,
-    CLASSIFIED_YES,
-    KEYWORDS_FILTERED_DATA,
-    MODEL_ID,
-    TEMPLATE_PATH,
-)
+from config.config import BATCH_SIZE, MODEL_ID, OUTPUT_DIR, TEMPLATE_PATH
 from processing.schema import ClassificationResult
 
 # Configure logging
@@ -57,6 +50,18 @@ _model_cache = {}
 _model_lock = threading.Lock()
 
 multiprocessing.set_start_method("spawn", force=True)
+
+
+def get_paths_for_subreddit(subreddit: str) -> dict:
+    return {
+        "CLASSIFIED_YES": os.path.join(OUTPUT_DIR, f"{subreddit}_filtered_ai_bias.csv"),
+        "CLASSIFIED_NO": os.path.join(
+            OUTPUT_DIR, f"{subreddit}_filtered_ai_non_bias.csv"
+        ),
+        "FEWSHOT_RESULT": os.path.join(
+            OUTPUT_DIR, f"{subreddit}_llm_classification_results.csv"
+        ),
+    }
 
 
 def log_device_info():
@@ -558,7 +563,7 @@ def example_single_classification() -> Dict[str, Any]:
 
 
 # === Pipeline Entry Point ===
-def main():
+def main(subreddit: str):
     """
     Main pipeline with improved memory management and error handling.
     """
@@ -641,15 +646,21 @@ def main():
 
     # Save results
     try:
-        result_df[result_df["pred_label"] == "yes"].to_csv(CLASSIFIED_YES, index=False)
-        result_df[result_df["pred_label"] == "no"].to_csv(CLASSIFIED_NO, index=False)
+        paths = get_paths_for_subreddit(subreddit)
+        result_df[result_df["pred_label"] == "yes"].to_csv(
+            paths["CLASSIFIED_YES"], index=False
+        )
+        result_df[result_df["pred_label"] == "no"].to_csv(
+            paths["CLASSIFIED_NO"], index=False
+        )
         logging.info(f"✅ Results saved to:")
-        logging.info(f"  → {CLASSIFIED_YES}")
-        logging.info(f"  → {CLASSIFIED_NO}")
+        logging.info(f"  → {paths['CLASSIFIED_YES']}")
+        logging.info(f"  → {paths['CLASSIFIED_NO']}")
     except Exception as e:
         logging.error(f"❌ Error saving results: {e}")
 
 
 if __name__ == "__main__":
     multiprocessing.set_start_method("spawn", force=True)
-    main()
+    subreddit = "aiwars"
+    main(subreddit)
