@@ -23,7 +23,7 @@ pipeline:
 
 # ======== Testing ========
 test:
-	PYTHONPATH=. poetry run pytest tests/ -m "not slow" --disable-warnings
+	PYTHONPATH=. python -m pytest tests/ -m "not slow" --disable-warnings
 
 test-all:
-	PYTHONPATH=. poetry run pytest tests/ --disable-warnings
+	PYTHONPATH=. python -m pytest tests/ --disable-warnings
