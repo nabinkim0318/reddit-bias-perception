@@ -1,65 +1,132 @@
 {
   "gender": [
     "gender", "woman", "man", "female", "male", "beauty", "attractive", "sexist", "misogyny", "misandry",
-    "feminine", "masculine", "patriarchy", "feminism", "gender identity", "gender role", "ladylike", "manly",
-    "genderfluid", "androgynous", "transgender", "nonbinary", "cisgender", "genderqueer", "agender",
-    "tomboy", "metrosexual", "butch", "effeminate", "androgyne"
+    "feminine", "masculine", "patriarchy", "feminism", "gender role", "ladylike", "manly",
+    "androgyne", "tomboy", "metrosexual", "butch", "effeminate", "androgyne",
+    "nurse", "engineer", "homemaker", "boss", "secretary", "ceo", "teacher", "soldier", "model",
+    "emotional", "rational", "strong", "soft", "aggressive", "nurturing", "submissive", "dominant"
   ],
+
   "age": [
-    "age", "old", "young", "elderly", "middle-aged", "youth", "teen", "senior", "child", "kid",
-    "baby", "infant", "adolescent", "toddler", "minor", "juvenile", "mature", "adult", "geriatric",
-    "pensioner", "retiree", "grandparent", "grandchild", "centenarian", "millennial", "gen z", "gen x",
-    "baby boomer", "ageism", "teenager"
+    "age", "young", "middle-aged", "old", "elderly", "senior", "mature", "adult", "juvenile", 
+    "teen", "teenager", "adolescent", "youth", "child", "kid", "baby", "toddler", "infant",
+    
+    "geriatric", "pensioner", "retiree", "grandparent", "grandchild", "centenarian",
+    "boomer", "baby boomer", "ageism",
+
+    "nursing home", "retirement home", "walking cane", "wrinkles", "grey hair",
+    "frail", "slow", "senile", "dependent", "old-fashioned"
   ],
+
+  "facial_features": [
+    "symmetrical face", "asymmetrical face", "thin face", "round face", "square jaw", "double chin",
+    "big eyes", "small eyes", "monolid", "hooded eyes", "almond eyes",
+    "straight nose", "wide nose", "crooked nose", "button nose",
+    "full lips", "thin lips", "plump lips", "cleft lip",
+    "high cheekbones", "flat cheeks", "freckles", "birthmark", "scar",
+    "wrinkles", "sagging skin", "dimple", "beauty mark",
+    "protruding ears", "large forehead", "jawline", "chin dimple",
+    "unattractive", "ugly", "plain looking", "average face", "aging face"
+  ],
+
+  "body_type": [
+    "slim", "skinny", "fit", "athletic", "toned", "muscular", "six-pack", "lean",
+    "obese", "fat", "overweight", "underweight", "chubby", "curvy", "plus-size", "thick",
+    "body positivity", "body shaming", "eating disorder", "anorexia", "bulimia",
+    "body dysmorphia", "self-esteem", "ideal body", "thinspiration", "fitspiration", "big body", "petite", "broad shoulders"
+  ],
+
+  "hair": [
+    "curly hair", "kinky hair", "coily hair", "afro", "natural hair", "textured hair",
+    "dreadlocks", "braids", "cornrows", "twists", "bantu knots", "locs", "protective style",
+    "straight hair", "wavy hair", "messy hair", "unkempt hair", "nappy hair",
+    "dyed hair", "colored hair", "bleached hair", "blonde", "brunette", "black hair", "red hair", "platinum hair", "ombre",
+    "bald", "shaved head", "buzz cut", "mohawk", "hair extensions", "wig", "weave", "hair loss"
+  ],
+
   "disability": [
     "disability", "disabled", "wheelchair", "blind", "deaf", "handicap", "mobility aid", "prosthetic", "crutch", "hearing aid",
     "guide dog", "braille", "paralyzed", "autism", "dyslexia", "amputee", "speech disorder", "mental disability", "learning disability", "accessible",
     "neurodivergent", "visual impairment", "cognitive disability", "developmental delay", "physical therapy", "occupational therapy", "prosthesis",
-    "orthopedic", "ALS", "cerebral palsy"
+    "orthopedic", "ALS", "cerebral palsy",
+    "crazy", "insane", "depressed", "anxious", "therapy", "mental illness", "bipolar", "schizophrenia"
   ],
+
   "race": [
     "race", "racial", "asian", "black", "white", "ethnicity", "ethnic", "hispanic", "latino", "african",
     "caucasian", "indigenous", "native", "minority", "biracial", "multiracial", "heritage", "ancestry", "melanin", "skin tone",
-    "afro", "mongoloid", "mestizo", "desi", "slavic", "arab", "jewish", "latina", "afro-caribbean", "albino"
+    "afro", "mongoloid", "mestizo", "desi", "slavic", "arab", "jewish", "latina", "afro-caribbean",
+    "white normativity", "western norm", "anglo-centric", "colonial", "eurocentric", "whitewashed",
+    "tribal", "exotic", "ghetto", "slum", "yellowface", "blackface"
   ],
-  "class": [
-    "rich", "poor", "income", "job", "profession", "unemployed", "worker", "class", "middle class", "upper class",
-    "lower class", "working class", "wealthy", "billionaire", "poverty", "blue collar", "white collar", "salary", "wage", "homeless",
-    "capitalist", "landlord", "tenant", "entrepreneur", "heir", "trust fund", "laborer", "servant", "peasant", "underprivileged"
+
+  "income": [
+    "rich", "poor", "income", "salary", "wage", "wealthy", "billionaire", "poverty",
+    "middle class", "upper class", "lower class", "working class", "underprivileged",
+    "trust fund", "heir", "homeless", "capitalist", "landlord", "entrepreneur", "peasant"
   ],
-  "education": [
-    "education", "graduate", "school", "college", "degree", "university", "student", "scholarship", "academic", "literacy",
-    "dropout", "phd", "doctoral", "bachelor's", "master's", "alumni", "campus", "professor", "lecturer", "curriculum",
-    "tuition", "exam", "diploma", "homework", "classroom", "kindergarten", "private school", "boarding school", "online learning", "valedictorian"
+
+  "study": [
+    "education", "school", "college", "university", "campus",
+    "degree", "diploma", "graduate", "bachelor's", "master's", "phd",
+    "academic", "scholarship", "valedictorian", "professor", "lecturer",
+    "dropout", "GED", "alternative education", "vocational training",
+    "curriculum", "private school", "boarding school", "online learning"
   ],
+
   "religion": [
     "religion", "muslim", "christian", "jewish", "temple", "hijab", "islam", "bible", "church", "mosque",
     "synagogue", "faith", "belief", "prayer", "atheist", "agnostic", "spirituality", "holy", "sacred", "religious symbol",
-    "cross", "crescent", "star of david", "yoga", "meditation", "karma", "monastery", "nun", "priest", "monk"
+    "cross", "crescent", "star of david", "monastery", "nun", "priest", "monk",
+    "burqa", "rosary", "imam", "rabbi", "chant", "pilgrimage", "fasting", "mecca", "halal", "kosher"
   ],
+
   "body_modification": [
     "tattoo", "piercing", "body modification", "scarification", "branding", "cosmetic surgery", "plastic surgery", "dermal", "implant", "stretching",
     "microdermal", "body suspension", "gauge", "inked", "septum piercing", "nose ring", "lip piercing", "ear plug", "beading", "subdermal implant",
-    "rhinoplasty", "liposuction", "facelift", "botox", "filler", "bleaching", "tanning", "cosmetic tattoo", "permanent makeup", "vampire facial"
+    "rhinoplasty", "liposuction", "facelift", "botox", "filler", "bleaching", "tanning", "cosmetic tattoo", "permanent makeup", "vampire facial",
+    "earring", "tongue piercing", "body art", "ink", "acrylic nails", "nail art", "hair dye", "colored hair", "alternative style", "nose job", "lip job", "face job"
   ],
-  "name": [
-    "name", "laura", "mohammed", "kevin", "akhil", "kim", "ali", "jessica", "john", "maria",
-    "lee", "chen", "patel", "hassan", "rodriguez", "smith", "jackson", "wang", "garcia", "ramirez",
-    "ivan", "giovanni", "miguel", "david", "satoshi", "yusuf", "olga", "fatima", "pedro", "samira"
+
+  "occupation": [
+    "occupation", "job", "career", "profession", "worker", "employee", "engineer", "doctor", "scientist", "professor", "architect", "pilot", "lawyer",
+    "secretary", "receptionist", "administrative assistant", "salesperson", "cashier", "telemarketer", "customer service", "marketing", "finance", "accountant", "data entry", "consultant",
+    "construction worker", "janitor", "mechanic", "plumber", "factory worker", "cleaner", "maid", "farmer", "delivery driver",
+    "nurse", "teacher", "model", "babysitter", "chef", "firefighter", "soldier", "police officer", "bus driver", "flight attendant",
+    "manager", "executive", "ceo", "founder", "intern", "freelancer", "entrepreneur", "blue collar", "white collar",
+    "maid", "janitor", "ceo", "model", "teacher", "engineer", "nurse", "rich job", "low-status job"
   ],
+
+  "naming": [
+    "Emily", "John", "Jamal", "Aisha", "Mohammed", "Fatima", "Chen", "Mei", "Satoshi", "Yuki", 
+    "Juan", "Maria", "Ali", "Ahmed", "Hassan", "Sophie", "Michael", "Jessica", "Hiroshi", 
+    "Tyrone", "DeShawn", "Charlotte", "Brayden", "Elizabeth", "Kaylee", "Lakshmi", "Wei", 
+    "Pierre", "Giovanni", "Anastasia", "Igor", "Amir", "Zainab",
+    "name-based", "ethnic name", "foreign name", "common name", "unique name", "name stereotype"
+  ],
+
   "lgbtq": [
     "gay", "lesbian", "queer", "lgbtq", "trans", "nonbinary", "bisexual", "pansexual", "asexual", "genderqueer",
     "genderfluid", "intersex", "closeted", "coming out", "transition", "drag", "pronouns", "two-spirit", "homosexual", "heterosexual",
-    "demisexual", "polyamorous", "aromantic", "gender questioning", "crossdresser", "top surgery", "bottom surgery", "binders", "queerplatonic", "camp"
+    "demisexual", "stigmatized", "polyamorous", "aromantic", "gender questioning", "crossdresser", "top surgery", 
+    "bottom surgery", "binders", "queerplatonic", "camp", "outing", "conversion therapy", "safe space", "pride parade"
   ],
+
   "location": [
-    "urban", "rural", "developed country", "developing world", "africa", "europe", "america", "asia", "latin america", "slum",
-    "ghetto", "city", "village", "downtown", "suburb", "province", "district", "region", "metropolis", "continent",
-    "island", "mountainous", "coastal", "desert", "rainforest", "countryside", "farmland", "inner city", "border town", "megacity"
+    "urban", "rural", "city", "village", "downtown", "suburb", "countryside", "inner city", "border town", "megacity",
+    "province", "district", "region", "metropolis", "island", "mountainous", "coastal", "desert", "rainforest", "farmland",
+
+    "cultural stereotype", "ethnic dress", "traditional clothing", "local custom",
+    "folk festival", "national costume", "cultural appropriation",
+
+    "slum", "ghetto", "tribal", "nomadic", "indigenous land", "native village", 
+    "exotic", "oriental", "tropical paradise", "underdeveloped", "backward region"
   ],
+
   "general_bias": [
-    "bias", "biased", "biases", "biasing", "stereotype", "stereotypical", "prejudice", "prejudiced", "discrimination", "discriminatory",
-    "unfair", "inequality", "marginalization", "exclusion", "microaggression", "implicit bias", "social stigma", "favoritism", "systemic bias", "unconscious bias",
-    "colorism", "tokenism", "xenophobia", "ableism", "sexism", "classism", "homophobia", "transphobia", "fatphobia", "ageism"
+    "bias", "biased", "biases", "stereotype", "stereotypical", 
+    "prejudice", "discrimination", "unfair", "inequality", 
+    "marginalization", "exclusion", "microaggression", 
+    "implicit bias", "social stigma", "favoritism"
   ]
 }
