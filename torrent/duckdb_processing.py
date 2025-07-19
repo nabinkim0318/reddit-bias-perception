@@ -1,22 +1,25 @@
 # torrent/duckdb_processing.py
 import json
+import logging
 import os
 import subprocess
-import logging
-from tqdm import tqdm
 
 import pandas as pd
 import zstandard as zstd
-from config.config import ZSTD_DECOMPRESS_THREADS
-from config.config import BASE_DIR
+from tqdm import tqdm
+
+from config.config import BASE_DIR, ZSTD_DECOMPRESS_THREADS
 
 logging.basicConfig(level=logging.INFO)
+
 
 def ensure_parent_dir_exists(path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
 
-def decompress_zstd(file_zst, extracted_path, prefer_cli=False, threads=ZSTD_DECOMPRESS_THREADS):
+def decompress_zstd(
+    file_zst, extracted_path, prefer_cli=False, threads=ZSTD_DECOMPRESS_THREADS
+):
     logging.info(f"📦 Decompressing {file_zst} to {extracted_path}...")
     try:
         if prefer_cli:
@@ -74,7 +77,7 @@ def extract_only(paths):
     except Exception as e:
         logging.warning(f"⚠️ Failed to preview file: {e}")
 
-    
+
 def load_and_preview_jsonl(subreddit: str, num_lines: int = 10):
     file_path = f"{BASE_DIR}/extracted/{subreddit}_submissions.zst"
     extracted_path = f"{BASE_DIR}/extracted/{subreddit}_posts.jsonl"
