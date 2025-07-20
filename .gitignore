@@ -24,3 +24,4 @@ venv/
 __pycache__/
 *.pyc
 data/extracted/*.jsonl
+data/extracted/*.zst

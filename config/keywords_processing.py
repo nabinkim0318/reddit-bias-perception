@@ -1,8 +1,7 @@
-# torrent/keywords_processing.py
+# config/keywords_processing.py
 import csv
 import json
 import logging
-import os
 from pathlib import Path
 
 from tqdm import tqdm
@@ -14,8 +13,8 @@ logging.basicConfig(level=logging.INFO)
 bias_json_path = Path("config/bias_keywords.json")
 subreddit_json_path = Path("config/subreddit_groups.json")
 
-bias_csv_path = Path("torrent/bias_keywords.csv")
-subreddit_csv_path = Path("torrent/subreddit_groups.csv")
+bias_csv_path = Path("config/bias_keywords.csv")
+subreddit_csv_path = Path("config/subreddit_groups.csv")
 
 
 def process_bias_keywords():
