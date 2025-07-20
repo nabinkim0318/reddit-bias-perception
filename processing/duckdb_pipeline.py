@@ -1,22 +1,27 @@
-# torrent/duckdb_pipeline.py
+# processing/duckdb_pipeline.py
 import logging
 import os
+from typing import List
 
 import duckdb
 import pandas as pd
 
 from config.config import BASE_DIR
-from torrent.duckdb_processing import (
-    decompress_zstd,
-    extract_only,
-    load_and_preview_jsonl,
-)
+from processing.duckdb_data_processing import decompress_zstd
 
 logging.basicConfig(level=logging.INFO)
 
 
-KEYWORDS_CSV = f"{BASE_DIR}/processed/bias_keywords.csv"
-SUBREDDIT_GROUPS_CSV = f"{BASE_DIR}/processed/subreddit_groups.csv"
+KEYWORDS_CSV = f"{BASE_DIR}/config/bias_keywords.csv"
+SUBREDDIT_GROUPS_CSV = f"{BASE_DIR}/config/subreddit_groups.csv"
+DB_PATH = f"{BASE_DIR}/reddit.duckdb"
+
+
+def get_paths(subreddit: str):
+    return {
+        "compressed_path": f"{BASE_DIR}/extracted/{subreddit}_submissions.zst",
+        "extracted_path": f"{BASE_DIR}/extracted/{subreddit}_posts.jsonl",
+    }
 
 
 ai_keywords = [
@@ -51,7 +56,7 @@ ai_keywords = [
 ]
 
 
-def load_posts(path):
+def load_posts(path: str) -> pd.DataFrame:
     logging.info(f"Loading posts from {path}...")
     try:
         df_posts = pd.read_json(path, lines=True)
@@ -65,11 +70,16 @@ def load_posts(path):
     return df_posts
 
 
-def connect_duckdb(db_path="reddit.duckdb"):
+def connect_duckdb(db_path: str = DB_PATH) -> duckdb.DuckDBPyConnection:
     return duckdb.connect(db_path)
 
 
-def register_tables(conn, df_posts, keywords_csv, subreddit_groups_csv):
+def register_tables(
+    conn: duckdb.DuckDBPyConnection,
+    df_posts: pd.DataFrame,
+    keywords_csv: str,
+    subreddit_groups_csv: str,
+):
     conn.register("df_posts", df_posts)
     logging.info("the number of rows in df_posts")
     logging.info(len(df_posts))
@@ -94,7 +104,7 @@ def register_tables(conn, df_posts, keywords_csv, subreddit_groups_csv):
     )
 
 
-def create_post_views(conn):
+def create_post_views(conn: duckdb.DuckDBPyConnection):
     conn.execute(
         """
     CREATE OR REPLACE VIEW posts AS
@@ -126,7 +136,7 @@ def create_post_views(conn):
     )
 
 
-def create_filtered_view(conn, ai_keywords):
+def create_filtered_view(conn: duckdb.DuckDBPyConnection, ai_keywords: List[str]):
     # 1. 먼저 posts_with_group_and_keywords 뷰 생성
     posts_with_keywords_view = """
     CREATE OR REPLACE VIEW posts_with_group_and_keywords AS
@@ -163,11 +173,11 @@ def create_filtered_view(conn, ai_keywords):
         AND CASE
             WHEN LOWER(subreddit) = 'twoxchromosomes' THEN ARRAY_LENGTH(matched_keywords) >= 2
 
-            WHEN subreddit_group = 'technical' THEN ARRAY_LENGTH(matched_bias_keywords) > 0
+            WHEN subreddit_group = 'technical' THEN ARRAY_LENGTH(matched_bias_types) > 0
 
-            WHEN subreddit_group = 'creative_AI_communities' THEN ARRAY_LENGTH(matched_bias_keywords) > 0
+            WHEN subreddit_group = 'creative_AI_communities' THEN ARRAY_LENGTH(matched_bias_types) > 0
 
-            WHEN subreddit_group = 'critical_discussion' THEN ARRAY_LENGTH(matched_bias_keywords) > 0
+            WHEN subreddit_group = 'critical_discussion' THEN ARRAY_LENGTH(matched_bias_types) > 0
 
             WHEN subreddit_group = 'general_reddit' THEN ARRAY_LENGTH(matched_keywords) >= 2
 
@@ -177,17 +187,20 @@ def create_filtered_view(conn, ai_keywords):
     conn.execute(filtered_posts_view)
 
 
-def export_filtered_posts(conn, subreddit, output_path):
+def export_filtered_posts(
+    conn: duckdb.DuckDBPyConnection, output_path: str
+) -> pd.DataFrame:
     df_filtered = conn.execute("SELECT * FROM filtered_posts").df()
-    df_filtered.to_csv(output_path.format(subreddit=subreddit), index=False)
+    df_filtered.to_csv(output_path, index=False)
     return df_filtered
 
 
-def statistics(conn, df_filtered):
+def statistics(conn: duckdb.DuckDBPyConnection, df_filtered: pd.DataFrame):
     logging.info("\n📊 🔎 Analysis Summary ========================")
 
     # ✅ Total posts
-    total_posts = conn.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
+    result = conn.execute("SELECT COUNT(*) FROM posts").fetchone()
+    total_posts = result[0] if result else 0
     logging.info(f"Total posts: {total_posts:,}")
 
     # ✅ Filtered posts
@@ -248,20 +261,22 @@ def statistics(conn, df_filtered):
     )
 
 
-def main(subreddit):
+def main(subreddit: str):
     os.makedirs(f"{BASE_DIR}/processed/filtered", exist_ok=True)
     os.makedirs(
         os.path.dirname(f"{BASE_DIR}/extracted/{subreddit}.jsonl"), exist_ok=True
     )
 
+    paths = get_paths(subreddit)
+
     # decompress zstd
-    compressed_path = f"{BASE_DIR}/extracted/{subreddit}_submissions.zst"
-    extracted_path = f"{BASE_DIR}/extracted/{subreddit}_posts.jsonl"
-    if not os.path.exists(extracted_path):
-        decompress_zstd(compressed_path, extracted_path, prefer_cli=True)
+    if not os.path.exists(paths["extracted_path"]):
+        decompress_zstd(
+            paths["compressed_path"], paths["extracted_path"], prefer_cli=True
+        )
 
     # load posts
-    df_posts = load_posts(extracted_path)
+    df_posts = load_posts(paths["extracted_path"])
     conn = connect_duckdb()
     register_tables(conn, df_posts, KEYWORDS_CSV, SUBREDDIT_GROUPS_CSV)
     create_post_views(conn)
@@ -283,7 +298,6 @@ def main(subreddit):
     # export filtered posts
     df = export_filtered_posts(
         conn,
-        subreddit,
         f"{BASE_DIR}/processed/filtered/{subreddit}_full_filtered_posts.csv",
     )
     statistics(conn, df)

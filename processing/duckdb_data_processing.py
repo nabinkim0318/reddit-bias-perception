@@ -1,4 +1,4 @@
-# torrent/duckdb_processing.py
+# processing/duckdb_data_processing.py
 import json
 import logging
 import os
@@ -97,26 +97,9 @@ def load_and_preview_jsonl(subreddit: str, num_lines: int = 10):
             pd.to_numeric(df["created_utc"], errors="coerce"), unit="s"
         )
 
-    # Add columns for missing values
-    df["title_missing"] = df["title"].isin(["[deleted]", "[removed]", "", None, "null"])
-    df["selftext_missing"] = df["selftext"].isin(
-        ["[deleted]", "[removed]", "", None, "null"]
-    )
-
-    # Add columns for length
-    df["title_len"] = df["title"].fillna("").apply(len)
-    df["selftext_len"] = df["selftext"].fillna("").apply(len)
-
     # Print summary information
     logging.info("📄 Preview of JSONL data:")
     logging.info(df[["id", "subreddit", "created_dt", "title", "selftext"]].head())
-
-    logging.info("\n🧾 Missing content stats:")
-    logging.info("Missing titles:", df["title_missing"].sum())
-    logging.info("Missing selftexts:", df["selftext_missing"].sum())
-
-    logging.info("\n📏 Length stats (non-missing only):")
-    logging.info(df[["title_len", "selftext_len"]].describe())
 
     logging.info("\n🧩 Columns:")
     logging.info(df.columns.tolist())

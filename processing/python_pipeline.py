@@ -1,9 +1,8 @@
-# torrent/python_pipeline.py
+# processing/python_pipeline.py
 import logging
 
 import pandas as pd
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-from tqdm import tqdm
 
 from config.config import BASE_DIR
 
