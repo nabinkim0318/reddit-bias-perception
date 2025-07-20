@@ -13,14 +13,21 @@ from config.config import BASE_DIR, ZSTD_DECOMPRESS_THREADS
 logging.basicConfig(level=logging.INFO)
 
 
+
+def get_data_paths(subreddit: str):
+    return {
+        "compressed_path": f"{BASE_DIR}/extracted/{subreddit}_submissions.zst",
+        "extracted_path": f"{BASE_DIR}/extracted/{subreddit}_posts.jsonl",
+    }
+
 def ensure_parent_dir_exists(path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
 
 def decompress_zstd(
-    file_zst, extracted_path, prefer_cli=False, threads=ZSTD_DECOMPRESS_THREADS
+    paths: dict[str, str], prefer_cli=False, threads=ZSTD_DECOMPRESS_THREADS
 ):
-    logging.info(f"📦 Decompressing {file_zst} to {extracted_path}...")
+    logging.info(f"📦 Decompressing {paths['compressed_path']} to {paths['extracted_path']}...")
     try:
         if prefer_cli:
             logging.info("⚡ Using zstd CLI for decompression...")
@@ -30,22 +37,22 @@ def decompress_zstd(
                     "-d",
                     "--long=31",
                     f"--threads={threads}",
-                    file_zst,
+                    paths["compressed_path"],
                     "-o",
-                    extracted_path,
+                    paths["extracted_path"],
                 ],
                 check=True,
             )
         else:
             dctx = zstd.ZstdDecompressor(max_window_size=2**31)
-            with open(file_zst, "rb") as compressed, open(
-                extracted_path, "wb"
+            with open(paths["compressed_path"], "rb") as compressed, open(
+                paths["extracted_path"], "wb"
             ) as out_file:
                 dctx.copy_stream(compressed, out_file)
         logging.info(f"✅ Decompression complete")
     except Exception as e:
         logging.error(f"❌ Decompression failed: {e}")
-        raise RuntimeError(f"Decompression failed for {file_zst}") from e
+        raise RuntimeError(f"Decompression failed for {paths['compressed_path']}") from e
 
 
 def extract_only(paths):
@@ -57,7 +64,7 @@ def extract_only(paths):
 
     # Decompress
     try:
-        decompress_zstd(raw_path, extracted_path, prefer_cli=True)
+        decompress_zstd(paths, prefer_cli=True)
     except Exception as e:
         logging.error(f"❌ Decompression failed: {e}")
         return
@@ -71,21 +78,18 @@ def extract_only(paths):
 
     # Preview
     try:
-        with open(extracted_path, "r") as f:
+        with open(paths["extracted_path"], "r") as f:
             lines = [next(f) for _ in range(10)]
         logging.info(f"✅ Previewed {len(lines)} lines")
     except Exception as e:
         logging.warning(f"⚠️ Failed to preview file: {e}")
 
 
-def load_and_preview_jsonl(subreddit: str, num_lines: int = 10):
-    file_path = f"{BASE_DIR}/extracted/{subreddit}_submissions.zst"
-    extracted_path = f"{BASE_DIR}/extracted/{subreddit}_posts.jsonl"
-
-    decompress_zstd(file_path, extracted_path, prefer_cli=True)
+def load_and_preview_jsonl(paths: dict[str, str], num_lines: int = 10):
+    decompress_zstd(paths, prefer_cli=True)
 
     all_lines = []
-    with open(file_path, "r") as f:
+    with open(paths["extracted_path"], "r") as f:
         for line in tqdm(f, desc="Loading JSONL file", total=num_lines):
             all_lines.append(json.loads(line))
 
@@ -107,10 +111,12 @@ def load_and_preview_jsonl(subreddit: str, num_lines: int = 10):
     return df
 
 
-def main(subreddit):
-    df_preview = load_and_preview_jsonl(subreddit)
+def main(subreddit: str):
+    paths = get_data_paths(subreddit)
+    df_preview = load_and_preview_jsonl(paths)
     logging.info(df_preview.head())
 
 
 if __name__ == "__main__":
-    main("technology")
+    dummy_subreddit = "technology"
+    main(dummy_subreddit)
