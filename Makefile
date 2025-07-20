@@ -20,6 +20,13 @@ check:
 pipeline:
 	poetry run python pipeline_main.py
 
+commit:
+	make format && make test
+	git status
+	git add .
+	git commit -m "$(m)"
+	git push
+	git status
 
 # ======== Testing ========
 test:

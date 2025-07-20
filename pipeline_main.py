@@ -3,7 +3,7 @@ import time
 
 from processing.clean_text import main as clean_text
 from processing.keyword_filter import main as keyword_filter
-from processing.llm_few_shot import main as llm_filter
+from processing.llm_few_shot_pipeline import main as llm_filter
 from reddit_crawler.main import run_crawler
 
 

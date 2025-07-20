@@ -9,7 +9,7 @@ import requests
 from tqdm import tqdm
 
 from config.config import SUBREDDIT_CSV_DIR
-from processing.utils_technical_filter import is_blacklist_post
+from utils.technical_filter import is_blacklist_post
 
 
 async def safe_fetch(fetch_func, *args, retries=3, sleep_sec=10, **kwargs):

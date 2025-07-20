@@ -149,7 +149,7 @@ def postprocess_outputs(
     """
     rows = []
     for i, decoded in enumerate(decoded_outputs):
-        label, reasoning = parse_label(decoded), parse_reasoning(decoded)
+        label, reasoning = parse_label_and_reasoning(decoded)
         try:
             # Ensure label is properly typed
             pred_label: Literal["yes", "no"] = cast(Literal["yes", "no"], label)

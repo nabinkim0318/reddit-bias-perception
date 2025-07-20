@@ -62,6 +62,12 @@ MAX_TEXT_LENGTH = 512
 VADER_THRESHOLD = 0.05
 VADER_PLOT_PATH = os.path.join(RESULTS_DIR, "vader_dist.png")
 
+# === LLM PARAMETERS ===
+TEMPERATURE = 0.0
+MAX_TOKENS = 400
+TOP_P = 1.0
+TOP_K = -1
+
 # === ETC ===
 RANDOM_SEED = 42
 SUBREDDIT_GROUPS_PATH = os.path.join(CONFIG_DIR, "subreddit_groups.json")
