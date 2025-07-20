@@ -13,12 +13,12 @@ from config.config import BASE_DIR, ZSTD_DECOMPRESS_THREADS
 logging.basicConfig(level=logging.INFO)
 
 
-
 def get_data_paths(subreddit: str):
     return {
         "compressed_path": f"{BASE_DIR}/extracted/{subreddit}_submissions.zst",
         "extracted_path": f"{BASE_DIR}/extracted/{subreddit}_posts.jsonl",
     }
+
 
 def ensure_parent_dir_exists(path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -27,7 +27,9 @@ def ensure_parent_dir_exists(path):
 def decompress_zstd(
     paths: dict[str, str], prefer_cli=False, threads=ZSTD_DECOMPRESS_THREADS
 ):
-    logging.info(f"📦 Decompressing {paths['compressed_path']} to {paths['extracted_path']}...")
+    logging.info(
+        f"📦 Decompressing {paths['compressed_path']} to {paths['extracted_path']}..."
+    )
     try:
         if prefer_cli:
             logging.info("⚡ Using zstd CLI for decompression...")
@@ -52,7 +54,9 @@ def decompress_zstd(
         logging.info(f"✅ Decompression complete")
     except Exception as e:
         logging.error(f"❌ Decompression failed: {e}")
-        raise RuntimeError(f"Decompression failed for {paths['compressed_path']}") from e
+        raise RuntimeError(
+            f"Decompression failed for {paths['compressed_path']}"
+        ) from e
 
 
 def extract_only(paths):
