@@ -1,11 +1,11 @@
+import argparse
 import asyncio
 import time
 
 from processing.clean_text import main as clean_text
+from processing.duckdb_data_processing import main as duckdb_data_processing
 from processing.keyword_filter import main as keyword_filter
 from processing.llm_few_shot_pipeline import main as llm_filter
-from processing.duckdb_data_processing import main as duckdb_data_processing
-import argparse
 
 
 def timed_step(label, func, subreddit: str):
@@ -27,6 +27,11 @@ def main(subreddit: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--subreddit", type=str, required=True, help="Subreddit name (e.g., 'midjourney')")
+    parser.add_argument(
+        "--subreddit",
+        type=str,
+        required=True,
+        help="Subreddit name (e.g., 'midjourney')",
+    )
     args = parser.parse_args()
     main(args.subreddit)
