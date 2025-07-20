@@ -5,7 +5,8 @@ import logging
 import pandas as pd
 
 from config.config import SUBREDDIT_GROUPS_PATH
-from processing.llm_few_shot import extract_label_and_reasoning, generate_outputs
+from processing.llm_few_shot_pipeline import generate_outputs
+from processing.llm_post_processing import parse_label_and_reasoning
 
 test_cases = [
     # Definite yes cases (MUST pass)
@@ -90,7 +91,7 @@ def run_tests_with_existing_pipeline(
     for idx, (decoded, expected, post_text) in enumerate(
         zip(decoded_outputs, expected_labels, batch_texts), 1
     ):
-        label, reasoning = extract_label_and_reasoning(decoded)
+        label, reasoning = parse_label_and_reasoning(decoded)
 
         if expected == "yes":
             if label == "yes":
