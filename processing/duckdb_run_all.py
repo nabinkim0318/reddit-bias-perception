@@ -1,8 +1,8 @@
 import argparse
 import logging
 
-from processing.duckdb_pipeline import main as duckdb_pipeline_main
 from processing.duckdb_data_processing import get_data_paths, load_and_preview_jsonl
+from processing.duckdb_pipeline import main as duckdb_pipeline_main
 from processing.python_pipeline import run as python_pipeline_main
 
 logging.basicConfig(level=logging.INFO)

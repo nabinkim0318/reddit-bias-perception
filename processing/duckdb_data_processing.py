@@ -120,11 +120,11 @@ def load_and_preview_jsonl(paths: dict[str, str], num_lines: int = 10):
 def list_extracted_files():
     """return the list of files in data/extracted directory"""
     extracted_dir = Path("data/extracted")
-    
+
     if not extracted_dir.exists():
         print("❌ data/extracted directory does not exist")
         return []
-    
+
     files = []
     for file_path in extracted_dir.iterdir():
         if file_path.is_file():
