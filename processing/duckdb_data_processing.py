@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import subprocess
+from pathlib import Path
 
 import pandas as pd
 import zstandard as zstd
@@ -15,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 
 def get_data_paths(subreddit: str):
     return {
-        "compressed_path": f"{BASE_DIR}/extracted/{subreddit}_submissions.zst",
+        "compressed_path": f"{BASE_DIR}/extracted/{subreddit}.zst",
         "extracted_path": f"{BASE_DIR}/extracted/{subreddit}_posts.jsonl",
     }
 
@@ -90,7 +91,8 @@ def extract_only(paths):
 
 
 def load_and_preview_jsonl(paths: dict[str, str], num_lines: int = 10):
-    decompress_zstd(paths, prefer_cli=True)
+    if not os.path.exists(paths["extracted_path"]):
+        decompress_zstd(paths, prefer_cli=True)
 
     all_lines = []
     with open(paths["extracted_path"], "r") as f:
@@ -115,12 +117,31 @@ def load_and_preview_jsonl(paths: dict[str, str], num_lines: int = 10):
     return df
 
 
+def list_extracted_files():
+    """return the list of files in data/extracted directory"""
+    extracted_dir = Path("data/extracted")
+    
+    if not extracted_dir.exists():
+        print("❌ data/extracted directory does not exist")
+        return []
+    
+    files = []
+    for file_path in extracted_dir.iterdir():
+        if file_path.is_file():
+            files.append(file_path.name)
+    return files
+
+
 def main(subreddit: str):
-    paths = get_data_paths(subreddit)
-    df_preview = load_and_preview_jsonl(paths)
-    logging.info(df_preview.head())
+    files = list_extracted_files()
+    for file in files:
+        if file.endswith(".zst"):
+            paths = get_data_paths(file.split(".")[0])
+            load_and_preview_jsonl(paths)
+        else:
+            logging.info(f"Skipping {file} because it is not a zst file")
 
 
 if __name__ == "__main__":
-    dummy_subreddit = "technology"
+    dummy_subreddit = "StableDiffusion"
     main(dummy_subreddit)
