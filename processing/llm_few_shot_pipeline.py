@@ -22,7 +22,6 @@ else:
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
-
 import threading
 import warnings
 from typing import Any, Dict, List, Optional
@@ -39,7 +38,6 @@ from utils.llm_utils import (
     get_paths_for_subreddit,
     log_device_info,
 )
-
 
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
 
@@ -115,7 +113,7 @@ def get_sampling_params():
         max_tokens=MAX_TOKENS,
         stop=["</s>", "<|eot_id|>"],
         top_p=TOP_P,
-        top_k=TOP_K
+        top_k=TOP_K,
     )
     return sampling_params
 
@@ -144,14 +142,11 @@ def generate_outputs(batch_texts: List[str], llm: LLM, batch_size: int) -> List[
 
         for text in sub_batch:
             prompt = build_prompt(text)
-            messages = [
-                {
-                    "role": "system",
-                    "content": "You are an AI ethics researcher analyzing Reddit posts. Follow the task strictly.",
-                },
-                {"role": "user", "content": prompt},
-            ]
-            prompts.append(messages)
+            full_prompt = (
+                "You are an AI ethics researcher analyzing Reddit posts. Follow the task strictly.\n\n"
+                f"User: {prompt}"
+            )
+            prompts.append(full_prompt)
 
         try:
             outputs = llm.generate(prompts, sampling_params)
