@@ -52,7 +52,9 @@ from config.config import (
 )
 from config.config import TOPIC_MODEL_PATH  # Path to save the trained BERTopic model
 from config.config import TOPIC_OUTPUT  # Output path for topic-level summary
-from utils.archive_vectorizer_config import vectorizer_model  # Custom vectorizer for BERTopic
+from utils.archive_vectorizer_config import (  # Custom vectorizer for BERTopic
+    vectorizer_model,
+)
 
 # Load environment variables and configure logging
 load_dotenv()
