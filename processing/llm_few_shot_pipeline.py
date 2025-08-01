@@ -6,6 +6,23 @@ Few-shot classification using Gemma 2B model to determine whether a Reddit post 
 import logging
 import os
 import sys
+
+print(sys.path)
+try:
+    # check whether Colab is running
+    IS_COLAB = "google.colab" in str(get_ipython())
+except NameError:
+    IS_COLAB = False
+
+if IS_COLAB:
+    # add project root to sys.path
+    sys.path.append("/content/reddit-bias-perception")
+else:
+    # add relative path to project root
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
+
 import threading
 import warnings
 from typing import Any, Dict, List, Optional
@@ -23,18 +40,6 @@ from utils.llm_utils import (
     log_device_info,
 )
 
-try:
-    # check whether Colab is running
-    IS_COLAB = "google.colab" in str(get_ipython())
-except NameError:
-    IS_COLAB = False
-
-if IS_COLAB:
-    # add project root to sys.path
-    sys.path.append("/content/reddit-bias-perception")
-else:
-    # add relative path to project root
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
 
@@ -110,8 +115,7 @@ def get_sampling_params():
         max_tokens=MAX_TOKENS,
         stop=["</s>", "<|eot_id|>"],
         top_p=TOP_P,
-        top_k=TOP_K,
-        use_beam_search=False,
+        top_k=TOP_K
     )
     return sampling_params
 
