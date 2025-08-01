@@ -272,7 +272,7 @@ def main(subreddit: str):
     # decompress zstd
     if not os.path.exists(paths["extracted_path"]):
         decompress_zstd(
-            paths["compressed_path"], paths["extracted_path"], prefer_cli=True
+            paths, prefer_cli=True
         )
 
     # load posts
