@@ -39,7 +39,8 @@ from utils.llm_utils import (
     log_device_info,
 )
 
-warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
+
+system_prompt = "You are an AI ethics researcher analyzing Reddit posts. Follow the task strictly.\n\n"
 
 
 # Configure logging
@@ -67,8 +68,10 @@ def get_vllm_engine():
                 model = LLM(
                     model=MODEL_ID,
                     tokenizer=MODEL_ID,
+                    tokenizer_mode="auto",
                     trust_remote_code=True,
                     dtype="bfloat16",
+                    tensor_parallel_size=1,
                 )
                 _model_cache["model"] = model
                 logging.info("✅ vLLM model loaded successfully")
@@ -92,7 +95,7 @@ def load_data(subreddit: str) -> Optional[pd.DataFrame]:
     logging.info("🔍 Loading data...")
     try:
         df = pd.read_csv(file_path)
-        df["clean_text"].fillna("").astype(str).tolist()
+        df["clean_text"] = df["clean_text"].fillna("").astype(str)
         df["subreddit"].tolist() if "subreddit" in df.columns else ["unknown"] * len(df)
         (
             df["id"].tolist()
@@ -136,27 +139,16 @@ def generate_outputs(batch_texts: List[str], llm: LLM, batch_size: int) -> List[
     decoded_outputs = []
     sampling_params = get_sampling_params()
 
-    for i in range(0, len(batch_texts), batch_size):
-        sub_batch = batch_texts[i : i + batch_size]
-        prompts = []
+    prompts = [system_prompt + build_prompt(text) for text in batch_texts]
+    try:
+        outputs = llm.generate(prompts, sampling_params)
+        for o in outputs:
+            response = o.outputs[0].text.strip()
+            decoded_outputs.append(response)
 
-        for text in sub_batch:
-            prompt = build_prompt(text)
-            full_prompt = (
-                "You are an AI ethics researcher analyzing Reddit posts. Follow the task strictly.\n\n"
-                f"User: {prompt}"
-            )
-            prompts.append(full_prompt)
-
-        try:
-            outputs = llm.generate(prompts, sampling_params)
-            for o in outputs:
-                response = o.outputs[0].text.strip()
-                decoded_outputs.append(response)
-
-        except Exception as e:
-            logging.error(f"❌ vLLM inference error: {e}")
-            return ["ERROR: " + str(e)] * len(batch_texts)
+    except Exception as e:
+        logging.error(f"❌ vLLM inference error: {e}")
+        return ["ERROR: " + str(e)] * len(batch_texts)
 
     return decoded_outputs
 

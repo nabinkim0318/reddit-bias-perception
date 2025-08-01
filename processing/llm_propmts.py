@@ -12,22 +12,29 @@ def get_template():
     """
     Load and cache the Jinja2 prompt template from file.
     """
-    with open(TEMPLATE_PATH, "r") as f:
-        template_text = f.read()
-        env = Environment(
-            loader=BaseLoader(),
-            trim_blocks=True,
-            lstrip_blocks=True,
-        )
-        return env.from_string(template_text)
+    try:
+        with open(TEMPLATE_PATH, "r") as f:
+            template_text = f.read()
+            env = Environment(
+                loader=BaseLoader(),
+                trim_blocks=True,
+                lstrip_blocks=True,
+            )
+            return env.from_string(template_text)
+    except FileNotFoundError as e:
+        logging.error(f"❌ Template file not found at {TEMPLATE_PATH}: {e}")
+        raise e
 
 
 def build_prompt(post_text: str) -> str:
     """
     Render the classification prompt using Jinja2 template.
     """
-    rendered = get_template().render(post_text=(post_text or "").strip())
-    return rendered
+    try:
+        return get_template().render(post_text=(post_text or "").strip())
+    except Exception as e:
+        logging.warning(f"⚠️ Failed to render prompt: {e}")
+        return f"Post: {post_text}"
 
 
 def main():
