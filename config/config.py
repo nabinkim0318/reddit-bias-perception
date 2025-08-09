@@ -1,14 +1,14 @@
 import json
 import os
 
-# === COLAB DETECTION ===
-try:
-    IS_COLAB = "google.colab" in str(get_ipython())
-except NameError:
-    IS_COLAB = False
+# # === COLAB DETECTION ===
+# try:
+#     IS_COLAB = "google.colab" in str(get_ipython())
+# except NameError:
+#     IS_COLAB = False
 
 # === BASE PATH SETTING ===
-BASE_DIR = "/content/drive/MyDrive/reddit_bias_data" if IS_COLAB else "data"
+BASE_DIR = "/content/reddit-bias-perception/data"
 RAW_DIR = os.path.join(BASE_DIR, "raw")
 PROCESSED_DIR = os.path.join(BASE_DIR, "processed")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")

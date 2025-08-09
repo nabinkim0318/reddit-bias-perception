@@ -28,9 +28,9 @@ MODEL_ID = EMOTION_MODEL
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("🔍 Loading GoEmotions model (PyTorch)...")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, local_files_only=True)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, token=os.environ['HF_TOKEN'], local_files_only=False)
 model = AutoModelForSequenceClassification.from_pretrained(
-    MODEL_ID, local_files_only=True
+    MODEL_ID, token = os.environ['HF_TOKEN'],local_files_only=False
 ).to(device)
 id2label = model.config.id2label
 
@@ -115,14 +115,14 @@ def analyze_comments(comments):
 
 def main():
     df = pd.read_csv(FINAL_ANALYSIS_INPUT)
-    df["text"] = df["text"].fillna("")
+    df["clean_text"] = df["clean_text"].fillna("")
 
-    texts = [t for t in df["text"].tolist() if t.strip()]
+    texts = [t for t in df["clean_text"].tolist() if t.strip()]
     print(f"🧠 Running GoEmotions on {len(texts)} texts...")
     ge_outputs = run_goemotions(texts)
     vader_outputs = [run_vader(t) for t in texts]
 
-    df = df.loc[df["text"].str.strip() != ""].copy()
+    df = df.loc[df["clean_text"].str.strip() != ""].copy()
     df["goemotions_top"] = ge_outputs
     df["vader"] = vader_outputs
 
