@@ -21,6 +21,7 @@ from config.config import (
     FINAL_ANALYSIS_INPUT,
     SENTIMENT_OUTPUT,
     VADER_PLOT_PATH,
+    SENTIMENT_PLOT_PATH
 )
 
 # Setup model and tokenizer
@@ -83,6 +84,7 @@ def plot_goemotion_distribution(df):
     sns.countplot(y=all_labels)
     plt.title("Top Predicted Emotions (GoEmotions)")
     plt.tight_layout()
+    plt.savefig(SENTIMENT_PLOT_PATH, dpi=300)
     plt.show()
 
 

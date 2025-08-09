@@ -8,10 +8,12 @@ import os
 #     IS_COLAB = False
 
 # === BASE PATH SETTING ===
-BASE_DIR = "/content/reddit-bias-perception/data"
-RAW_DIR = os.path.join(BASE_DIR, "raw")
-PROCESSED_DIR = os.path.join(BASE_DIR, "processed")
+BASE_DIR = "/content/reddit-bias-perception"
+DATA_DIR = "/content/reddit-bias-perception/data"
+RAW_DIR = os.path.join(DATA_DIR, "raw")
+PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
+os.makedirs(RESULTS_DIR, exist_ok=True)
 CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # === INPUT FILES ===
@@ -57,6 +59,7 @@ MAX_TEXT_LENGTH = 512
 # === VADER ===
 VADER_THRESHOLD = 0.05
 VADER_PLOT_PATH = os.path.join(RESULTS_DIR, "vader_dist.png")
+SENTIMENT_PLOT_PATH = os.path.join(RESULTS_DIR, "sentiment_plot.png")
 
 # === ETC ===
 RANDOM_SEED = 42
