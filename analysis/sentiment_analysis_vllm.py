@@ -16,34 +16,139 @@ from config.config import (
     SENTIMENT_PLOT_PATH
 )
 
-MODEL_ID = os.getenv("LLM_MODEL_ID", "meta-llama/Llama-3.2-8B-Instruct")
+MODEL_ID = os.getenv("LLM_MODEL_ID", "meta-llama/Llama-3.2-3B-Instruct")
 
 llm = LLM(
     model=MODEL_ID,
     dtype="half",              # T4: use FP16
-    max_model_len=2048,
+    max_model_len=1024,
     trust_remote_code=True,
-    gpu_memory_utilization=0.92,
+    gpu_memory_utilization=0.85,
+    swap_space=4,
 )
+
 sampler = SamplingParams(
     temperature=0.0,
     top_p=1.0,
-    max_tokens=160,            # plenty for 5 emotions JSON
+    max_tokens=120,
+    stop=["<|eot_id|>","</json>","</s>","<|end|>"]  # harmless extra stops
 )
 
-SYSTEM_INSTRUCTIONS = (
-    "You are an emotion analysis engine. "
-    "Classify the input text into the TOP-5 emotions with strengths in [0,1]. "
-    "Output STRICT JSON only: a list of exactly 5 objects with fields "
-    '\"emotion\" (string) and \"score\" (number between 0 and 1). '
-    "No prose, no markdown, no extra keys."
-)
+
+SYSTEM_INSTRUCTIONS = """You are an emotion analysis engine.
+
+Task
+- From the input text, infer emotions from Plutchik’s primary set:
+  anger, anticipation, joy, trust, fear, surprise, sadness, disgust.
+- Return ONLY the top-5 emotions by strength (multi-label), each with a score in [0,1].
+- Output STRICT JSON: a list of EXACTLY 5 objects with keys:
+  "emotion" (one of the 8 above) and "score" (float in [0,1]).
+- Sort by descending "score". No prose, no markdown, no extra keys.
+
+Scoring policy
+- Start with lexical/semantic cues; adjust with:
+  • Intensifiers: (“very”, “incredibly”) → increase score by ~0.1–0.25
+  • Downtoners: (“slightly”, “a bit”) → decrease score by ~0.05–0.15
+  • Negation: (“not happy”, “no fear”) → invert/attenuate expected signal
+  • Modality/uncertainty: (“might”, “maybe”, “I guess”) → lower scores
+  • Sarcasm/irony indicators: exaggeration + negative context → raise anger/disgust or sadness as appropriate; reduce joy unless sincere
+  • Temporal distance: past resolved events usually reduce arousal unless text shows lingering affect
+- Typical ranges:
+  • Dominant emotion: 0.55–0.90 (rarely >0.90)
+  • Secondary: 0.25–0.60
+  • Weak/background: 0.05–0.30
+- If evidence is extremely weak or ambiguous, keep all scores low (≤0.25).
+
+Disambiguation tips
+- anger vs disgust: anger targets an agent/action (“they lied”); disgust targets contamination/morality (“gross”, “vile”)
+- fear vs anticipation: fear = threat expectation; anticipation = forward-looking expectation (can be positive or worried)
+- joy vs trust: joy = felt positivity/pleasure; trust = safety/reliability/assurance cues
+- sadness vs anger: sadness = loss/helplessness; anger = blame/agency
+
+Edge cases
+- Neutral/informational text: return low scores across categories (e.g., 0.05–0.15).
+- Mixed sentiment (“bittersweet”): include both positive (joy/trust/anticipation) and negative (sadness/fear) with moderate values.
+- Emoji/exclamations:
+  • “!!!”, “😂”, “😭” → boost relevant emotions slightly
+- Profanity alone does NOT guarantee anger—use context.
+
+Language & domain
+- Be domain- and culture-agnostic; do not import world knowledge beyond the text.
+- Multilingual: if non-English, infer using common affective cues; still return English emotion labels.
+
+Output format
+- Return ONLY JSON (no explanation).
+- EXACTLY 5 items; if fewer than five emotions are apparent, fill the remaining with the weakest plausible ones (very low scores) to keep list length 5.
+- Sort by descending score; no ties.
+
+Target JSON example schema (illustrative):
+[
+  {"emotion":"fear", "score":0.72},
+  {"emotion":"anticipation", "score":0.41},
+  {"emotion":"sadness", "score":0.33},
+  {"emotion":"disgust", "score":0.18},
+  {"emotion":"trust", "score":0.10}
+]
+
+Few-shot I/O (for patterning)
+
+Input:
+"I can’t stop smiling—this finally worked after weeks!"
+Expected (one possible):
+[
+  {"emotion":"joy","score":0.82},
+  {"emotion":"anticipation","score":0.36},
+  {"emotion":"trust","score":0.22},
+  {"emotion":"surprise","score":0.18},
+  {"emotion":"sadness","score":0.06}
+]
+
+Input:
+"I’m worried this will fail again, but maybe we’ll learn something."
+Expected:
+[
+  {"emotion":"fear","score":0.70},
+  {"emotion":"anticipation","score":0.31},
+  {"emotion":"sadness","score":0.24},
+  {"emotion":"trust","score":0.14},
+  {"emotion":"surprise","score":0.08}
+]
+
+Input:
+"Wow… great job… sure… (eye roll)"
+Expected (sarcastic praise → negative):
+[
+  {"emotion":"disgust","score":0.52},
+  {"emotion":"anger","score":0.46},
+  {"emotion":"sadness","score":0.24},
+  {"emotion":"surprise","score":0.16},
+  {"emotion":"joy","score":0.08}
+]
+
+Input:
+"Just deployed the patch. Logs look stable."
+Expected (neutral/low arousal):
+[
+  {"emotion":"trust","score":0.20},
+  {"emotion":"anticipation","score":0.18},
+  {"emotion":"joy","score":0.10},
+  {"emotion":"surprise","score":0.07},
+  {"emotion":"sadness","score":0.05}
+]
+"""
+
 
 def build_prompt(text: str) -> str:
     return (
-        f"<|system|>\n{SYSTEM_INSTRUCTIONS}\n</|system|>\n"
-        f"<|user|>\nText: {text}\n</|user|>\n"
-        "<|assistant|>"
+        "<|begin_of_text|>"
+        "<|start_header_id|>system<|end_header_id|>\n"
+        f"{SYSTEM_INSTRUCTIONS}\n"
+        "<|eot_id|>"
+        "<|start_header_id|>user<|end_header_id|>\n"
+        f"Text:\n{text}\n"
+        "Respond with ONLY the JSON list of 5 objects as specified.\n"
+        "<|eot_id|>"
+        "<|start_header_id|>assistant<|end_header_id|>\n"
     )
 
 _json_start_re = re.compile(r'\[', re.DOTALL)
