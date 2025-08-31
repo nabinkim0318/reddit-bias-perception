@@ -12,6 +12,7 @@ import os
 import re
 import threading
 import time
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from functools import lru_cache
@@ -26,6 +27,7 @@ from pydantic import ValidationError
 from tqdm import tqdm
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.tokenization_auto import AutoTokenizer
+from transformers.utils import logging as hf_logging
 
 from config.config import (
     BATCH_SIZE,
@@ -37,15 +39,23 @@ from config.config import (
 )
 from processing.schema import ClassificationResult
 
+warnings.filterwarnings("ignore", message="The following generation flags")
+hf_logging.set_verbosity_error()
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
 )
 
+
 # Load environment variables
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
+
+if not HF_TOKEN:
+    logging.warning("HF_TOKEN not set; private models may fail to load.")
+
 
 # Global model cache
 _model_cache = {}
@@ -283,7 +293,8 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
 
     try:
         # Process in smaller sub-batches to manage memory
-        sub_batch_size = min(4, len(batch_texts))  # Smaller sub-batches
+        SUB_BATCH_SIZE = int(os.getenv("LLM_SUB_BATCH", "2"))
+        sub_batch_size = max(1, min(SUB_BATCH_SIZE, len(batch_texts)))
 
         for i in range(0, len(batch_texts), sub_batch_size):
             sub_batch = batch_texts[i : i + sub_batch_size]
@@ -305,7 +316,7 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
 
                 attention_mask = (input_ids != tokenizer.pad_token_id).long()
 
-                with torch.no_grad():
+                with torch.inference_mode():
                     outputs = model.generate(
                         input_ids,
                         attention_mask=attention_mask,
@@ -326,11 +337,6 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
 
                 # Clear GPU memory
                 del outputs, input_ids, attention_mask
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                    # Log memory usage every 10 batches
-                    if i % 10 == 0:
-                        log_gpu_memory()
 
             decoded_outputs.extend(sub_outputs)
 
@@ -476,8 +482,8 @@ def classify_single_post(
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=200,
-                repetition_penalty=1.1,
                 do_sample=False,
+                repetition_penalty=1.1,
                 pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
                 eos_token_id=[
                     tokenizer.eos_token_id,
@@ -596,20 +602,17 @@ def main(subreddit: str):
     all_results = []
 
     # Use fewer processes to avoid memory issues
-    num_processes = min(available_cores, 2)  # Reduced from 4 to 2
+    num_processes = min(available_cores, 1)
     logging.info(f"Using {num_processes} processes for classification")
 
     try:
         with Pool(processes=num_processes) as pool:
-            results = pool.map(
-                classify_post_wrapper,
-                tqdm(
-                    batch_input_list,
-                    desc="Classifying posts",
-                    total=len(batch_input_list),
-                ),
-            )
-            for batch_result in results:
+            for batch_result in tqdm(
+                pool.imap_unordered(classify_post_wrapper, batch_input_list),
+                total=len(batch_input_list),
+                desc="Classifying",
+                unit="batch",
+            ):
                 all_results.extend(batch_result)
     except Exception as e:
         logging.error(f"❌ Error during multiprocessing: {e}")
