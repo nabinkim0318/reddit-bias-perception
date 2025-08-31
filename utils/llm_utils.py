@@ -57,5 +57,7 @@ def get_dynamic_sub_batch_size(max_target_memory_mb=1000, max_cap=64):
     est_batch = max(1, free_mem_mb // max_target_memory_mb)
     capped_batch = min(est_batch, max_cap)
 
-    logging.info(f"🧮 Free GPU memory: {free_mem_mb}MB | Est. batch: {est_batch} | Using: {capped_batch}")
+    logging.info(
+        f"🧮 Free GPU memory: {free_mem_mb}MB | Est. batch: {est_batch} | Using: {capped_batch}"
+    )
     return capped_batch

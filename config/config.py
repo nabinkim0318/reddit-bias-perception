@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 # === COLAB DETECTION ===
 try:
@@ -8,11 +9,12 @@ except NameError:
     IS_COLAB = False
 
 # === BASE PATH SETTING ===
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BASE_DIR = "/content/drive/MyDrive/reddit_bias_data" if IS_COLAB else "data"
 RAW_DIR = os.path.join(BASE_DIR, "raw")
 PROCESSED_DIR = os.path.join(BASE_DIR, "processed")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
-CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_DIR = PROJECT_ROOT / "config"
 
 # === INPUT FILES ===
 RAW_REDDIT_DATA = os.path.join(RAW_DIR, "reddit_raw.json")
