@@ -3,6 +3,7 @@
 Few-shot classification using Gemma 2B model to determine whether a Reddit post discusses bias in AI-generated images.
 """
 
+import argparse
 import gc
 import json
 import logging
@@ -644,4 +645,9 @@ def main(subreddit: str):
 
 if __name__ == "__main__":
     multiprocessing.set_start_method("spawn", force=True)
-    main()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--subreddit", type=str, required=True, help="Subreddit name")
+    args = parser.parse_args()
+
+    main(args.subreddit)
