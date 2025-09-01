@@ -13,6 +13,8 @@ import re
 import threading
 import time
 import warnings
+from transformers.utils import logging as hf_logging
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from functools import lru_cache
@@ -27,7 +29,6 @@ from pydantic import ValidationError
 from tqdm import tqdm
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.tokenization_auto import AutoTokenizer
-from transformers.utils import logging as hf_logging
 
 from config.config import (
     BATCH_SIZE,
@@ -38,9 +39,8 @@ from config.config import (
     TEMPLATE_PATH,
 )
 from processing.schema import ClassificationResult
-
 warnings.filterwarnings("ignore", message="The following generation flags")
-hf_logging.set_verbosity_error()
+hf_logging.set_verbosity_error() 
 
 # Configure logging
 logging.basicConfig(
@@ -602,7 +602,7 @@ def main(subreddit: str):
     all_results = []
 
     # Use fewer processes to avoid memory issues
-    num_processes = min(available_cores, 1)
+    num_processes = min(available_cores, 1)  
     logging.info(f"Using {num_processes} processes for classification")
 
     try:
@@ -611,7 +611,7 @@ def main(subreddit: str):
                 pool.imap_unordered(classify_post_wrapper, batch_input_list),
                 total=len(batch_input_list),
                 desc="Classifying",
-                unit="batch",
+                unit="batch"
             ):
                 all_results.extend(batch_result)
     except Exception as e:

@@ -33,7 +33,8 @@
     "slim", "skinny", "fit", "athletic", "toned", "muscular", "six-pack", "lean",
     "obese", "fat", "overweight", "underweight", "chubby", "curvy", "plus-size", "thick",
     "body positivity", "body shaming", "eating disorder", "anorexia", "bulimia",
-    "body dysmorphia", "self-esteem", "ideal body", "thinspiration", "fitspiration", "big body", "petite", "broad shoulders"
+    "body dysmorphia", "self-esteem", "ideal body", "thinspiration", "fitspiration", "big body", 
+    "petite", "broad shoulders", "hourglass", "pear-shaped", "apple-shaped", "thigh gap"
   ],
 
   "hair": [
@@ -57,7 +58,8 @@
     "caucasian", "indigenous", "native", "minority", "biracial", "multiracial", "heritage", "ancestry", "melanin", "skin tone",
     "afro", "mongoloid", "mestizo", "desi", "slavic", "arab", "jewish", "latina", "afro-caribbean",
     "white normativity", "western norm", "anglo-centric", "colonial", "eurocentric", "whitewashed",
-    "tribal", "exotic", "ghetto", "slum", "yellowface", "blackface"
+    "tribal", "exotic", "ghetto", "slum", "yellowface", "blackface", "bipoc", "poc", "people of color", "asian american", "latinx",
+    "mena", "roma", "black american", "african american", "native american", "pacific islander"
   ],
 
   "income": [

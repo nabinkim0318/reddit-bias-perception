@@ -8,6 +8,7 @@ import pandas as pd
 
 from config.config import BASE_DIR, CONFIG_DIR
 from processing.duckdb_data_processing import decompress_zstd
+from config.config import AI_KEYWORDS
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,38 +22,6 @@ KEYWORDS_CSV = CONFIG_DIR / "bias_keywords.csv"
 SUBREDDIT_GROUPS_CSV = CONFIG_DIR / "subreddit_groups.csv"
 DB_PATH = BASE_DIR / "reddit.duckdb"
 
-
-# ---- AI keywords ----
-ai_keywords = [
-    "ai",
-    "artificial intelligence",
-    "ai art",
-    "ai image",
-    "ai image generated",
-    "ai pictures",
-    "ai photos",
-    "ai content",
-    "prompt",
-    "prompting",
-    "ai filter",
-    "deepfake",
-    "face swap",
-    "diffusion",
-    "deep learning",
-    "machine learning",
-    "neural network",
-    "stable diffusion",
-    "dalle",
-    "midjourney",
-    "openai",
-    "text-to-image",
-    "image generation",
-    "chatgpt",
-    "gpt",
-    "llm",
-    "copilot",
-    "gemini",
-]
 
 
 # ---- Functions ----
@@ -98,7 +67,7 @@ def register_tables(conn: duckdb.DuckDBPyConnection, df_posts: pd.DataFrame):
     )
     # ✅ AI keywords tentative table
     ai_vals = []
-    for kw in ai_keywords:
+    for kw in AI_KEYWORDS:
         escaped_kw = kw.lower().replace("'", "''")
         ai_vals.append(f"('{escaped_kw}')")
     ai_vals_str = ", ".join(ai_vals)
@@ -108,53 +77,54 @@ def register_tables(conn: duckdb.DuckDBPyConnection, df_posts: pd.DataFrame):
 
 
 def create_post_views(conn: duckdb.DuckDBPyConnection):
-    # clean_text: lower + url/html removal + symbol removal (replace with space)
     conn.execute(
         """
         CREATE OR REPLACE VIEW posts AS
         SELECT
-        id,
-        subreddit,
-        title,
-        selftext,
-        created_utc,
+            id,
+            subreddit,
+            title,
+            selftext,
+            created_utc,
 
-        -- 1) LLM use: keep case, punctuation, emoji (only remove URL/HTML)
-        REGEXP_REPLACE(
+            -- 1) LLM input: URL/HTML only remove (preserve case/punctuation/emojis)
             REGEXP_REPLACE(
-            COALESCE(title, '') || ' ' || COALESCE(selftext, ''),
-            'http\\S+|www\\.\\S+', ''       -- remove URL
-            ),
-            '<.*?>', ''                        -- HTML 제거
-        ) AS clean_text,  -- ✅ LLM use this column
+                REGEXP_REPLACE(
+                    COALESCE(title, '') || ' ' || COALESCE(selftext, ''),
+                    'http\\S+|www\\.\\S+', ''
+                ),
+                '<.*?>', ''
+            ) AS clean_text,
 
-        -- 2) Matching use: lowercase + non-ASCII(ASCII之外) removed, allow numbers/emoji
-        REGEXP_REPLACE(
+            -- 2) Matching use: lowercase + URL/HTML remove + prompt symbols(: - / _ %) preserve
             REGEXP_REPLACE(
-            REGEXP_REPLACE(
-                LOWER(COALESCE(title, '') || ' ' || COALESCE(selftext, '')),
-                'http\\S+|www\\.\\S+', ''
-            ),
-            '<.*?>', ''
-            ),
-            '[^a-z0-9\\s'
-            || '\\x{1F300}-\\x{1FAFF}'
-            || '\\x{2600}-\\x{26FF}'
-            || '\\x{1F3FB}-\\x{1F3FF}'  -- skin tone
-            || '\\x{200D}'              -- ZWJ
-            || '\\x{FE0F}'              -- VS16
-            || ']',
-            ' '
-        ) AS clean_text_lc,  -- ✅ keyword/regex matching use this column
+                REGEXP_REPLACE(
+                    REGEXP_REPLACE(
+                        LOWER(COALESCE(title, '') || ' ' || COALESCE(selftext, '')),
+                        'http\\S+|www\\.\\S+', ''
+                    ),
+                    '<.*?>', ''
+                ),
+                '[^a-z0-9\\s:\\-/_%'
+                || '\\x{1F300}-\\x{1FAFF}'
+                || '\\x{2600}-\\x{26FF}'
+                || '\\x{1F3FB}-\\x{1F3FF}'  -- skin tone
+                || '\\x{200D}'              -- ZWJ
+                || '\\x{FE0F}'              -- VS16
+                || ']',
+                ' '
+            ) AS clean_text_lc,
 
-        COALESCE(title, '') || ' ' || COALESCE(selftext, '') AS full_text
+         
+            COALESCE(title, '') || ' ' || COALESCE(selftext, '') AS full_text
         FROM df_posts
         WHERE
-        created_utc BETWEEN 1640995200 AND 1735689599
-        AND (
-            LOWER(COALESCE(title, '')) NOT IN ('[deleted]', '[removed]', '', 'null', 'none')
-            OR LOWER(COALESCE(selftext, '')) NOT IN ('[deleted]', '[removed]', '', 'null', 'none')
-        )
+            -- 2022-01-01 ~ 2024-12-31
+            created_utc BETWEEN 1640995200 AND 1735689599
+            AND (
+                LOWER(COALESCE(title, '')) NOT IN ('[deleted]', '[removed]', '', 'null', 'none')
+                OR LOWER(COALESCE(selftext, '')) NOT IN ('[deleted]', '[removed]', '', 'null', 'none')
+            );
         """
     )
     logging.info("✅ Created posts view")
