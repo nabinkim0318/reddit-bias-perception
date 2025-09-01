@@ -31,5 +31,17 @@
     "gpt",
     "llm",
     "copilot",
-    "gemini"
+    "gemini",
+
+    "sd", "sdxl", "comfyui", "automatic1111", "a1111", "kohya", "civitai",
+
+    "checkpoint", "ckpt", "vae", "sampler", "xformers",
+    "text2img", "img2img", "inpaint", "outpaint", "hi-res fix", "hires fix",
+    "controlnet", "ip-adapter", "t2i-adapter", "clip skip", "cfg",
+
+    "lora", "locon", "lycoris", "textual inversion", "ti", "dreambooth",
+
+    "/imagine", "/describe", "/blend",
+    "--ar", "--seed", "--stylize", "--style", "--chaos", "--tile", "--weird",
+    "niji", "upscale", "upbeta"
   ]

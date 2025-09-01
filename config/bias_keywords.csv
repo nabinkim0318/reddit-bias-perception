@@ -142,6 +142,10 @@ body_type,fitspiration
 body_type,big body
 body_type,petite
 body_type,broad shoulders
+body_type,hourglass
+body_type,pear-shaped
+body_type,apple-shaped
+body_type,thigh gap
 hair,curly hair
 hair,kinky hair
 hair,coily hair
@@ -256,6 +260,17 @@ race,ghetto
 race,slum
 race,yellowface
 race,blackface
+race,bipoc
+race,poc
+race,people of color
+race,asian american
+race,latinx
+race,mena
+race,roma
+race,black american
+race,african american
+race,native american
+race,pacific islander
 income,rich
 income,poor
 income,income
