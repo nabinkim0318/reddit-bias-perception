@@ -2,12 +2,10 @@ import argparse
 import logging
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, Sequence
-from concurrent.futures import ProcessPoolExecutor, as_completed
-
-
 
 # ---- import your pipeline steps ----
 from processing.duckdb_data_processing import main as duckdb_data_processing
@@ -53,7 +51,6 @@ def run_step(step: Step, subreddit: str) -> object:
     return result
 
 
-
 def filter_steps(
     steps: Sequence[Step], only: Optional[list[str]], skip: Optional[list[str]]
 ) -> list[Step]:
@@ -89,6 +86,7 @@ def build_steps(subreddit: str) -> list[Step]:
     ]
     return steps
 
+
 # ---------- Batch helpers ----------
 def list_subreddits_from_extracted() -> list[str]:
     """
@@ -114,6 +112,7 @@ def list_subreddits_from_extracted() -> list[str]:
                 break
         subs.add(name)
     return sorted(subs)
+
 
 def already_done(subreddit: str, steps: Sequence[Step]) -> bool:
     """Check if all expected artifacts exist for the (filtered) steps."""
@@ -149,18 +148,44 @@ def run_pipeline_for_subreddit(
     except Exception as e:
         return subreddit, False, str(e)
 
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Batch runner for Reddit AI-bias pipeline")
+    parser = argparse.ArgumentParser(
+        description="Batch runner for Reddit AI-bias pipeline"
+    )
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--subreddit", type=str, help="Run a single subreddit (e.g., 'midjourney')")
-    group.add_argument("--subreddits", nargs="+", help="Run multiple subreddits (space-separated)")
-    group.add_argument("--all", action="store_true", help=f"Auto-discover all from {EXTRACTED_DIR}")
-    parser.add_argument("--jobs", "-j", type=int, default=1, help="Parallel processes (default: 1)")
-    parser.add_argument("--only", nargs="*", default=None, help="Run only steps whose names contain these substrings")
-    parser.add_argument("--skip", nargs="*", default=None, help="Skip steps whose names contain these substrings")
-    parser.add_argument("--force", action="store_true", help="Ignore existing outputs and re-run")
-    parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
+    group.add_argument(
+        "--subreddit", type=str, help="Run a single subreddit (e.g., 'midjourney')"
+    )
+    group.add_argument(
+        "--subreddits", nargs="+", help="Run multiple subreddits (space-separated)"
+    )
+    group.add_argument(
+        "--all", action="store_true", help=f"Auto-discover all from {EXTRACTED_DIR}"
+    )
+    parser.add_argument(
+        "--jobs", "-j", type=int, default=1, help="Parallel processes (default: 1)"
+    )
+    parser.add_argument(
+        "--only",
+        nargs="*",
+        default=None,
+        help="Run only steps whose names contain these substrings",
+    )
+    parser.add_argument(
+        "--skip",
+        nargs="*",
+        default=None,
+        help="Skip steps whose names contain these substrings",
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="Ignore existing outputs and re-run"
+    )
+    parser.add_argument(
+        "--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"]
+    )
     return parser.parse_args()
+
 
 def resolve_targets(args: argparse.Namespace) -> list[str]:
     if args.subreddit:
@@ -174,6 +199,7 @@ def resolve_targets(args: argparse.Namespace) -> list[str]:
             sys.exit(3)
         return subs
     return []
+
 
 def main() -> None:
     args = parse_args()
@@ -190,7 +216,9 @@ def main() -> None:
     if args.jobs <= 1 or len(targets) == 1:
         failures = []
         for sub in targets:
-            sub, ok, err = run_pipeline_for_subreddit(sub, args.only, args.skip, args.force)
+            sub, ok, err = run_pipeline_for_subreddit(
+                sub, args.only, args.skip, args.force
+            )
             if not ok:
                 logging.error(f"❌ [{sub}] failed: {err}")
                 failures.append(sub)
@@ -205,7 +233,9 @@ def main() -> None:
     start = time.time()
     with ProcessPoolExecutor(max_workers=args.jobs) as ex:
         futures = {
-            ex.submit(run_pipeline_for_subreddit, sub, args.only, args.skip, args.force): sub
+            ex.submit(
+                run_pipeline_for_subreddit, sub, args.only, args.skip, args.force
+            ): sub
             for sub in targets
         }
         for fut in as_completed(futures):
@@ -220,7 +250,9 @@ def main() -> None:
             except Exception as e:
                 logging.exception(f"💥 [{sub}] crashed: {e}")
                 failures.append(sub)
-    logging.info(f"\n🧮 Done in {time.time()-start:.2f}s; failures: {failures if failures else 'none'}")
+    logging.info(
+        f"\n🧮 Done in {time.time()-start:.2f}s; failures: {failures if failures else 'none'}"
+    )
     if failures:
         sys.exit(1)
 
