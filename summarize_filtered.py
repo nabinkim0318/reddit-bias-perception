@@ -1,12 +1,12 @@
 # summarize_filtered.py
 # -------------------------------------------
-# data/filtered/*_keyword_filtered.csv 들을 읽어서
-# 1) 서브레딧별 잔존 행수
-# 2) 서브레딧×바이어스 카테고리 분포
-# 3) 서브레딧별 상위 키워드 Top-K
-# 4) (있으면) 월별 추이
-# 5) (옵션) 서브레딧×카테고리별 예시 문장 샘플
-# 을 CSV로 저장합니다.
+# data/filtered/*_keyword_filtered.csv (Read)
+# 1) The number of remaining rows by subreddit
+# 2) Subreddit×Bias category distribution
+# 3) Top-K keywords by subreddit
+# 4) (if exists) Monthly trends
+# 5) (optional) Example sentences by (subreddit, category)
+# Save as CSV.
 # -------------------------------------------
 
 import argparse
@@ -21,7 +21,7 @@ import pandas as pd
 
 # ---------- Helpers ----------
 def parse_listlike(val) -> List[str]:
-    """JSON 리스트/문자열 'a, b, c' 모두를 안전하게 리스트로 변환."""
+    """JSON list/strings 'a, b, c' all safely to list."""
     if val is None:
         return []
     if isinstance(val, list):
@@ -41,8 +41,8 @@ def parse_listlike(val) -> List[str]:
     return [t.strip() for t in re.split(r",\s*", s) if t.strip()]
 
 
-def safe_to_datetime(row) -> pd.Timestamp:
-    """created_dt(문자열) 또는 created_utc(epoch) -> Timestamp."""
+def safe_to_datetime(row) -> pd.Timestamp | None:
+    """created_dt(string) or created_utc(epoch) -> Timestamp."""
     created_dt = row.get("created_dt")
     created_utc = row.get("created_utc")
     if pd.notna(created_dt):
@@ -59,7 +59,7 @@ def safe_to_datetime(row) -> pd.Timestamp:
                 return ts
         except Exception:
             pass
-    return pd.NaT
+    return None
 
 
 def load_all(pattern: str, in_dir: Path) -> pd.DataFrame:
@@ -75,7 +75,7 @@ def load_all(pattern: str, in_dir: Path) -> pd.DataFrame:
             print(f"⚠️  Failed to read {f}: {e}")
             continue
 
-        # 파일명에서 서브레딧 추정
+        # Inferred subreddit from filename
         m = re.search(r"([^/\\]+)_keyword_filtered\.csv$", str(f))
         inferred = m.group(1) if m else f.stem.replace("_keyword_filtered", "")
         if "subreddit" not in df.columns:
@@ -83,7 +83,7 @@ def load_all(pattern: str, in_dir: Path) -> pd.DataFrame:
         else:
             df["subreddit"] = df["subreddit"].fillna(inferred).astype(str)
 
-        # 누락 컬럼 보정
+        # Missing column correction
         for col in ["matched_bias_types", "matched_keywords", "created_dt", "created_utc", "clean_text", "id", "title", "selftext"]:
             if col not in df.columns:
                 df[col] = np.nan
@@ -97,12 +97,9 @@ def load_all(pattern: str, in_dir: Path) -> pd.DataFrame:
 
 # ---------- Core computations ----------
 def compute_overview(df: pd.DataFrame) -> pd.DataFrame:
-    return (
-        df.groupby("subreddit", dropna=False)
-          .size()
-          .reset_index(name="rows")
-          .sort_values("rows", ascending=False)
-    )
+    result = df.groupby("subreddit", dropna=False).size().reset_index()
+    result.columns = ["subreddit", "rows"]
+    return result.sort_values("rows", ascending=False)
 
 
 def compute_category_breakdown(df: pd.DataFrame) -> pd.DataFrame:
@@ -110,12 +107,9 @@ def compute_category_breakdown(df: pd.DataFrame) -> pd.DataFrame:
     tmp["matched_bias_types"] = tmp["matched_bias_types"].apply(parse_listlike)
     exploded = tmp.explode("matched_bias_types").rename(columns={"matched_bias_types": "bias_type"})
     exploded = exploded[exploded["bias_type"].notna() & (exploded["bias_type"].astype(str).str.len() > 0)]
-    return (
-        exploded.groupby(["subreddit", "bias_type"])
-        .size()
-        .reset_index(name="cnt")
-        .sort_values(["subreddit", "cnt"], ascending=[True, False])
-    )
+    result = exploded.groupby(["subreddit", "bias_type"]).size().reset_index()
+    result.columns = ["subreddit", "bias_type", "cnt"]
+    return result.sort_values(["subreddit", "cnt"], ascending=[True, False])
 
 
 def compute_top_keywords(df: pd.DataFrame, topk: int) -> pd.DataFrame:
@@ -123,7 +117,8 @@ def compute_top_keywords(df: pd.DataFrame, topk: int) -> pd.DataFrame:
     tmp["matched_keywords"] = tmp["matched_keywords"].apply(parse_listlike)
     exploded = tmp.explode("matched_keywords").rename(columns={"matched_keywords": "keyword"})
     exploded = exploded[exploded["keyword"].notna() & (exploded["keyword"].astype(str).str.len() > 0)]
-    counts = exploded.groupby(["subreddit", "keyword"]).size().reset_index(name="cnt")
+    counts = exploded.groupby(["subreddit", "keyword"]).size().reset_index()
+    counts.columns = ["subreddit", "keyword", "cnt"]
     counts["rank"] = counts.groupby("subreddit")["cnt"].rank(method="first", ascending=False)
     return (
         counts[counts["rank"] <= topk]
@@ -133,32 +128,33 @@ def compute_top_keywords(df: pd.DataFrame, topk: int) -> pd.DataFrame:
 
 
 def compute_monthly_counts(df: pd.DataFrame) -> pd.DataFrame:
-    # timestamp 열 구성
+    # timestamp column construction
     if ("created_dt" not in df.columns) and ("created_utc" not in df.columns):
         return pd.DataFrame(columns=["subreddit", "month", "cnt"])
 
-    ts = df[["created_dt", "created_utc"]].copy()
-    ts = ts.apply(safe_to_datetime, axis=1)
-    if ts.notna().any():
-        month = ts.dt.to_period("M").dt.to_timestamp()
+    # Create timestamp column
+    timestamps = []
+    for _, row in df.iterrows():
+        ts = safe_to_datetime(row)
+        timestamps.append(ts)
+    
+    if any(t is not None for t in timestamps):
+        month = pd.Series(timestamps).dt.to_period("M").dt.to_timestamp()
         tmp = pd.DataFrame({"subreddit": df["subreddit"], "month": month})
         tmp = tmp.dropna(subset=["month"])
-        return (
-            tmp.groupby(["subreddit", "month"])
-               .size()
-               .reset_index(name="cnt")
-               .sort_values(["subreddit", "month"])
-        )
+        result = tmp.groupby(["subreddit", "month"]).size().reset_index()
+        result.columns = ["subreddit", "month", "cnt"]
+        return result.sort_values(["subreddit", "month"])
     return pd.DataFrame(columns=["subreddit", "month", "cnt"])
 
 
 def compute_examples(df: pd.DataFrame, per_group: int = 3) -> pd.DataFrame:
-    """서브레딧×바이어스 카테고리별 예시 문장 N개."""
+    """Subreddit×Bias category-wise example sentences N."""
     tmp = df[["id", "subreddit", "clean_text", "matched_bias_types"]].copy()
     tmp["matched_bias_types"] = tmp["matched_bias_types"].apply(parse_listlike)
     exploded = tmp.explode("matched_bias_types").rename(columns={"matched_bias_types": "bias_type"})
     exploded = exploded[exploded["bias_type"].notna() & (exploded["bias_type"].astype(str).str.len() > 0)]
-    # 그룹별 상위 N (단순 head 사용; 무작위면 .sample(per_group, replace=False) 사용)
+    # Group-wise top N (simple head; or .sample(per_group, replace=False) for random)
     examples = (exploded
                 .groupby(["subreddit", "bias_type"], group_keys=False)
                 .head(per_group))
@@ -182,22 +178,22 @@ def main():
     df = load_all(args.pattern, in_dir)
     print(f"✅ Loaded {len(df):,} rows from {in_dir}")
 
-    # 1) 서브레딧별 개수
+    # 1) Subreddit count
     overview = compute_overview(df)
     overview.to_csv(out_dir / "overview_by_subreddit.csv", index=False)
     print("📄 overview_by_subreddit.csv saved.")
 
-    # 2) 카테고리 분포
+    # 2) Category breakdown
     cat = compute_category_breakdown(df)
     cat.to_csv(out_dir / "category_breakdown.csv", index=False)
     print("📄 category_breakdown.csv saved.")
 
-    # 3) 상위 키워드
+    # 3) Top keywords
     topkw = compute_top_keywords(df, topk=args.topk)
     topkw.to_csv(out_dir / "top_keywords.csv", index=False)
     print("📄 top_keywords.csv saved.")
 
-    # 4) 월별 추이
+    # 4) Monthly trends
     monthly = compute_monthly_counts(df)
     if not monthly.empty:
         monthly.to_csv(out_dir / "monthly_counts.csv", index=False)
@@ -205,13 +201,13 @@ def main():
     else:
         print("ℹ️ No usable timestamps → monthly_counts skipped.")
 
-    # 5) 예시 문장 (선택)
+    # 5) Examples (optional)
     if args.samples_per_group > 0:
         examples = compute_examples(df, per_group=args.samples_per_group)
         examples.to_csv(out_dir / "examples_per_category.csv", index=False)
         print("📄 examples_per_category.csv saved.")
 
-    # 콘솔에서도 핵심 요약 한번 보여주기
+    # Show summary in console (optional)
     print("\n=== Overview (top 15) ===")
     print(overview.head(15).to_string(index=False))
 
