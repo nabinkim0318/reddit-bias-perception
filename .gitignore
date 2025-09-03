@@ -1,39 +1,52 @@
-# Python
+# -------------------------
+# OS / Editor noise
+# -------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# -------------------------
+# Python caches & builds
+# -------------------------
 __pycache__/
 *.py[cod]
+*.pyc
+*.pyo
 *.egg-info/
 *.egg
 *.log
+build/
+dist/
 
+# -------------------------
 # Virtual environments
+# -------------------------
 .env
 .venv/
 env/
 venv/
 
-# Jupyter / temp
+# -------------------------
+# Jupyter
+# -------------------------
 .ipynb_checkpoints/
-*.ipynb
-.DS_Store
 
-# VSCode or IDE
-.vscode/
-.idea
+# -------------------------
+# Data: ignored except for filtered folder's 
+# *_keyword_filtered.{csv,json}
+# -------------------------
+/data/*                        
+!/data/filtered/               
+/data/filtered/*               
+!/data/filtered/*_keyword_filtered.csv
+!/data/filtered/*_keyword_filtered.json
 
-# __pycache__
-__pycache__/
-*.pyc
-data/extracted/*.jsonl
-data/extracted/*.zst
-.ipynb_checkpoints/
-.DS_Store
-*.tmp
-
-# data artifacts
-/data/
-/reddit.duckdb
+# -------------------------
+# Local DB / archives 
+# -------------------------
 *.zst
-*.jsonl
 *.parquet
 *.duckdb
-
+*.jsonl
+/reddit.duckdb
