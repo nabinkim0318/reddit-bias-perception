@@ -1,6 +1,0 @@
-text,goemotions_top,vader
-I feel a strange mix of admiration and sadness.,"[('sadness', 0.8418382406234741)]","{'neg': 0.331, 'neu': 0.423, 'pos': 0.246, 'compound': -0.0516}"
-Why is the AI so biased?,"[('curiosity', 0.41127291321754456)]","{'neg': 0.354, 'neu': 0.646, 'pos': 0.0, 'compound': -0.4101}"
-I'm really impressed with this result.,"[('admiration', 0.9482828974723816)]","{'neg': 0.0, 'neu': 0.596, 'pos': 0.404, 'compound': 0.5256}"
-"This is disappointing, honestly.","[('disappointment', 0.8702751994132996)]","{'neg': 0.39, 'neu': 0.244, 'pos': 0.366, 'compound': -0.0516}"
-The image gave me chills... in a good way!,"[('admiration', 0.7213698625564575), ('joy', 0.30717387795448303)]","{'neg': 0.0, 'neu': 0.715, 'pos': 0.285, 'compound': 0.4926}"
