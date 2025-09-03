@@ -6,9 +6,8 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
-from config.config import BASE_DIR, CONFIG_DIR
+from config.config import AI_KEYWORDS, BASE_DIR, CONFIG_DIR
 from processing.duckdb_data_processing import decompress_zstd
-from config.config import AI_KEYWORDS
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,7 +20,6 @@ BASE_DIR = Path(BASE_DIR)
 KEYWORDS_CSV = CONFIG_DIR / "bias_keywords.csv"
 SUBREDDIT_GROUPS_CSV = CONFIG_DIR / "subreddit_groups.csv"
 DB_PATH = BASE_DIR / "reddit.duckdb"
-
 
 
 # ---- Functions ----

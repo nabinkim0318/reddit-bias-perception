@@ -1,0 +1,211 @@
+subreddit,keyword,cnt
+ArtistHate,ai,844
+ArtistHate,man,230
+ArtistHate,job,162
+ArtistHate,model,159
+ArtistHate,ai art,151
+ArtistHate,old,94
+ArtistHate,prompt,94
+ArtistHate,ai image,69
+ArtistHate,chatgpt,54
+ArtistHate,school,53
+ArtistHate,child,48
+ArtistHate,ceo,47
+ArtistHate,diffusion,47
+ArtistHate,midjourney,47
+ArtistHate,openai,46
+ArtistHate,career,45
+ArtistHate,age,43
+ArtistHate,stable diffusion,40
+ArtistHate,black,36
+ArtistHate,scar,35
+ArtistHate,poor,34
+ArtistHate,crazy,33
+ArtistHate,kid,32
+ArtistHate,profession,32
+ArtistHate,strong,32
+ArtistHate,worker,32
+ArtistHate,fit,30
+ArtistHate,rich,29
+ArtistHate,white,29
+ArtistHate,emotional,25
+DefendingAIArt,ai,689
+DefendingAIArt,ai art,298
+DefendingAIArt,man,187
+DefendingAIArt,model,176
+DefendingAIArt,job,138
+DefendingAIArt,prompt,77
+DefendingAIArt,old,73
+DefendingAIArt,diffusion,70
+DefendingAIArt,stable diffusion,55
+DefendingAIArt,ai image,46
+DefendingAIArt,midjourney,42
+DefendingAIArt,school,41
+DefendingAIArt,black,28
+DefendingAIArt,fit,28
+DefendingAIArt,career,27
+DefendingAIArt,profession,27
+DefendingAIArt,scar,27
+DefendingAIArt,white,27
+DefendingAIArt,poor,26
+DefendingAIArt,strong,26
+DefendingAIArt,age,25
+DefendingAIArt,emotional,25
+DefendingAIArt,crazy,23
+DefendingAIArt,degree,22
+DefendingAIArt,artificial intelligence,21
+DefendingAIArt,kid,21
+DefendingAIArt,accessible,20
+DefendingAIArt,child,20
+DefendingAIArt,income,19
+DefendingAIArt,openai,19
+MachineLearning,model,4577
+MachineLearning,ai,2886
+MachineLearning,machine learning,2189
+MachineLearning,llm,1597
+MachineLearning,engineer,771
+MachineLearning,man,747
+MachineLearning,gpt,655
+MachineLearning,job,606
+MachineLearning,prompt,602
+MachineLearning,deep learning,595
+MachineLearning,neural network,581
+MachineLearning,diffusion,569
+MachineLearning,openai,459
+MachineLearning,chatgpt,435
+MachineLearning,phd,361
+MachineLearning,university,361
+MachineLearning,career,315
+MachineLearning,bias,278
+MachineLearning,degree,261
+MachineLearning,scientist,257
+MachineLearning,artificial intelligence,239
+MachineLearning,strong,228
+MachineLearning,fit,206
+MachineLearning,old,198
+MachineLearning,stable diffusion,196
+MachineLearning,school,194
+MachineLearning,academic,184
+MachineLearning,accessible,157
+MachineLearning,intern,149
+MachineLearning,cross,145
+MediaSynthesis,ai,130
+MediaSynthesis,model,96
+MediaSynthesis,diffusion,76
+MediaSynthesis,stable diffusion,34
+MediaSynthesis,prompt,27
+MediaSynthesis,ai art,17
+MediaSynthesis,midjourney,17
+MediaSynthesis,man,15
+MediaSynthesis,old,14
+MediaSynthesis,openai,14
+MediaSynthesis,white,13
+MediaSynthesis,woman,11
+MediaSynthesis,job,10
+MediaSynthesis,text-to-image,9
+MediaSynthesis,black,8
+MediaSynthesis,chatgpt,8
+MediaSynthesis,image generation,8
+MediaSynthesis,bias,7
+MediaSynthesis,school,7
+MediaSynthesis,sd,7
+MediaSynthesis,artificial intelligence,6
+MediaSynthesis,dalle,6
+MediaSynthesis,deepfake,6
+MediaSynthesis,female,6
+MediaSynthesis,insane,6
+MediaSynthesis,slow,6
+MediaSynthesis,asian,5
+MediaSynthesis,city,5
+MediaSynthesis,cross,5
+MediaSynthesis,marketing,5
+TwoXChromosomes,ti,509
+TwoXChromosomes,man,404
+TwoXChromosomes,woman,303
+TwoXChromosomes,old,183
+TwoXChromosomes,kid,165
+TwoXChromosomes,job,148
+TwoXChromosomes,school,144
+TwoXChromosomes,child,140
+TwoXChromosomes,male,140
+TwoXChromosomes,prompt,133
+TwoXChromosomes,age,125
+TwoXChromosomes,female,123
+TwoXChromosomes,young,111
+TwoXChromosomes,scar,106
+TwoXChromosomes,doctor,105
+TwoXChromosomes,ai,98
+TwoXChromosomes,baby,88
+TwoXChromosomes,emotional,78
+TwoXChromosomes,crazy,71
+TwoXChromosomes,adult,62
+TwoXChromosomes,college,62
+TwoXChromosomes,therapy,62
+TwoXChromosomes,strong,61
+TwoXChromosomes,attractive,57
+TwoXChromosomes,gender,56
+TwoXChromosomes,career,55
+TwoXChromosomes,white,55
+TwoXChromosomes,city,45
+TwoXChromosomes,anxious,41
+TwoXChromosomes,degree,40
+aiwars,ai,1819
+aiwars,man,590
+aiwars,ai art,541
+aiwars,model,540
+aiwars,job,432
+aiwars,prompt,309
+aiwars,old,201
+aiwars,diffusion,180
+aiwars,stable diffusion,134
+aiwars,ai image,130
+aiwars,profession,126
+aiwars,chatgpt,113
+aiwars,midjourney,105
+aiwars,school,101
+aiwars,bias,96
+aiwars,age,94
+aiwars,openai,92
+aiwars,career,90
+aiwars,emotional,87
+aiwars,black,80
+aiwars,degree,80
+aiwars,strong,79
+aiwars,worker,79
+aiwars,fit,76
+aiwars,llm,74
+aiwars,accessible,72
+aiwars,poor,70
+aiwars,prompting,70
+aiwars,white,70
+aiwars,income,67
+deeplearning,model,1298
+deeplearning,deep learning,771
+deeplearning,ai,746
+deeplearning,machine learning,314
+deeplearning,llm,304
+deeplearning,neural network,298
+deeplearning,man,192
+deeplearning,job,130
+deeplearning,engineer,129
+deeplearning,gpt,120
+deeplearning,diffusion,119
+deeplearning,university,114
+deeplearning,openai,98
+deeplearning,prompt,94
+deeplearning,chatgpt,93
+deeplearning,fit,89
+deeplearning,artificial intelligence,88
+deeplearning,phd,82
+deeplearning,bias,75
+deeplearning,career,73
+deeplearning,old,71
+deeplearning,scientist,68
+deeplearning,degree,67
+deeplearning,college,62
+deeplearning,stable diffusion,62
+deeplearning,accessible,59
+deeplearning,school,54
+deeplearning,strong,54
+deeplearning,professor,47
+deeplearning,ti,41

@@ -4,21 +4,16 @@ Few-shot classification using Gemma 2B model to determine whether a Reddit post 
 """
 
 import argparse
-import gc
 import json
 import logging
 import multiprocessing
 import os
 import re
 import threading
-import time
 import warnings
-from transformers.utils import logging as hf_logging
-
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import contextmanager
 from functools import lru_cache
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple, cast
 
 import pandas as pd
@@ -29,18 +24,13 @@ from pydantic import ValidationError
 from tqdm import tqdm
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.tokenization_auto import AutoTokenizer
+from transformers.utils import logging as hf_logging
 
-from config.config import (
-    BATCH_SIZE,
-    CLASSIFIED_NO,
-    CLASSIFIED_YES,
-    KEYWORDS_FILTERED_DATA,
-    MODEL_ID,
-    TEMPLATE_PATH,
-)
+from config.config import BATCH_SIZE, MODEL_ID, TEMPLATE_PATH
 from processing.schema import ClassificationResult
+
 warnings.filterwarnings("ignore", message="The following generation flags")
-hf_logging.set_verbosity_error() 
+hf_logging.set_verbosity_error()
 
 # Configure logging
 logging.basicConfig(
@@ -55,6 +45,25 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 
 if not HF_TOKEN:
     logging.warning("HF_TOKEN not set; private models may fail to load.")
+
+
+EMPTY_COLS = [
+    "id",
+    "subreddit",
+    "clean_text",
+    "pred_label",
+    "llm_reasoning",
+    "raw_output",
+]
+
+
+def _write_empty_outputs(yes_path: Path, no_path: Path):
+    empty = pd.DataFrame(columns=EMPTY_COLS)
+    empty.to_csv(yes_path, index=False)
+    empty.to_csv(no_path, index=False)
+    logging.info(f"✅ Empty outputs written to:")
+    logging.info(f"  → {yes_path}")
+    logging.info(f"  → {no_path}")
 
 
 # Global model cache
@@ -566,9 +575,15 @@ def main(subreddit: str):
 
     file_path = f"data/filtered/{subreddit}_keyword_filtered.csv"
 
+    out_dir = Path("data/filtered")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    yes_path = out_dir / f"{subreddit}_filtered_ai_bias.csv"
+    no_path = out_dir / f"{subreddit}_filtered_ai_non_bias.csv"
+
     # Check if file exists
     if not os.path.exists(file_path):
         logging.error(f"❌ File not found: {file_path}")
+        _write_empty_outputs(yes_path, no_path)
         return
 
     logging.info("🔍 Loading data...")
@@ -583,6 +598,7 @@ def main(subreddit: str):
         )
     except Exception as e:
         logging.error(f"❌ Error loading data: {e}")
+        _write_empty_outputs(yes_path, no_path)
         return
 
     # Optimize batch size based on available memory and CPU cores
@@ -602,7 +618,7 @@ def main(subreddit: str):
     all_results = []
 
     # Use fewer processes to avoid memory issues
-    num_processes = min(available_cores, 1)  
+    num_processes = min(available_cores, 1)
     logging.info(f"Using {num_processes} processes for classification")
 
     try:
@@ -611,15 +627,17 @@ def main(subreddit: str):
                 pool.imap_unordered(classify_post_wrapper, batch_input_list),
                 total=len(batch_input_list),
                 desc="Classifying",
-                unit="batch"
+                unit="batch",
             ):
                 all_results.extend(batch_result)
     except Exception as e:
         logging.error(f"❌ Error during multiprocessing: {e}")
+        _write_empty_outputs(yes_path, no_path)
         return
 
     if not all_results:
         logging.error("❌ No results were generated")
+        _write_empty_outputs(yes_path, no_path)
         return
 
     result_df = pd.DataFrame(all_results)
@@ -637,13 +655,15 @@ def main(subreddit: str):
 
     # Save results
     try:
-        result_df[result_df["pred_label"] == "yes"].to_csv(CLASSIFIED_YES, index=False)
-        result_df[result_df["pred_label"] == "no"].to_csv(CLASSIFIED_NO, index=False)
+        result_df[result_df["pred_label"] == "yes"].to_csv(yes_path, index=False)
+        result_df[result_df["pred_label"] == "no"].to_csv(no_path, index=False)
         logging.info(f"✅ Results saved to:")
-        logging.info(f"  → {CLASSIFIED_YES}")
-        logging.info(f"  → {CLASSIFIED_NO}")
+        logging.info(f"  → {yes_path}")
+        logging.info(f"  → {no_path}")
     except Exception as e:
         logging.error(f"❌ Error saving results: {e}")
+        _write_empty_outputs(yes_path, no_path)
+        return
 
 
 if __name__ == "__main__":
