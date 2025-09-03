@@ -25,3 +25,15 @@ __pycache__/
 *.pyc
 data/extracted/*.jsonl
 data/extracted/*.zst
+.ipynb_checkpoints/
+.DS_Store
+*.tmp
+
+# data artifacts
+/data/
+/reddit.duckdb
+*.zst
+*.jsonl
+*.parquet
+*.duckdb
+
