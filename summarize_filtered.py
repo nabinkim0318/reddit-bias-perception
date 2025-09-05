@@ -84,7 +84,16 @@ def load_all(pattern: str, in_dir: Path) -> pd.DataFrame:
             df["subreddit"] = df["subreddit"].fillna(inferred).astype(str)
 
         # Missing column correction
-        for col in ["matched_bias_types", "matched_keywords", "created_dt", "created_utc", "clean_text", "id", "title", "selftext"]:
+        for col in [
+            "matched_bias_types",
+            "matched_keywords",
+            "created_dt",
+            "created_utc",
+            "clean_text",
+            "id",
+            "title",
+            "selftext",
+        ]:
             if col not in df.columns:
                 df[col] = np.nan
 
@@ -105,8 +114,13 @@ def compute_overview(df: pd.DataFrame) -> pd.DataFrame:
 def compute_category_breakdown(df: pd.DataFrame) -> pd.DataFrame:
     tmp = df[["subreddit", "matched_bias_types"]].copy()
     tmp["matched_bias_types"] = tmp["matched_bias_types"].apply(parse_listlike)
-    exploded = tmp.explode("matched_bias_types").rename(columns={"matched_bias_types": "bias_type"})
-    exploded = exploded[exploded["bias_type"].notna() & (exploded["bias_type"].astype(str).str.len() > 0)]
+    exploded = tmp.explode("matched_bias_types").rename(
+        columns={"matched_bias_types": "bias_type"}
+    )
+    exploded = exploded[
+        exploded["bias_type"].notna()
+        & (exploded["bias_type"].astype(str).str.len() > 0)
+    ]
     result = exploded.groupby(["subreddit", "bias_type"]).size().reset_index()
     result.columns = ["subreddit", "bias_type", "cnt"]
     return result.sort_values(["subreddit", "cnt"], ascending=[True, False])
@@ -115,11 +129,17 @@ def compute_category_breakdown(df: pd.DataFrame) -> pd.DataFrame:
 def compute_top_keywords(df: pd.DataFrame, topk: int) -> pd.DataFrame:
     tmp = df[["subreddit", "matched_keywords"]].copy()
     tmp["matched_keywords"] = tmp["matched_keywords"].apply(parse_listlike)
-    exploded = tmp.explode("matched_keywords").rename(columns={"matched_keywords": "keyword"})
-    exploded = exploded[exploded["keyword"].notna() & (exploded["keyword"].astype(str).str.len() > 0)]
+    exploded = tmp.explode("matched_keywords").rename(
+        columns={"matched_keywords": "keyword"}
+    )
+    exploded = exploded[
+        exploded["keyword"].notna() & (exploded["keyword"].astype(str).str.len() > 0)
+    ]
     counts = exploded.groupby(["subreddit", "keyword"]).size().reset_index()
     counts.columns = ["subreddit", "keyword", "cnt"]
-    counts["rank"] = counts.groupby("subreddit")["cnt"].rank(method="first", ascending=False)
+    counts["rank"] = counts.groupby("subreddit")["cnt"].rank(
+        method="first", ascending=False
+    )
     return (
         counts[counts["rank"] <= topk]
         .sort_values(["subreddit", "cnt"], ascending=[True, False])
@@ -137,7 +157,7 @@ def compute_monthly_counts(df: pd.DataFrame) -> pd.DataFrame:
     for _, row in df.iterrows():
         ts = safe_to_datetime(row)
         timestamps.append(ts)
-    
+
     if any(t is not None for t in timestamps):
         month = pd.Series(timestamps).dt.to_period("M").dt.to_timestamp()
         tmp = pd.DataFrame({"subreddit": df["subreddit"], "month": month})
@@ -152,23 +172,47 @@ def compute_examples(df: pd.DataFrame, per_group: int = 3) -> pd.DataFrame:
     """Subreddit×Bias category-wise example sentences N."""
     tmp = df[["id", "subreddit", "clean_text", "matched_bias_types"]].copy()
     tmp["matched_bias_types"] = tmp["matched_bias_types"].apply(parse_listlike)
-    exploded = tmp.explode("matched_bias_types").rename(columns={"matched_bias_types": "bias_type"})
-    exploded = exploded[exploded["bias_type"].notna() & (exploded["bias_type"].astype(str).str.len() > 0)]
+    exploded = tmp.explode("matched_bias_types").rename(
+        columns={"matched_bias_types": "bias_type"}
+    )
+    exploded = exploded[
+        exploded["bias_type"].notna()
+        & (exploded["bias_type"].astype(str).str.len() > 0)
+    ]
     # Group-wise top N (simple head; or .sample(per_group, replace=False) for random)
-    examples = (exploded
-                .groupby(["subreddit", "bias_type"], group_keys=False)
-                .head(per_group))
+    examples = exploded.groupby(["subreddit", "bias_type"], group_keys=False).head(
+        per_group
+    )
     return examples[["subreddit", "bias_type", "id", "clean_text"]]
 
 
 # ---------- Main ----------
 def main():
-    ap = argparse.ArgumentParser(description="Summarize *_keyword_filtered.csv outputs.")
-    ap.add_argument("--in-dir", default="data/filtered", help="Input dir (contains *_keyword_filtered.csv)")
-    ap.add_argument("--pattern", default="*_keyword_filtered.csv", help="Glob pattern for input files")
-    ap.add_argument("--out-dir", default="data/filtered/_summaries", help="Directory to write summaries")
+    ap = argparse.ArgumentParser(
+        description="Summarize *_keyword_filtered.csv outputs."
+    )
+    ap.add_argument(
+        "--in-dir",
+        default="data/filtered",
+        help="Input dir (contains *_keyword_filtered.csv)",
+    )
+    ap.add_argument(
+        "--pattern",
+        default="*_keyword_filtered.csv",
+        help="Glob pattern for input files",
+    )
+    ap.add_argument(
+        "--out-dir",
+        default="data/filtered/_summaries",
+        help="Directory to write summaries",
+    )
     ap.add_argument("--topk", type=int, default=20, help="Top-K keywords per subreddit")
-    ap.add_argument("--samples-per-group", type=int, default=3, help="Examples per (subreddit, category)")
+    ap.add_argument(
+        "--samples-per-group",
+        type=int,
+        default=3,
+        help="Examples per (subreddit, category)",
+    )
     args = ap.parse_args()
 
     in_dir = Path(args.in_dir)
