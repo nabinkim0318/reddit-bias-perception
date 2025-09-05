@@ -1,0 +1,890 @@
+[
+  {
+    "id": "18lbnsm",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Researchers from Yonsei University College of Medicine in South Korea have developed a method of diagnosing autism spectrum disorder (ASD) and symptom severity in children using retinal images screened by an AI algorithm. ",
+    "clean_text_lc": "researchers from yonsei university college of medicine in south korea have developed a method of diagnosing autism spectrum disorder  asd) and symptom severity in children using retinal images screened by an ai algorithm. ",
+    "matched_bias_types": [
+      "disability",
+      "study"
+    ],
+    "matched_keywords": [
+      "ai",
+      "autism",
+      "autismcollegeuniversity",
+      "college",
+      "university"
+    ]
+  },
+  {
+    "id": "18ugr5p",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Researchers have created an AI tool, trained on a data set pulled from the entire population of Denmark, that uses sequences of life events — such as health history, education, job and income — to predict everything from a person’s personality to their mortality ",
+    "clean_text_lc": "researchers have created an ai tool  trained on a data set pulled from the entire population of denmark, that uses sequences of life events — such as health history, education, job and income — to predict everything from a person’s personality to their mortality ",
+    "matched_bias_types": [
+      "income",
+      "occupation",
+      "study"
+    ],
+    "matched_keywords": [
+      "ai",
+      "education",
+      "income",
+      "incomejob",
+      "job"
+    ]
+  },
+  {
+    "id": "1gqm3rl",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Using Artificial Intelligence to Create a 3D Model of a Lost Temple Relief from a 134-Year-Old Photograph  ",
+    "clean_text_lc": "using artificial intelligence to create a 3d model of a lost temple relief from a 134-year-old photograph  ",
+    "matched_bias_types": [
+      "age",
+      "gender",
+      "occupation",
+      "religion"
+    ],
+    "matched_keywords": [
+      "artificial intelligence",
+      "model",
+      "old",
+      "temple",
+      "templemodel"
+    ]
+  },
+  {
+    "id": "19ag9im",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Scientists at University of California San Diego School of Medicine leveraged a machine learning algorithm to tackle one of the biggest challenges facing cancer researchers: predicting when cancer will resist chemotherapy [deleted]",
+    "clean_text_lc": "scientists at university of california san diego school of medicine leveraged a machine learning algorithm to tackle one of the biggest challenges facing cancer researchers: predicting when cancer will resist chemotherapy  deleted]",
+    "matched_bias_types": [
+      "occupation",
+      "study"
+    ],
+    "matched_keywords": [
+      "machine learning",
+      "school",
+      "schooluniversity",
+      "scientist",
+      "university"
+    ]
+  },
+  {
+    "id": "zo0501",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "New research uses machine learning models to better understand water’s phase changes: Strong evidence is found in support of water’s liquid-liquid transition that can be applied to real-world systems that use water to operate. ",
+    "clean_text_lc": "new research uses machine learning models to better understand water s phase changes: strong evidence is found in support of water’s liquid-liquid transition that can be applied to real-world systems that use water to operate. ",
+    "matched_bias_types": [
+      "gender",
+      "lgbtq",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "machine learning",
+      "model",
+      "strong",
+      "strongtransition",
+      "transition"
+    ]
+  },
+  {
+    "id": "1dv074l",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "AI's Imperfections: Unveiling the Impact of AI Bias in Education ",
+    "clean_text_lc": "ai s imperfections: unveiling the impact of ai bias in education ",
+    "matched_bias_types": [
+      "general_bias",
+      "study"
+    ],
+    "matched_keywords": [
+      "ai",
+      "bias",
+      "biaseducation",
+      "education"
+    ]
+  },
+  {
+    "id": "1gi2wbv",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "New machine learning model shows 80% accuracy in early autism detection for children under two ",
+    "clean_text_lc": "new machine learning model shows 80% accuracy in early autism detection for children under two ",
+    "matched_bias_types": [
+      "disability",
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "autism",
+      "autismmodel",
+      "machine learning",
+      "model"
+    ]
+  },
+  {
+    "id": "175ch4q",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Researchers developed an age prediction machine learning model which predicts age at death based on the cellular composition of human brain tissue specimens with an avg accuracy of 5.45 years, helping to predict potential cognitive diseases ",
+    "clean_text_lc": "researchers developed an age prediction machine learning model which predicts age at death based on the cellular composition of human brain tissue specimens with an avg accuracy of 5 45 years, helping to predict potential cognitive diseases ",
+    "matched_bias_types": [
+      "age",
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "age",
+      "agemodel",
+      "machine learning",
+      "model"
+    ]
+  },
+  {
+    "id": "15ve5a3",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Human gut microbiome variation associated with race and ethnicity arises after 3 months of age and persists through childhood. Machine learning modeling of childhood microbiomes distinguishes racial and ethnic categories with 87% accuracy. ",
+    "clean_text_lc": "human gut microbiome variation associated with race and ethnicity arises after 3 months of age and persists through childhood  machine learning modeling of childhood microbiomes distinguishes racial and ethnic categories with 87% accuracy. ",
+    "matched_bias_types": [
+      "age",
+      "race"
+    ],
+    "matched_keywords": [
+      "age",
+      "ethnic",
+      "ethnicity",
+      "machine learning",
+      "race",
+      "raceethnicityageracialethnic",
+      "racial"
+    ]
+  },
+  {
+    "id": "1ewq2t8",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "A new machine learning model analyzed 28 parameters and was able to identify children under the age of 2 with autism with about 80% accuracy (n>30,000 kids). Parameters such as age of first smile, first short sentence and the presence of eating difficulties were strong predictors of autism. ",
+    "clean_text_lc": "a new machine learning model analyzed 28 parameters and was able to identify children under the age of 2 with autism with about 80% accuracy  n>30,000 kids). parameters such as age of first smile, first short sentence and the presence of eating difficulties were strong predictors of autism. ",
+    "matched_bias_types": [
+      "age",
+      "disability",
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "age",
+      "ageautismmodelstrong",
+      "autism",
+      "kid",
+      "machine learning",
+      "model",
+      "strong"
+    ]
+  },
+  {
+    "id": "144sbdq",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "A team led by a University of Arizona College of Medicine harnessed AI to trace the path from a healthy brain cell to one afflicted by Alzheimer’s disease. [deleted]",
+    "clean_text_lc": "a team led by a university of arizona college of medicine harnessed ai to trace the path from a healthy brain cell to one afflicted by alzheimer s disease. [deleted]",
+    "matched_bias_types": [
+      "study"
+    ],
+    "matched_keywords": [
+      "ai",
+      "college",
+      "collegeuniversity",
+      "university"
+    ]
+  },
+  {
+    "id": "14husql",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "The Bhopal gas explosion in 1984—one of India’s worst industrial disasters—may have heightened the risk of disability and cancer in later life among future generations, curbed their educational attainment, and prompted a fall in the proportion of male births the following year. ",
+    "clean_text_lc": "the bhopal gas explosion in 1984 one of india’s worst industrial disasters—may have heightened the risk of disability and cancer in later life among future generations, curbed their educational attainment, and prompted a fall in the proportion of male births the following year. ",
+    "matched_bias_types": [
+      "disability",
+      "gender",
+      "study"
+    ],
+    "matched_keywords": [
+      "disability",
+      "education",
+      "male",
+      "maledisability",
+      "prompt"
+    ]
+  },
+  {
+    "id": "17wk1ag",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "In a new study, 2 leading publicly available AI text-to-image generators amplified societal biases, depicting over 98% surgeons as White and male. Geographic-based prompting increased non-White surgeon representation but not female representation. ",
+    "clean_text_lc": "in a new study  2 leading publicly available ai text-to-image generators amplified societal biases, depicting over 98% surgeons as white and male. geographic-based prompting increased non-white surgeon representation but not female representation. ",
+    "matched_bias_types": [
+      "gender",
+      "general_bias",
+      "race"
+    ],
+    "matched_keywords": [
+      "ai",
+      "bias",
+      "biases",
+      "female",
+      "femalewhite",
+      "male",
+      "prompting",
+      "text-to-image",
+      "white"
+    ]
+  },
+  {
+    "id": "x2c4q4",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "End sexist scheduling of major sporting events to boost gender equality: Globally, women are less physically active than men, prompting the World Health Organization to encourage gender equality in sports as part of a strategy to reduce physical inactivity by 15% by 2030. [deleted]",
+    "clean_text_lc": "end sexist scheduling of major sporting events to boost gender equality: globally  women are less physically active than men, prompting the world health organization to encourage gender equality in sports as part of a strategy to reduce physical inactivity by 15% by 2030. [deleted]",
+    "matched_bias_types": [
+      "gender"
+    ],
+    "matched_keywords": [
+      "gender",
+      "prompting",
+      "sexist",
+      "sexistgender"
+    ]
+  },
+  {
+    "id": "179wwrj",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "ChatGPT may be better than a doctor at following recognised treatment standards for depression, and without the gender or social class biases ",
+    "clean_text_lc": "chatgpt may be better than a doctor at following recognised treatment standards for depression  and without the gender or social class biases ",
+    "matched_bias_types": [
+      "gender",
+      "general_bias",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "bias",
+      "biases",
+      "chatgpt",
+      "doctor",
+      "gender",
+      "genderdoctorbiases"
+    ]
+  },
+  {
+    "id": "12emve6",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "RETRACTION: Machine learning of neural representations of suicide and emotion concepts identifies suicidal youth **We wish to inform the** [**r/science**]( **community of an article submitted to the subreddit that has since been retracted by the journal. The submission garnered broad exposure on** [**r/science**](https://www.reddit.com/r/science/) **and significant media coverage. Per** [**our rules**](https://www.reddit.com/r/science/wiki/rules#wiki_retractions)**, the flair on this submission has been updated with \"RETRACTED\". The submission has also been added to our** [**wiki of retracted submissions**](https://www.reddit.com/r/science/wiki/retractions#wiki_retractions)**.**\n\n\\--\n\nReddit Submission: [MRI Predicts Suicidality with 91% Accuracy](https://www.reddit.com/r/science/comments/79oo5l/mri_predicts_suicidality_with_91_accuracy/)\n\nThe article [\"Machine learning of neural representations of suicide and emotion concepts identifies suicidal youth\"](https://doi.org/10.1038/s41562-017-0234-y) has [been retracted](https://doi.org/10.1038/s41562-023-01581-1) from *Nature Human Behavior* as of April 6, 2023. Concerns were raised in a [Matters Arising](https://doi.org/10.1038/s41562-023-01560-6) about the validity of the machine learning method used in the study. While preparing their response, the authors confirmed that their method was indeed flawed. Specifically, the classification model overestimated the accuracy of identifying suicidal ideators because feature selection relied on the same data used in the final model evaluation. Since this undermines the conclusions of the study, the authors requested the article be retracted.\n\n* Retraction Watch: [High-profile paper that used AI to identify suicide risk from brain scans retracted for flawed methods](https://retractionwatch.com/2023/04/06/high-profile-paper-that-used-ai-to-identify-suicide-risk-from-brain-scans-retracted-for-flawed-methods/)\n\n\\--\n\nShould you encounter a submission on [r/science](https://www.reddit.com/r/science/) that has been retracted, please notify the moderators [via Modmail](https://www.reddit.com/message/compose?to=%2Fr%2Fscience&subject=Retraction).",
+    "clean_text_lc": "retraction: machine learning of neural representations of suicide and emotion concepts identifies suicidal youth  *we wish to inform the** [**r/science**]( **community of an article submitted to the subreddit that has since been retracted by the journal. the submission garnered broad exposure on** [**r/science**](https://www.reddit.com/r/science/) **and significant media coverage. per** [**our rules**](https://www.reddit.com/r/science/wiki/rules#wiki_retractions)**, the flair on this submission has been updated with \"retracted\". the submission has also been added to our** [**wiki of retracted submissions**](https://www.reddit.com/r/science/wiki/retractions#wiki_retractions)**.**\n\n\\--\n\nreddit submission: [mri predicts suicidality with 91% accuracy](https://www.reddit.com/r/science/comments/79oo5l/mri_predicts_suicidality_with_91_accuracy/)\n\nthe article [\"machine learning of neural representations of suicide and emotion concepts identifies suicidal youth\"](https://doi.org/10.1038/s41562-017-0234-y) has [been retracted](https://doi.org/10.1038/s41562-023-01581-1) from *nature human behavior* as of april 6, 2023. concerns were raised in a [matters arising](https://doi.org/10.1038/s41562-023-01560-6) about the validity of the machine learning method used in the study. while preparing their response, the authors confirmed that their method was indeed flawed. specifically, the classification model overestimated the accuracy of identifying suicidal ideators because feature selection relied on the same data used in the final model evaluation. since this undermines the conclusions of the study, the authors requested the article be retracted.\n\n* retraction watch: [high-profile paper that used ai to identify suicide risk from brain scans retracted for flawed methods](https://retractionwatch.com/2023/04/06/high-profile-paper-that-used-ai-to-identify-suicide-risk-from-brain-scans-retracted-for-flawed-methods/)\n\n\\--\n\nshould you encounter a submission on [r/science](https://www.reddit.com/r/science/) that has been retracted, please notify the moderators [via modmail](https://www.reddit.com/message/compose?to=%2fr%2fscience&subject=retraction).",
+    "matched_bias_types": [
+      "age",
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "ai",
+      "machine learning",
+      "model",
+      "youth",
+      "youthmodel"
+    ]
+  },
+  {
+    "id": "17rwer8",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "AI Analysis of Peer Review Reports Reveals Subjectivity and Gender Bias in Neuroscience Research ",
+    "clean_text_lc": "ai analysis of peer review reports reveals subjectivity and gender bias in neuroscience research ",
+    "matched_bias_types": [
+      "gender",
+      "general_bias"
+    ],
+    "matched_keywords": [
+      "ai",
+      "bias",
+      "gender",
+      "genderbias"
+    ]
+  },
+  {
+    "id": "1d2yclg",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Scientists at the University of California, San Francisco have developed a bilingual brain implant that uses artificial intelligence to help a stroke survivor communicate in Spanish and English for the first time. ",
+    "clean_text_lc": "scientists at the university of california  san francisco have developed a bilingual brain implant that uses artificial intelligence to help a stroke survivor communicate in spanish and english for the first time. ",
+    "matched_bias_types": [
+      "body_modification",
+      "occupation",
+      "study"
+    ],
+    "matched_keywords": [
+      "artificial intelligence",
+      "implant",
+      "implantuniversity",
+      "scientist",
+      "university"
+    ]
+  },
+  {
+    "id": "181csgo",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Diagnostic deep learning algorithms use resting EEG to distinguish major depressive disorder, bipolar disorder, and schizophrenia from each other and from healthy volunteers with 90-100% accuracy. ",
+    "clean_text_lc": "diagnostic deep learning algorithms use resting eeg to distinguish major depressive disorder  bipolar disorder, and schizophrenia from each other and from healthy volunteers with 90-100% accuracy. ",
+    "matched_bias_types": [
+      "disability"
+    ],
+    "matched_keywords": [
+      "bipolar",
+      "deep learning",
+      "schizophrenia",
+      "schizophreniabipolar"
+    ]
+  },
+  {
+    "id": "17rwg4v",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "AI Analysis of Peer Review Reports Reveals Subjectivity and Gender Bias in Neuroscience Research ",
+    "clean_text_lc": "ai analysis of peer review reports reveals subjectivity and gender bias in neuroscience research ",
+    "matched_bias_types": [
+      "gender",
+      "general_bias"
+    ],
+    "matched_keywords": [
+      "ai",
+      "bias",
+      "biasgender",
+      "gender"
+    ]
+  },
+  {
+    "id": "tyga2s",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Researchers have trained a machine learning model to identify people with post-traumatic stress disorder with 80 per cent accuracy by analyzing text data. The model could one day serve as an accessible and inexpensive screening tool to support health professionals in detecting and diagnosing PTSD ",
+    "clean_text_lc": "researchers have trained a machine learning model to identify people with post-traumatic stress disorder with 80 per cent accuracy by analyzing text data  the model could one day serve as an accessible and inexpensive screening tool to support health professionals in detecting and diagnosing ptsd ",
+    "matched_bias_types": [
+      "disability",
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "accessible",
+      "machine learning",
+      "model",
+      "modelaccessible"
+    ]
+  },
+  {
+    "id": "101aw6h",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Biases in human perception of facial age are present and more exaggerated in current AI technology ",
+    "clean_text_lc": "biases in human perception of facial age are present and more exaggerated in current ai technology ",
+    "matched_bias_types": [
+      "age",
+      "general_bias"
+    ],
+    "matched_keywords": [
+      "age",
+      "agebiases",
+      "ai",
+      "bias",
+      "biases"
+    ]
+  },
+  {
+    "id": "139t6dm",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Association of Biomarker-Based Artificial Intelligence With Risk of Racial Bias in Retinal Images ",
+    "clean_text_lc": "association of biomarker-based artificial intelligence with risk of racial bias in retinal images ",
+    "matched_bias_types": [
+      "general_bias",
+      "race"
+    ],
+    "matched_keywords": [
+      "artificial intelligence",
+      "bias",
+      "racial",
+      "racialbias"
+    ]
+  },
+  {
+    "id": "vwluzr",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Racist Algorithms Are Making Robots Racist Too | Researchers show that large AI models are threatening to bring racist and sexist bias into the realm of robotics. [deleted]",
+    "clean_text_lc": "racist algorithms are making robots racist too   researchers show that large ai models are threatening to bring racist and sexist bias into the realm of robotics. [deleted]",
+    "matched_bias_types": [
+      "gender",
+      "general_bias",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "ai",
+      "bias",
+      "biassexist",
+      "model",
+      "sexist"
+    ]
+  },
+  {
+    "id": "1e0ldg7",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Researchers pinpoint brain areas tied to mood swings in bipolar disorder | The study has uncovered the brain areas that bias mood and the brain’s response to pleasure in bipolar disorder. It is possible that our findings may one day lead to better treatments. ",
+    "clean_text_lc": "researchers pinpoint brain areas tied to mood swings in bipolar disorder   the study has uncovered the brain areas that bias mood and the brain’s response to pleasure in bipolar disorder. it is possible that our findings may one day lead to better treatments. ",
+    "matched_bias_types": [
+      "disability",
+      "general_bias"
+    ],
+    "matched_keywords": [
+      "bias",
+      "bipolar",
+      "bipolarbias",
+      "ti"
+    ]
+  },
+  {
+    "id": "162suwb",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Woman with paralysis speaks through an avatar 18 years after a stroke, thanks to a brain implant and AI [removed]",
+    "clean_text_lc": "woman with paralysis speaks through an avatar 18 years after a stroke  thanks to a brain implant and ai [removed]",
+    "matched_bias_types": [
+      "body_modification",
+      "gender"
+    ],
+    "matched_keywords": [
+      "ai",
+      "implant",
+      "woman",
+      "womanimplant"
+    ]
+  },
+  {
+    "id": "161sayr",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Scientists have developed an advanced AI model that utilizes chest radiographs to accurately estimate a patient’s chronological age and, when there is a disparity, it can signal a correlation with chronic disease ",
+    "clean_text_lc": "scientists have developed an advanced ai model that utilizes chest radiographs to accurately estimate a patient s chronological age and, when there is a disparity, it can signal a correlation with chronic disease ",
+    "matched_bias_types": [
+      "age",
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "age",
+      "ai",
+      "model",
+      "modelage",
+      "scientist"
+    ]
+  },
+  {
+    "id": "teb0zp",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Mitigating the effects of gender bias in clinical trials. Researchers from the Technion have developed a technology that rectifies the effects of underrepresentation of women in clinical trials over machine learning models ",
+    "clean_text_lc": "mitigating the effects of gender bias in clinical trials  researchers from the technion have developed a technology that rectifies the effects of underrepresentation of women in clinical trials over machine learning models ",
+    "matched_bias_types": [
+      "gender",
+      "general_bias",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "bias",
+      "gender",
+      "genderbias",
+      "machine learning",
+      "model"
+    ]
+  },
+  {
+    "id": "1frc0vm",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "AI is biased against speakers of African American English, study finds ",
+    "clean_text_lc": "ai is biased against speakers of african american english  study finds ",
+    "matched_bias_types": [
+      "general_bias",
+      "race"
+    ],
+    "matched_keywords": [
+      "african",
+      "african american",
+      "africanafrican americanbiased",
+      "ai",
+      "bias",
+      "biased"
+    ]
+  },
+  {
+    "id": "17dqjbt",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Being suspended from school or sent to the office is tied to a big drop in grade point average (GPA), especially for Black and Latinx children. They should be considered adverse childhood experiences (ACEs) that put students at greater risk for chronic illnesses, as well as mental illness. ",
+    "clean_text_lc": "being suspended from school or sent to the office is tied to a big drop in grade point average  gpa), especially for black and latinx children. they should be considered adverse childhood experiences (aces) that put students at greater risk for chronic illnesses, as well as mental illness. ",
+    "matched_bias_types": [
+      "disability",
+      "race",
+      "study"
+    ],
+    "matched_keywords": [
+      "black",
+      "latinx",
+      "latinxblackschool",
+      "mental illness",
+      "school",
+      "ti"
+    ]
+  },
+  {
+    "id": "1ga8tke",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Cortisol levels in new mothers tied to parenting behavior and brain response to baby’s cry | The study is the first to explore the connections between maternal cortisol levels, brain response to infant distress, and parenting behavior in such detail. ",
+    "clean_text_lc": "cortisol levels in new mothers tied to parenting behavior and brain response to baby s cry | the study is the first to explore the connections between maternal cortisol levels, brain response to infant distress, and parenting behavior in such detail. ",
+    "matched_bias_types": [
+      "age"
+    ],
+    "matched_keywords": [
+      "baby",
+      "babyinfant",
+      "infant",
+      "ti"
+    ]
+  },
+  {
+    "id": "1c9kx93",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Stanford Medicine researchers have developed a powerful new artificial intelligence model that can distinguish between male and female brains. Stanford Medicine study identifies distinct brain organization patterns in women and men. ",
+    "clean_text_lc": "stanford medicine researchers have developed a powerful new artificial intelligence model that can distinguish between male and female brains  stanford medicine study identifies distinct brain organization patterns in women and men. ",
+    "matched_bias_types": [
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "artificial intelligence",
+      "female",
+      "femalemalemodel",
+      "male",
+      "model"
+    ]
+  },
+  {
+    "id": "1fzp6hu",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "The Nobel Prize in Chemistry 2024: Awarded with one half to David Baker for \"computational protein design\" and the other half jointly to Demis Hassabis and John Jumper for \"protein structure prediction\" The Nobel Prize in Chemistry 2024 was awarded with one half to [David Baker]( for \"**computational protein design**\" and the other half jointly to [Demis Hassabis](https://en.wikipedia.org/wiki/Demis_Hassabis) and [John Jumper](https://en.wikipedia.org/wiki/John_M._Jumper) for \"**protein structure prediction**.\"\n\n \n\n* [Official Press Release](https://www.nobelprize.org/prizes/chemistry/2024/press-release/)  \n \n* [Popular Science Background](https://www.nobelprize.org/prizes/chemistry/2024/popular-information/)   \n \n* [Scientific Explanation of the Award](https://www.nobelprize.org/prizes/chemistry/2024/advanced-information/)   \n \n* [Video of the Prize Announcement](https://www.youtube.com/watch?v=bPjB9NRu8Jc)   \n \n\n>The Nobel Prize in Chemistry 2024 is about pro­teins,  life’s ingenious chemical tools. David Baker has succeeded with the  almost impossible feat of building entirely new kinds of proteins. Demis  Hassabis and John Jumper have developed an AI model to solve a  50-year-old problem: predicting proteins’ complex structures. These  discoveries hold enormous potential.\n\n&#x200B;",
+    "clean_text_lc": "the nobel prize in chemistry 2024: awarded with one half to david baker for  computational protein design\" and the other half jointly to demis hassabis and john jumper for \"protein structure prediction\" the nobel prize in chemistry 2024 was awarded with one half to [david baker]( for \"**computational protein design**\" and the other half jointly to [demis hassabis](https://en.wikipedia.org/wiki/demis_hassabis) and [john jumper](https://en.wikipedia.org/wiki/john_m._jumper) for \"**protein structure prediction**.\"\n\n \n\n* [official press release](https://www.nobelprize.org/prizes/chemistry/2024/press-release/)  \n \n* [popular science background](https://www.nobelprize.org/prizes/chemistry/2024/popular-information/)   \n \n* [scientific explanation of the award](https://www.nobelprize.org/prizes/chemistry/2024/advanced-information/)   \n \n* [video of the prize announcement](https://www.youtube.com/watch?v=bpjb9nru8jc)   \n \n\n>the nobel prize in chemistry 2024 is about pro­teins,  life’s ingenious chemical tools. david baker has succeeded with the  almost impossible feat of building entirely new kinds of proteins. demis  hassabis and john jumper have developed an ai model to solve a  50-year-old problem: predicting proteins’ complex structures. these  discoveries hold enormous potential.\n\n&#x200b;",
+    "matched_bias_types": [
+      "age",
+      "gender",
+      "naming",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "ai",
+      "john",
+      "johnmodel",
+      "model",
+      "old"
+    ]
+  },
+  {
+    "id": "1f374zp",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Adolescent students with more executive functioning (EF) challenges find generative AI tools particularly useful for schoolwork, especially for completing assignments. ",
+    "clean_text_lc": "adolescent students with more executive functioning  ef) challenges find generative ai tools particularly useful for schoolwork, especially for completing assignments. ",
+    "matched_bias_types": [
+      "age",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "adolescent",
+      "adolescentexecutive",
+      "ai",
+      "executive"
+    ]
+  },
+  {
+    "id": "1ffjefm",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "A brief conversation with an AI (GPT4) reduced conspiracy believers' belief in their chosen conspiracy theory by 20%, and the effect was just as strong 2 months later. (I am senior author on the paper) ",
+    "clean_text_lc": "a brief conversation with an ai  gpt4) reduced conspiracy believers' belief in their chosen conspiracy theory by 20%, and the effect was just as strong 2 months later. (i am senior author on the paper) ",
+    "matched_bias_types": [
+      "age",
+      "gender",
+      "religion"
+    ],
+    "matched_keywords": [
+      "ai",
+      "belief",
+      "senior",
+      "strong",
+      "strongbeliefsenior"
+    ]
+  },
+  {
+    "id": "130nxqn",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "RETRACTION: Association of Video Gaming With Cognitive Performance Among Children **We wish to inform the** [**r/science**]( **community of an article submitted to the subreddit that has since been retracted and replaced by the journal. The submission garnered broad exposure on** [**r/science**](https://www.reddit.com/r/science/) **and significant media coverage. Per** [**our rules**](https://www.reddit.com/r/science/wiki/rules#wiki_retractions)**, the flair on this submission has been updated with \"RETRACTED\". The submission has also been added to our** [**wiki of retracted submissions**](https://www.reddit.com/r/science/wiki/retractions#wiki_retractions)**.**\n\n\\--\n\nReddit Submission: [A study of nearly 2,000 children found that those who reported playing video games for three hours per day or more performed better on cognitive skills tests involving impulse control and working memory compared to children who had never played video games.](https://www.reddit.com/r/science/comments/ycqb2v/a_study_of_nearly_2000_children_found_that_those/)\n\nThe article [\"Association of Video Gaming With Cognitive Performance Among Children\"](https://doi.org/10.1001/jamanetworkopen.2022.35721) has [been retracted and replaced](https://doi.org/10.1001/jamanetworkopen.2023.6895) from *JAMA Network Open* as of April 10, 2023. The authors were contacted by a reader regarding several errors in their work, mostly related to a failure to include, properly account for, and analyze differences between the two study groups. These errors prompted extensive corrections to the paper.\n\nThe original study found that the children who played video games performed better on two cognitive tests, but the reanalysis showed that they did notably worse on one test and about the same on the other compared to children who didn't play video games. The original study also claimed there was no significant difference between the groups on the Child Behavior Checklist used to detect behavioral and emotional problems in children and adolescents. The reanalysis found that attention problems, depression symptoms, and attention-deficit/hyperactivity disorder (ADHD) scores were significantly higher among children who played three hours per day or more compared to children who had never played video games. Given the extensive corrections necessary to resolve these errors, the authors requested the article be [retracted and replaced](https://doi.org/10.1001/jamanetworkopen.2023.6895) with a revised manuscript.\n\n* Retraction Watch: [Debate over whether video games \"rot kids' brains\" won’t be settled by this retraction](https://retractionwatch.com/2023/04/20/debate-over-whether-video-games-rot-kids-brains-wont-be-settled-by-this-retraction/)\n\n\\--\n\nShould you encounter a submission on [r/science](https://www.reddit.com/r/science/) that has been retracted, please notify the moderators [via Modmail](https://www.reddit.com/message/compose?to=%2Fr%2Fscience&subject=Retraction).",
+    "clean_text_lc": "retraction: association of video gaming with cognitive performance among children  *we wish to inform the** [**r/science**]( **community of an article submitted to the subreddit that has since been retracted and replaced by the journal. the submission garnered broad exposure on** [**r/science**](https://www.reddit.com/r/science/) **and significant media coverage. per** [**our rules**](https://www.reddit.com/r/science/wiki/rules#wiki_retractions)**, the flair on this submission has been updated with \"retracted\". the submission has also been added to our** [**wiki of retracted submissions**](https://www.reddit.com/r/science/wiki/retractions#wiki_retractions)**.**\n\n\\--\n\nreddit submission: [a study of nearly 2,000 children found that those who reported playing video games for three hours per day or more performed better on cognitive skills tests involving impulse control and working memory compared to children who had never played video games.](https://www.reddit.com/r/science/comments/ycqb2v/a_study_of_nearly_2000_children_found_that_those/)\n\nthe article [\"association of video gaming with cognitive performance among children\"](https://doi.org/10.1001/jamanetworkopen.2022.35721) has [been retracted and replaced](https://doi.org/10.1001/jamanetworkopen.2023.6895) from *jama network open* as of april 10, 2023. the authors were contacted by a reader regarding several errors in their work, mostly related to a failure to include, properly account for, and analyze differences between the two study groups. these errors prompted extensive corrections to the paper.\n\nthe original study found that the children who played video games performed better on two cognitive tests, but the reanalysis showed that they did notably worse on one test and about the same on the other compared to children who didn't play video games. the original study also claimed there was no significant difference between the groups on the child behavior checklist used to detect behavioral and emotional problems in children and adolescents. the reanalysis found that attention problems, depression symptoms, and attention-deficit/hyperactivity disorder (adhd) scores were significantly higher among children who played three hours per day or more compared to children who had never played video games. given the extensive corrections necessary to resolve these errors, the authors requested the article be [retracted and replaced](https://doi.org/10.1001/jamanetworkopen.2023.6895) with a revised manuscript.\n\n* retraction watch: [debate over whether video games \"rot kids' brains\" won’t be settled by this retraction](https://retractionwatch.com/2023/04/20/debate-over-whether-video-games-rot-kids-brains-wont-be-settled-by-this-retraction/)\n\n\\--\n\nshould you encounter a submission on [r/science](https://www.reddit.com/r/science/) that has been retracted, please notify the moderators [via modmail](https://www.reddit.com/message/compose?to=%2fr%2fscience&subject=retraction).",
+    "matched_bias_types": [
+      "age",
+      "gender"
+    ],
+    "matched_keywords": [
+      "adolescent",
+      "child",
+      "emotional",
+      "emotionalchild",
+      "kid",
+      "prompt"
+    ]
+  },
+  {
+    "id": "1hh1qcc",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Bias in AI amplifies our own biases, finds study | Artificial intelligence systems tend to take on human biases and amplify them, causing people who use that AI to become more biased themselves, finds a new study by UCL researchers. ",
+    "clean_text_lc": "bias in ai amplifies our own biases  finds study | artificial intelligence systems tend to take on human biases and amplify them, causing people who use that ai to become more biased themselves, finds a new study by ucl researchers. ",
+    "matched_bias_types": [
+      "general_bias"
+    ],
+    "matched_keywords": [
+      "ai",
+      "artificial intelligence",
+      "bias",
+      "biasbiasesbiased",
+      "biased",
+      "biases"
+    ]
+  },
+  {
+    "id": "1awbvqd",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Study unveils a new AI model that was more than 90% successful at determining whether scans of brain activity came from a woman or a man. ",
+    "clean_text_lc": "study unveils a new ai model that was more than 90% successful at determining whether scans of brain activity came from a woman or a man  ",
+    "matched_bias_types": [
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "ai",
+      "man",
+      "model",
+      "modelmanwoman",
+      "woman"
+    ]
+  },
+  {
+    "id": "1dn9w9m",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "In a new study, researchers found that ChatGPT consistently ranked resumes with disability-related honors and credentials lower than the same resumes without those honors and credentials. When asked to explain the rankings, the system spat out biased perceptions of disabled people. ",
+    "clean_text_lc": "in a new study  researchers found that chatgpt consistently ranked resumes with disability-related honors and credentials lower than the same resumes without those honors and credentials. when asked to explain the rankings, the system spat out biased perceptions of disabled people. ",
+    "matched_bias_types": [
+      "disability",
+      "general_bias"
+    ],
+    "matched_keywords": [
+      "bias",
+      "biased",
+      "chatgpt",
+      "disability",
+      "disabled",
+      "disabledbiased"
+    ]
+  },
+  {
+    "id": "1e3r1t4",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Researchers created an AI model capable of predicting whether a person with mild cognitive impairment will develop Alzheimer’s disease within 6 years, based solely on their speech. This model has shown an accuracy rate of 78.5%, offering a non-invasive, accessible method for early diagnosis. ",
+    "clean_text_lc": "researchers created an ai model capable of predicting whether a person with mild cognitive impairment will develop alzheimer s disease within 6 years, based solely on their speech. this model has shown an accuracy rate of 78.5%, offering a non-invasive, accessible method for early diagnosis. ",
+    "matched_bias_types": [
+      "disability",
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "accessible",
+      "accessiblemodel",
+      "ai",
+      "model"
+    ]
+  },
+  {
+    "id": "sjpexl",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "People are more comfortable talking to female rather than male robots working in service roles in hotels, according to a new study. These are important considerations for AI robot developers as well as for hospitality employers to consider as they think about adopting robots more widely. ",
+    "clean_text_lc": "people are more comfortable talking to female rather than male robots working in service roles in hotels  according to a new study. these are important considerations for ai robot developers as well as for hospitality employers to consider as they think about adopting robots more widely. ",
+    "matched_bias_types": [
+      "gender"
+    ],
+    "matched_keywords": [
+      "ai",
+      "female",
+      "male",
+      "malefemale"
+    ]
+  },
+  {
+    "id": "17cdui1",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Being suspended from school or sent to the office is tied to a big drop in grade point average (GPA), especially for Black and Latinx children ",
+    "clean_text_lc": "being suspended from school or sent to the office is tied to a big drop in grade point average  gpa), especially for black and latinx children ",
+    "matched_bias_types": [
+      "race",
+      "study"
+    ],
+    "matched_keywords": [
+      "black",
+      "latinx",
+      "school",
+      "schoolblacklatinx",
+      "ti"
+    ]
+  },
+  {
+    "id": "1g322vs",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "LLMs systematically recommend more denials and higher interest rates for Black applicants than otherwise-identical white applicants.  ",
+    "clean_text_lc": "llms systematically recommend more denials and higher interest rates for black applicants than otherwise-identical white applicants   ",
+    "matched_bias_types": [
+      "race"
+    ],
+    "matched_keywords": [
+      "black",
+      "llm",
+      "white",
+      "whiteblack"
+    ]
+  },
+  {
+    "id": "10vfjx8",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Researchers tested a large sample of the prominent major AI technologies available today and found not only did they reproduce human biases in the recognition of facial age, but they exaggerated those biases ",
+    "clean_text_lc": "researchers tested a large sample of the prominent major ai technologies available today and found not only did they reproduce human biases in the recognition of facial age  but they exaggerated those biases ",
+    "matched_bias_types": [
+      "age",
+      "general_bias"
+    ],
+    "matched_keywords": [
+      "age",
+      "ai",
+      "bias",
+      "biases",
+      "biasesage"
+    ]
+  },
+  {
+    "id": "1egj233",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "AI predicts male infertility risk with blood test, no semen needed | The AI model demonstrated 100% accuracy in predicting non-obstructive azoospermia, the most severe form of male infertility. ",
+    "clean_text_lc": "ai predicts male infertility risk with blood test  no semen needed | the ai model demonstrated 100% accuracy in predicting non-obstructive azoospermia, the most severe form of male infertility. ",
+    "matched_bias_types": [
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "ai",
+      "male",
+      "model",
+      "modelmale"
+    ]
+  },
+  {
+    "id": "1bv5d57",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Recommendation letters written by ChatGPT demonstrate gender bias ",
+    "clean_text_lc": "recommendation letters written by chatgpt demonstrate gender bias ",
+    "matched_bias_types": [
+      "gender",
+      "general_bias"
+    ],
+    "matched_keywords": [
+      "bias",
+      "biasgender",
+      "chatgpt",
+      "gender"
+    ]
+  },
+  {
+    "id": "1ajk2z0",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Researchers trained a multimodal AI system through the eyes and ears of a single child, using headcam video recordings from six months and through their second birthday. They found the model was able to learn a substantial number of the words and concepts present in the child’s everyday experience ",
+    "clean_text_lc": "researchers trained a multimodal ai system through the eyes and ears of a single child  using headcam video recordings from six months and through their second birthday. they found the model was able to learn a substantial number of the words and concepts present in the child’s everyday experience ",
+    "matched_bias_types": [
+      "age",
+      "gender",
+      "occupation"
+    ],
+    "matched_keywords": [
+      "ai",
+      "child",
+      "model",
+      "modelchild"
+    ]
+  },
+  {
+    "id": "sysk1d",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "Adolescent psychological well-being tied to adult risk of cardiovascular disease, study finds ",
+    "clean_text_lc": "adolescent psychological well-being tied to adult risk of cardiovascular disease  study finds ",
+    "matched_bias_types": [
+      "age"
+    ],
+    "matched_keywords": [
+      "adolescent",
+      "adolescentadult",
+      "adult",
+      "ti"
+    ]
+  },
+  {
+    "id": "1ghzp01",
+    "subreddit": "science",
+    "subreddit_group": "general_reddit",
+    "clean_text": "White women's Trump support tied to racial resentment, study finds ",
+    "clean_text_lc": "white women s trump support tied to racial resentment, study finds ",
+    "matched_bias_types": [
+      "race"
+    ],
+    "matched_keywords": [
+      "racial",
+      "racialwhite",
+      "ti",
+      "white"
+    ]
+  }
+]
