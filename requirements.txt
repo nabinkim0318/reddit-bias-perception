@@ -1,21 +1,28 @@
-# === Core LLM Runtime ===
-torch==2.7.0
-torchvision==0.22.0
-torchaudio==2.7.0
-vllm==0.9.2
-transformers==4.51.3
-xformers==0.0.30
-sentencepiece
-accelerate
-flashinfer --extra-index-url https://pypi.nvidia.com
+# === Core LLM Runtime (HF only) ===
+# Torch is recommended to install with CUDA 12.4 build: index specification required when installing
+torch==2.4.0
+torchvision==0.19.0
+torchaudio==2.4.0
 
-# === Optional for Prompt Management / Output Parsing ===
+transformers==4.44.2
+accelerate==0.33.0
+safetensors==0.4.3
+sentencepiece==0.2.0
+huggingface-hub==0.23.5
+# protobuf has many compatibility issues with newer versions → fixed at 5.0.0 or lower
+protobuf<5.0.0
+
+# === (Optional) Performance ===
+# xformers is platform-sensitive → only install when needed. If unstable, comment out
+xformers==0.0.27.post2
+
+# === Prompt/Parsing (Optional) ===
 outlines==0.1.11
 xgrammar==0.1.19
 
 # === Data Handling ===
 pandas>=2.2.2
-numpy<2.0  
+numpy<2.0
 scikit-learn
 scipy
 tqdm
@@ -38,7 +45,5 @@ hdbscan
 
 # === Logging, Config, Util ===
 python-dotenv
-huggingface-hub
 coloredlogs
 typing-extensions>=4.14.0
-protobuf>=6.0.0
