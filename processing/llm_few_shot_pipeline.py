@@ -270,7 +270,7 @@ def get_model_and_tokenizer():
                 model = AutoModelForCausalLM.from_pretrained(
                     MODEL_ID,
                     token=HF_TOKEN,
-                    torch_dtype=torch.bfloat16,   # A100이면 bfloat16 권장
+                    torch_dtype=torch.bfloat16,   # A100 recommends bfloat16
                     device_map="auto",
                     low_cpu_mem_usage=True,
                     trust_remote_code=True,
@@ -294,59 +294,69 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
     if tokenizer is None or model is None:
         return ["Model not available"] * len(batch_texts)
 
-    decoded_outputs = []
     try:
-        SUB_BATCH_SIZE = int(os.getenv("LLM_SUB_BATCH", "2"))
+        SUB_BATCH_SIZE = int(os.getenv("LLM_SUB_BATCH", "8"))
         sub_batch_size = max(1, min(SUB_BATCH_SIZE, len(batch_texts)))
 
-        # 안전한 eos 리스트 구성
+        # Safe EOS
         eot_id = tokenizer.convert_tokens_to_ids("<|eot_id|>")
-        eos_list = [tokenizer.eos_token_id]
-        if eot_id is not None:
-            eos_list.append(eot_id)
+        eos_list = [tok for tok in [tokenizer.eos_token_id, eot_id] if tok is not None]
+
+        decoded_outputs: List[str] = []
 
         for i in range(0, len(batch_texts), sub_batch_size):
-            sub_batch = batch_texts[i:i+sub_batch_size]
-            sub_outputs = []
+            sub_texts = batch_texts[i:i+sub_batch_size]
 
-            for text in sub_batch:
+            # (1) batched messages
+            messages_batch = []
+            for text in sub_texts:
                 prompt = build_prompt(text)
-                messages = [
+                messages_batch.append([
                     {"role": "system", "content": "You are an AI ethics researcher analyzing Reddit posts. Follow the task strictly."},
                     {"role": "user", "content": prompt},
-                ]
-                input_ids = tokenizer.apply_chat_template(
-                    messages, add_generation_prompt=True, return_tensors="pt"
-                ).to(model.device)
+                ])
 
-                attention_mask = (input_ids != tokenizer.pad_token_id).long()
+            # (2) apply template & tokenize (batched)
+            enc = tokenizer.apply_chat_template(
+                messages_batch,
+                add_generation_prompt=True,
+                tokenize=True,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=2048,
+            )
+            # move to device (safe way)
+            inputs = {k: v.to(model.device) for k, v in enc.items()}
 
-                with torch.inference_mode():
-                    outputs = model.generate(
-                        input_ids,
-                        attention_mask=attention_mask,
-                        max_new_tokens=400,
-                        do_sample=True,              # 샘플링 모드면 temperature/top_p 사용 가능
-                        temperature=0.6,
-                        top_p=0.9,
-                        eos_token_id=eos_list,
-                        repetition_penalty=1.1,
-                        pad_token_id=tokenizer.pad_token_id,
-                    )
+            # (3) generate once per sub-batch
+            with torch.inference_mode():
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=64,
+                    do_sample=False,
+                    eos_token_id=eos_list if eos_list else None,
+                    repetition_penalty=1.05,
+                    pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+                )
 
-                # 프롬프트 부분 제거 후 디코드
-                gen_only = outputs[0][input_ids.shape[-1]:]
-                decoded = tokenizer.decode(gen_only, skip_special_tokens=True).strip()
-                sub_outputs.append(decoded if decoded else "[EMPTY_OUTPUT]")
+            # (4) cut off the prompt per-sample using attention_mask lengths
+            attn_mask = inputs["attention_mask"]
+            in_lens = attn_mask.sum(dim=1).tolist()  # [B]
+            for j, out_ids in enumerate(outputs):
+                gen_only = out_ids[in_lens[j]:]
+                text = tokenizer.decode(gen_only, skip_special_tokens=True).strip()
+                decoded_outputs.append(text or "[EMPTY_OUTPUT]")
 
-                del outputs, input_ids, attention_mask
+            del outputs, inputs, enc
 
-            decoded_outputs.extend(sub_outputs)
         return decoded_outputs
 
     except Exception as e:
         logging.error(f"❌ Model inference error: {e}")
         return [f"Inference error: {e}"] * len(batch_texts)
+
+
 
 
 
@@ -580,7 +590,7 @@ def main(subreddit: str):
 
     # Optimize batch size based on available memory and CPU cores
     available_cores = os.cpu_count() or 1
-    optimal_batch_size = min(BATCH_SIZE, max(2, len(texts) // (available_cores * 2)))
+    optimal_batch_size = int(os.getenv("LLM_BATCH", "16"))
     logging.info(f"Using batch size: {optimal_batch_size}")
 
     # Prepare batches
@@ -591,24 +601,13 @@ def main(subreddit: str):
         batch_subreddits = list(subreddits[i : i + optimal_batch_size])
         batch_input_list.append((batch_texts, batch_ids, batch_subreddits))
 
-    logging.info("🚀 Starting multiprocessing classification...")
+    logging.info("🚀 Starting classification (single-process, batched generate)...")
     all_results = []
-
-    # Use fewer processes to avoid memory issues
-    num_processes = min(available_cores, 1)
-    logging.info(f"Using {num_processes} processes for classification")
-
     try:
-        with Pool(processes=num_processes) as pool:
-            for batch_result in tqdm(
-                pool.imap_unordered(classify_post_wrapper, batch_input_list),
-                total=len(batch_input_list),
-                desc="Classifying",
-                unit="batch",
-            ):
-                all_results.extend(batch_result)
+        for batch_input in tqdm(batch_input_list, desc="Classifying", unit="batch", total=len(batch_input_list)):
+            all_results.extend(classify_post_wrapper(batch_input))
     except Exception as e:
-        logging.error(f"❌ Error during multiprocessing: {e}")
+        logging.error(f"❌ Error during classification loop: {e}")
         _write_empty_outputs(yes_path, no_path)
         return
 
