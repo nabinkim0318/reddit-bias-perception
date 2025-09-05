@@ -253,29 +253,27 @@ def extract_label_and_reasoning(decoded_output: str) -> Tuple[str, str]:
 
 # === MODEL Loading & Inference ===
 def get_model_and_tokenizer():
-    """
-    Loading model and tokenizer with caching.
-
-    Returns:
-        Tuple[Optional[AutoTokenizer], Optional[AutoModelForCausalLM]]:
-        Tokenizer and model, or (None, None) if loading failed
-    """
     global _model_cache
-
     with _model_lock:
         if "model" not in _model_cache or "tokenizer" not in _model_cache:
             logging.info("🔍 Loading model and tokenizer...")
             try:
-                tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, token=HF_TOKEN)
+                tokenizer = AutoTokenizer.from_pretrained(
+                    MODEL_ID,
+                    token=HF_TOKEN,
+                    use_fast=True,
+                    trust_remote_code=True,
+                )
                 if tokenizer.pad_token is None:
                     tokenizer.pad_token = tokenizer.eos_token
 
                 model = AutoModelForCausalLM.from_pretrained(
                     MODEL_ID,
                     token=HF_TOKEN,
-                    torch_dtype=torch.bfloat16,
+                    torch_dtype=torch.bfloat16,   # A100이면 bfloat16 권장
                     device_map="auto",
-                    low_cpu_mem_usage=True,  # Memory optimization
+                    low_cpu_mem_usage=True,
+                    trust_remote_code=True,
                 )
                 model.eval()
 
@@ -291,34 +289,32 @@ def get_model_and_tokenizer():
     return _model_cache["tokenizer"], _model_cache["model"]
 
 
+
 def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
-    """
-    Generate outputs for a batch of texts with improved memory management.
-    """
     if tokenizer is None or model is None:
-        return [f"Model not available"] * len(batch_texts)
+        return ["Model not available"] * len(batch_texts)
 
     decoded_outputs = []
-
     try:
-        # Process in smaller sub-batches to manage memory
         SUB_BATCH_SIZE = int(os.getenv("LLM_SUB_BATCH", "2"))
         sub_batch_size = max(1, min(SUB_BATCH_SIZE, len(batch_texts)))
 
+        # 안전한 eos 리스트 구성
+        eot_id = tokenizer.convert_tokens_to_ids("<|eot_id|>")
+        eos_list = [tokenizer.eos_token_id]
+        if eot_id is not None:
+            eos_list.append(eot_id)
+
         for i in range(0, len(batch_texts), sub_batch_size):
-            sub_batch = batch_texts[i : i + sub_batch_size]
+            sub_batch = batch_texts[i:i+sub_batch_size]
             sub_outputs = []
 
             for text in sub_batch:
                 prompt = build_prompt(text)
                 messages = [
-                    {
-                        "role": "system",
-                        "content": "You are an AI ethics researcher analyzing Reddit posts. Follow the task strictly.",
-                    },
+                    {"role": "system", "content": "You are an AI ethics researcher analyzing Reddit posts. Follow the task strictly."},
                     {"role": "user", "content": prompt},
                 ]
-
                 input_ids = tokenizer.apply_chat_template(
                     messages, add_generation_prompt=True, return_tensors="pt"
                 ).to(model.device)
@@ -329,31 +325,29 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
                     outputs = model.generate(
                         input_ids,
                         attention_mask=attention_mask,
-                        max_new_tokens=400,  # Reduced for efficiency
-                        do_sample=False,
-                        eos_token_id=[
-                            tokenizer.eos_token_id,
-                            tokenizer.convert_tokens_to_ids("<|eot_id|>"),
-                        ],
+                        max_new_tokens=400,
+                        do_sample=True,              # 샘플링 모드면 temperature/top_p 사용 가능
+                        temperature=0.6,
+                        top_p=0.9,
+                        eos_token_id=eos_list,
                         repetition_penalty=1.1,
                         pad_token_id=tokenizer.pad_token_id,
                     )
 
-                # Decode and strip any special tokens
-                response = outputs[0][input_ids.shape[-1] :]
-                decoded = tokenizer.decode(response, skip_special_tokens=True).strip()
-                sub_outputs.append(decoded)
+                # 프롬프트 부분 제거 후 디코드
+                gen_only = outputs[0][input_ids.shape[-1]:]
+                decoded = tokenizer.decode(gen_only, skip_special_tokens=True).strip()
+                sub_outputs.append(decoded if decoded else "[EMPTY_OUTPUT]")
 
-                # Clear GPU memory
                 del outputs, input_ids, attention_mask
 
             decoded_outputs.extend(sub_outputs)
-
         return decoded_outputs
 
     except Exception as e:
         logging.error(f"❌ Model inference error: {e}")
         return [f"Inference error: {e}"] * len(batch_texts)
+
 
 
 def postprocess_outputs(
@@ -459,79 +453,62 @@ def classify_post_wrapper(
 
 
 # === SINGLE POST CLASSIFICATION ===
-def classify_single_post(
-    post_text: str, subreddit: str = "unknown", post_id: str = "unknown"
-) -> Dict[str, Any]:
-    """
-    Perform bias classification for a single Reddit post with optimized model loading.
-    """
+def classify_single_post(post_text: str, subreddit: str = "unknown", post_id: str = "unknown") -> Dict[str, Any]:
     tokenizer, model = get_model_and_tokenizer()
     if tokenizer is None or model is None:
         logging.error("❌ Failed to load model and tokenizer")
         return {
-            "id": post_id,
-            "subreddit": subreddit,
-            "clean_text": post_text,
-            "pred_label": "no",
-            "llm_reasoning": "Model load failed",
+            "id": post_id, "subreddit": subreddit, "clean_text": post_text,
+            "pred_label": "no", "llm_reasoning": "Model load failed",
         }
 
     try:
-        # Create prompt
         prompt = build_prompt(post_text)
+        messages = [
+            {"role": "system", "content": "You are an AI ethics researcher analyzing Reddit posts. Follow the task strictly."},
+            {"role": "user", "content": prompt},
+        ]
+        input_ids = tokenizer.apply_chat_template(
+            messages, add_generation_prompt=True, return_tensors="pt"
+        ).to(model.device)
 
-        # Tokenize with memory optimization
-        inputs = tokenizer(
-            prompt, return_tensors="pt", padding=True, truncation=True, max_length=2048
-        )
-        inputs = {k: v.to(model.device) for k, v in inputs.items()}
+        eot_id = tokenizer.convert_tokens_to_ids("<|eot_id|>")
+        eos_list = [tokenizer.eos_token_id] + ([eot_id] if eot_id is not None else [])
 
-        # Perform inference
         with torch.no_grad():
             outputs = model.generate(
-                **inputs,
+                input_ids,
                 max_new_tokens=200,
-                do_sample=False,
+                do_sample=True, temperature=0.6, top_p=0.9,
                 repetition_penalty=1.1,
                 pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
-                eos_token_id=[
-                    tokenizer.eos_token_id,
-                    tokenizer.convert_tokens_to_ids("<|eot_id|>"),
-                ],
+                eos_token_id=eos_list,
             )
 
-        # Decode result
-        decoded_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        decoded_output = decoded_output.replace(prompt, "").strip()
+        gen_only = outputs[0][input_ids.shape[-1]:]
+        decoded_output = tokenizer.decode(gen_only, skip_special_tokens=True).strip()
+        if not decoded_output:
+            decoded_output = "[EMPTY_OUTPUT]"
 
-        # Extract label
         label, reasoning = extract_label_and_reasoning(decoded_output)
 
-        # Clear memory
-        del outputs, inputs
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
         result = {
-            "id": post_id,
-            "subreddit": subreddit,
-            "clean_text": post_text,
-            "pred_label": label,
-            "llm_reasoning": reasoning,
+            "id": post_id, "subreddit": subreddit, "clean_text": post_text,
+            "pred_label": label, "llm_reasoning": reasoning, "raw_output": decoded_output,
         }
-
         logging.info(f"✅ Classification complete: {label}")
         return result
 
     except Exception as e:
         logging.error(f"❌ Error during classification: {e}")
         return {
-            "id": post_id,
-            "subreddit": subreddit,
-            "clean_text": post_text,
-            "pred_label": "no",
-            "llm_reasoning": f"Error: {str(e)}",
+            "id": post_id, "subreddit": subreddit, "clean_text": post_text,
+            "pred_label": "no", "llm_reasoning": f"Error: {str(e)}",
         }
+
 
 
 def example_single_classification() -> Dict[str, Any]:
