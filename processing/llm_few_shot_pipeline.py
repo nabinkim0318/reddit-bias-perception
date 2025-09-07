@@ -337,16 +337,26 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
                 ])
 
             # (2) apply template & tokenize (batched)
-            enc_max_len = min(2048, getattr(tokenizer, "model_max_length", 2048))
-            enc = tokenizer.apply_chat_template(
+            prompt_texts = tokenizer.apply_chat_template(
                 messages_batch,
                 add_generation_prompt=True,
-                tokenize=True,
+                tokenize=False,          # ← take strings
+            )
+            
+            if isinstance(prompt_texts, str):
+                prompt_texts = [prompt_texts]
+
+            # Now encode with normal tokenizer (dict return)
+            enc_max_len = min(2048, getattr(tokenizer, "model_max_length", 2048))
+            enc = tokenizer(
+                prompt_texts,
                 return_tensors="pt",
                 padding=True,
                 truncation=True,
                 max_length=enc_max_len,
             )
+
+            # move to device
             inputs = {k: v.to(model.device) for k, v in enc.items()}
 
             # (3) generate once per sub-batch
