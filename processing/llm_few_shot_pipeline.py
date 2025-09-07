@@ -264,16 +264,35 @@ def get_model_and_tokenizer():
                     use_fast=True,
                     trust_remote_code=True,
                 )
+                
                 if tokenizer.pad_token is None:
                     tokenizer.pad_token = tokenizer.eos_token
+                    
+                use_gpu = torch.cuda.is_available()
+                USE_4BIT = os.getenv("USE_4BIT", "1") not in {"0", "false", "False"}
+                
+                load_kwargs = dict(
+                    device_map="auto",
+                    low_cpu_mem_usage=True,
+                )
+                    
+                if use_gpu and USE_4BIT:
+                    load_kwargs.update(dict(
+                        load_in_4bit=True,
+                        bnb_4bit_quant_type="nf4",
+                        bnb_4bit_use_double_quant=True,
+                        bnb_4bit_compute_dtype=torch.float16,
+                    ))
+                else:
+                    load_kwargs.update(dict(
+                        torch_dtype=torch.float16 if use_gpu else torch.float32
+                    ))
 
                 model = AutoModelForCausalLM.from_pretrained(
                     MODEL_ID,
                     token=HF_TOKEN,
-                    torch_dtype=torch.bfloat16,   # A100 recommends bfloat16
-                    device_map="auto",
-                    low_cpu_mem_usage=True,
                     trust_remote_code=True,
+                    **load_kwargs,
                 )
                 model.eval()
 
@@ -303,6 +322,7 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
         eos_list = [tok for tok in [tokenizer.eos_token_id, eot_id] if tok is not None]
 
         decoded_outputs: List[str] = []
+        sub_batch_idx = 0  # ← Sub-batch counter
 
         for i in range(0, len(batch_texts), sub_batch_size):
             sub_texts = batch_texts[i:i+sub_batch_size]
@@ -317,6 +337,7 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
                 ])
 
             # (2) apply template & tokenize (batched)
+            enc_max_len = min(2048, getattr(tokenizer, "model_max_length", 2048))
             enc = tokenizer.apply_chat_template(
                 messages_batch,
                 add_generation_prompt=True,
@@ -324,9 +345,8 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
                 return_tensors="pt",
                 padding=True,
                 truncation=True,
-                max_length=2048,
+                max_length=enc_max_len,
             )
-            # move to device (safe way)
             inputs = {k: v.to(model.device) for k, v in enc.items()}
 
             # (3) generate once per sub-batch
@@ -338,25 +358,35 @@ def generate_outputs(batch_texts: List[str], tokenizer, model) -> List[str]:
                     eos_token_id=eos_list if eos_list else None,
                     repetition_penalty=1.05,
                     pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+                    use_cache=True,
+                    return_dict_in_generate=False,
                 )
 
             # (4) cut off the prompt per-sample using attention_mask lengths
             attn_mask = inputs["attention_mask"]
             in_lens = attn_mask.sum(dim=1).tolist()  # [B]
-            for j, out_ids in enumerate(outputs):
+
+            for j, out_ids in enumerate(outputs):   # ← enumerate index is j
                 gen_only = out_ids[in_lens[j]:]
                 text = tokenizer.decode(gen_only, skip_special_tokens=True).strip()
                 decoded_outputs.append(text or "[EMPTY_OUTPUT]")
 
-            del outputs, inputs, enc
+            # cleanup
+            del outputs, inputs, enc, attn_mask, in_lens
 
+            # Sometimes clear cache (to avoid fragmentation)
+            if torch.cuda.is_available():
+                every = int(os.getenv("CUDA_EMPTY_CACHE_EVERY", "4"))
+                if every > 0 and (sub_batch_idx % every == 0):
+                    torch.cuda.empty_cache()
+                    # Option: torch.cuda.synchronize()
+
+            sub_batch_idx += 1  # ← Sub-batch counter increase
         return decoded_outputs
 
     except Exception as e:
         logging.error(f"❌ Model inference error: {e}")
         return [f"Inference error: {e}"] * len(batch_texts)
-
-
 
 
 
@@ -589,7 +619,7 @@ def main(subreddit: str):
         return
 
     # Optimize batch size based on available memory and CPU cores
-    available_cores = os.cpu_count() or 1
+    num_processes = 1
     optimal_batch_size = int(os.getenv("LLM_BATCH", "16"))
     logging.info(f"Using batch size: {optimal_batch_size}")
 
