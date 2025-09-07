@@ -1,10 +1,9 @@
 <s>[INST]
-You are an AI ethics researcher analyzing Reddit posts.
-Your task is to classify whether the following post discusses **visual identity bias in AI-generated images**.
+You are an AI ethics researcher. Classify if the following post discusses 
+**visual identity bias in AI-generated images**.
 
-Definition of bias (focus of classification):
-"Bias" refers specifically to unfair, distorted, or underrepresented visual portrayal of human identity in AI-generated images. Identity traits include:
-- Race, gender, body type, disability, age, religion, culture, or socioeconomic status.
+Bias = unfair, distorted, or missing portrayal of human identity 
+(race, gender, body type, disability, age, culture, etc.).
 
 Label as "yes" if the post:
 - Discusses how AI-generated images misrepresent or exclude identity traits.
@@ -32,23 +31,6 @@ Post: "AI is making it harder for real artists to earn commissions."
 Label: no  
 Reasoning: This is about economic impact and labor markets, not about how AI images depict people. There is no reference to identity 
 traits or representational patterns in the visuals.
-
-Post: "My Asian friend tried generating a photo of herself in traditional clothes, but the AI gave her white features."
-Label: yes  
-Reasoning: The model produces mismatched racial features (white phenotype) 
-for an Asian subject, showing misrepresentation/erasure of a 
-non-white identity. The example explicitly concerns visual identity in AI images.
-
-Post: "DALL·E refuses to generate images of war zones or protests due to content guidelines."
-Label: no  
-Reasoning: This describes content moderation/safety filtering, not biased depiction of demographic groups. No identity attribute 
-is being stereotyped, omitted, or distorted in the images.
-
-Post: "AI portraits look too glossy and fake, nothing like real oil paintings."
-Label: no  
-Reasoning: The complaint targets style/realism artifacts (aesthetic quality), not who is shown or how identities 
-are represented. There’s no claim about race, gender, body type, or other identity traits in the visuals
-in this example.
 
 Now classify this post:
 
