@@ -8,8 +8,8 @@ import os
 #     IS_COLAB = False
 
 # === BASE PATH SETTING ===
-BASE_DIR = "/content/reddit-bias-perception"
-DATA_DIR = "/content/reddit-bias-perception/data"
+BASE_DIR = "/home/tsutar3/reddit-bias-perception"
+DATA_DIR = "/home/tsutar3/reddit-bias-perception/data"
 RAW_DIR = os.path.join(DATA_DIR, "raw")
 PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
