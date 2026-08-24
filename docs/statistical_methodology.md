@@ -117,6 +117,18 @@ python -m analysis.emotion_statistics \
 
 Importing the module does not read research files or run models.
 
+## GoEmotions execution
+
+`analysis.sentiment_analysis` loads the GoEmotions tokenizer/model and VADER
+only when an execution path is called. The default model ID is explicit
+(`SamLowe/roberta-base-go_emotions`). An optional Hugging Face revision may be
+supplied; when it is omitted, provenance records `model_revision` as unset.
+That is not an immutable pin.
+
+Lazy loading and revision configuration are engineering controls. They do not
+validate GoEmotions for Reddit, calibrate scores, or change 512-token
+truncation. Predictions remain exploratory local tooling.
+
 ## What this does not establish
 
 - causal effects of “bias categories”
