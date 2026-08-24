@@ -139,6 +139,17 @@ Pipeline scripts may write record-level files under local `data/` (raw dumps, cl
 
 Public examples for tests and documentation are synthetic only (`tests/fixtures/synthetic/`). `.gitignore` is written to block accidental recommits of Reddit corpora, archives, databases, and per-record outputs; it cannot erase objects that already exist in Git history. See [docs/git_history_audit.md](docs/git_history_audit.md).
 
+### LLM annotation contract
+
+Few-shot labels are model predictions, not human-validated ground truth.
+
+- On success, `pred_label` is `yes` or `no`.
+- On parse or model failure, `pred_label` is null and `status` records the failure.
+- Malformed replies are not guessed. Failures are never stored as `"no"`.
+- Unsuccessful rows are written to `*_filtered_ai_unclassified.csv` and excluded from yes/no prevalence denominators.
+
+See [docs/llm_annotation.md](docs/llm_annotation.md). Artifacts without `status` are a prior schema; re-run annotation rather than migrating them.
+
 ---
 
 ## Tests

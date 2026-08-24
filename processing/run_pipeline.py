@@ -75,6 +75,8 @@ def build_steps(subreddit: str) -> list[Step]:
     keyword_filtered = FILTERED_DIR / f"{subreddit}_keyword_filtered.csv"
     llm_yes = FILTERED_DIR / f"{subreddit}_filtered_ai_bias.csv"
     llm_no = FILTERED_DIR / f"{subreddit}_filtered_ai_non_bias.csv"
+    llm_unclassified = FILTERED_DIR / f"{subreddit}_filtered_ai_unclassified.csv"
+    llm_combined = FILTERED_DIR / f"{subreddit}_llm_classification_results.csv"
 
     steps: list[Step] = [
         Step(
@@ -82,7 +84,11 @@ def build_steps(subreddit: str) -> list[Step]:
         ),
         Step("2. Python/DuckDB Filtering", python_pipeline, expects=(python_filtered,)),
         Step("3. Keyword Filtering", keyword_filter, expects=(keyword_filtered,)),
-        Step("4. LLM Filtering", llm_filter, expects=(llm_yes, llm_no)),
+        Step(
+            "4. LLM Filtering",
+            llm_filter,
+            expects=(llm_yes, llm_no, llm_unclassified, llm_combined),
+        ),
     ]
     return steps
 

@@ -37,6 +37,9 @@ def get_paths_for_subreddit(subreddit: str) -> dict:
         "CLASSIFIED_NO": os.path.join(
             OUTPUT_DIR, f"{subreddit}_filtered_ai_non_bias.csv"
         ),
+        "CLASSIFIED_UNCLASSIFIED": os.path.join(
+            OUTPUT_DIR, f"{subreddit}_filtered_ai_unclassified.csv"
+        ),
         "FEWSHOT_RESULT": os.path.join(
             OUTPUT_DIR, f"{subreddit}_llm_classification_results.csv"
         ),
