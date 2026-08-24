@@ -1,20 +1,22 @@
+"""Dual sentiment analysis: GoEmotions (multi-label) and VADER (rule-based).
+
+Tokenizer, transformer, and VADER objects are created on first use, not at
+import time. The GoEmotions model ID and optional revision are explicit
+configuration. A missing revision is recorded as unset and is not an
+immutable pin.
+
+This module does not validate GoEmotions for Reddit, calibrate scores, or
+change 512-token truncation. Predictions remain exploratory local tooling.
 """
-Dual sentiment analysis on AI bias Reddit posts using:
-1. GoEmotions RoBERTa model (multi-label with probabilities)
-2. VADER (rule-based)
-"""
+
+from __future__ import annotations
 
 import ast
-import os
+import logging
+from dataclasses import dataclass
+from typing import Any, Optional
 
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-import seaborn as sns
-import torch
-from tqdm import tqdm
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from config.config import (
     EMOTION_MODEL,
@@ -23,40 +25,196 @@ from config.config import (
     VADER_PLOT_PATH,
 )
 
-# Setup model and tokenizer
-MODEL_ID = EMOTION_MODEL
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logger = logging.getLogger(__name__)
 
-print("🔍 Loading GoEmotions model (PyTorch)...")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, local_files_only=True)
-model = AutoModelForSequenceClassification.from_pretrained(
-    MODEL_ID, local_files_only=True
-).to(device)
-id2label = model.config.id2label
+DEFAULT_GOEMOTIONS_MODEL_ID = EMOTION_MODEL
+DEFAULT_GOEMOTIONS_MODEL_REVISION: Optional[str] = None
+DEFAULT_GOEMOTIONS_LOCAL_FILES_ONLY = True
+DEFAULT_GOEMOTIONS_MAX_LENGTH = 512
+# Backward-compatible alias for the explicit default model ID.
+MODEL_ID = DEFAULT_GOEMOTIONS_MODEL_ID
 
-# Load VADER
-vader_analyzer = SentimentIntensityAnalyzer()
+_goemotions_runtime: Optional["GoEmotionsRuntime"] = None
+_vader_analyzer: Any = None
 
 
-def batch_tokenize(texts, tokenizer, max_length=512):
+@dataclass(frozen=True)
+class GoEmotionsRuntime:
+    model_id: str
+    model_revision: Optional[str]
+    tokenizer: Any
+    model: Any
+    device: Any
+    id2label: Any
+    local_files_only: bool
+
+    def provenance(self) -> dict[str, Optional[str]]:
+        return goemotions_provenance(
+            model_id=self.model_id,
+            model_revision=self.model_revision,
+        )
+
+
+def goemotions_provenance(
+    model_id: str = DEFAULT_GOEMOTIONS_MODEL_ID,
+    model_revision: Optional[str] = DEFAULT_GOEMOTIONS_MODEL_REVISION,
+) -> dict[str, Optional[str]]:
+    """Return the requested GoEmotions identity.
+
+    ``model_revision`` is ``None`` when no immutable SHA or tag was supplied.
+    An explicit model ID alone is not a pin and does not make a run
+    scientifically reproducible or domain-validated.
+    """
+    return {
+        "model_id": model_id,
+        "model_revision": model_revision,
+    }
+
+
+def _reset_sentiment_runtimes() -> None:
+    """Drop cached runtimes. Intended for tests."""
+    global _goemotions_runtime, _vader_analyzer
+    _goemotions_runtime = None
+    _vader_analyzer = None
+
+
+def _load_goemotions_tokenizer(model_id: str, **kwargs: Any) -> Any:
+    from transformers import AutoTokenizer
+
+    return AutoTokenizer.from_pretrained(model_id, **kwargs)
+
+
+def _load_goemotions_model(model_id: str, **kwargs: Any) -> Any:
+    from transformers import AutoModelForSequenceClassification
+
+    return AutoModelForSequenceClassification.from_pretrained(model_id, **kwargs)
+
+
+def _new_vader_analyzer() -> Any:
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+    return SentimentIntensityAnalyzer()
+
+
+def _pretrained_kwargs(
+    *,
+    model_revision: Optional[str],
+    local_files_only: bool,
+) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {"local_files_only": local_files_only}
+    if model_revision is not None:
+        kwargs["revision"] = model_revision
+    return kwargs
+
+
+def _runtime_matches(
+    runtime: GoEmotionsRuntime,
+    model_id: str,
+    model_revision: Optional[str],
+    local_files_only: bool,
+) -> bool:
+    return (
+        runtime.model_id == model_id
+        and runtime.model_revision == model_revision
+        and runtime.local_files_only == local_files_only
+    )
+
+
+def load_goemotions_runtime(
+    model_id: str = DEFAULT_GOEMOTIONS_MODEL_ID,
+    model_revision: Optional[str] = DEFAULT_GOEMOTIONS_MODEL_REVISION,
+    *,
+    local_files_only: bool = DEFAULT_GOEMOTIONS_LOCAL_FILES_ONLY,
+) -> GoEmotionsRuntime:
+    """Always construct a GoEmotions tokenizer/model for the requested identity."""
+    import torch
+
+    logger.info(
+        "Loading GoEmotions runtime (model_id=%s, revision=%s)",
+        model_id,
+        model_revision,
+    )
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    loader_kwargs = _pretrained_kwargs(
+        model_revision=model_revision,
+        local_files_only=local_files_only,
+    )
+    tokenizer = _load_goemotions_tokenizer(model_id, **loader_kwargs)
+    model = _load_goemotions_model(model_id, **loader_kwargs).to(device)
+    return GoEmotionsRuntime(
+        model_id=model_id,
+        model_revision=model_revision,
+        tokenizer=tokenizer,
+        model=model,
+        device=device,
+        id2label=model.config.id2label,
+        local_files_only=local_files_only,
+    )
+
+
+def get_goemotions_runtime(
+    model_id: str = DEFAULT_GOEMOTIONS_MODEL_ID,
+    model_revision: Optional[str] = DEFAULT_GOEMOTIONS_MODEL_REVISION,
+    *,
+    local_files_only: bool = DEFAULT_GOEMOTIONS_LOCAL_FILES_ONLY,
+) -> GoEmotionsRuntime:
+    """Return a cached runtime, reloading when model identity changes."""
+    global _goemotions_runtime
+    cached = _goemotions_runtime
+    if cached is not None and _runtime_matches(
+        cached, model_id, model_revision, local_files_only
+    ):
+        return cached
+    runtime = load_goemotions_runtime(
+        model_id,
+        model_revision,
+        local_files_only=local_files_only,
+    )
+    _goemotions_runtime = runtime
+    return runtime
+
+
+def get_vader_analyzer() -> Any:
+    """Return a cached VADER analyzer, creating it on first use."""
+    global _vader_analyzer
+    if _vader_analyzer is None:
+        _vader_analyzer = _new_vader_analyzer()
+    return _vader_analyzer
+
+
+def batch_tokenize(texts, tokenizer, max_length=DEFAULT_GOEMOTIONS_MAX_LENGTH):
     return tokenizer(
         texts, padding=True, truncation=True, max_length=max_length, return_tensors="pt"
     )
 
 
-def run_goemotions(texts, batch_size=32):
-    model.eval()
+def run_goemotions(
+    texts,
+    batch_size=32,
+    *,
+    model_id: str = DEFAULT_GOEMOTIONS_MODEL_ID,
+    model_revision: Optional[str] = DEFAULT_GOEMOTIONS_MODEL_REVISION,
+):
+    import torch
+
+    runtime = get_goemotions_runtime(
+        model_id=model_id,
+        model_revision=model_revision,
+    )
+    runtime.model.eval()
     results = []
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
-        inputs = batch_tokenize(batch, tokenizer)
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        inputs = batch_tokenize(batch, runtime.tokenizer)
+        inputs = {k: v.to(runtime.device) for k, v in inputs.items()}
         with torch.no_grad():
-            outputs = model(**inputs)
+            outputs = runtime.model(**inputs)
             probs = torch.sigmoid(outputs.logits).cpu().numpy()
 
         for i_probs in probs:
-            all_probs = {id2label[i]: float(score) for i, score in enumerate(i_probs)}
+            all_probs = {
+                runtime.id2label[i]: float(score) for i, score in enumerate(i_probs)
+            }
             sorted_filtered = sorted(
                 all_probs.items(), key=lambda x: x[1], reverse=True
             )
@@ -65,10 +223,13 @@ def run_goemotions(texts, batch_size=32):
 
 
 def run_vader(text):
-    return vader_analyzer.polarity_scores(text)
+    return get_vader_analyzer().polarity_scores(text)
 
 
 def plot_goemotion_distribution(df):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
     print("📊 Plotting GoEmotions distribution...")
     all_labels = (
         df["goemotions_top"]
@@ -87,6 +248,9 @@ def plot_goemotion_distribution(df):
 
 
 def plot_vader_distribution(df):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
     print("📊 Plotting VADER compound score distribution...")
     compound_scores = df["vader"].apply(
         lambda x: (

@@ -249,6 +249,7 @@ Includes:
 - Human-validation framework tests (sampling, agreement, synthetic E2E)
 - Topic-stability and BERTopic probability-assignment tests (no model download)
 - Clustered emotion-statistics helpers and synthetic methodology E2E
+- Sentiment lazy-import and provenance tests (no model download)
 - Other fast offline unit tests
 
 Live Reddit API tests, model downloads, GPU jobs, and real BERTopic training are
