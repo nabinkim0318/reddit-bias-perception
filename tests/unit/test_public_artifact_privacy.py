@@ -29,6 +29,7 @@ SYNTHETIC_FIXTURE_DIR = REPO_ROOT / "tests" / "fixtures" / "synthetic"
 PUBLIC_AGGREGATE_DIRS = [
     REPO_ROOT / "data" / "public",
     REPO_ROOT / "docs" / "public_results",
+    REPO_ROOT / "artifacts" / "synthetic_demo",
 ]
 
 PROHIBITED_FIELD_NAMES = {

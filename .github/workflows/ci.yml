@@ -35,11 +35,7 @@ jobs:
         poetry run black --check .
         poetry run isort --check-only .
 
-    - name: Run offline unit tests
+    - name: Run offline tests
       run: |
-        PYTHONPATH=. poetry run pytest \
-          tests/unit/test_simple.py \
-          tests/unit/test_public_artifact_privacy.py \
-          tests/unit/test_llm_annotation.py \
-          tests/unit/test_template_render.py \
-          tests/integration/test_llm_few_shot_integration.py -v
+        PYTHONPATH=. poetry run pytest tests/ \
+          -m "not slow and not integration_external" -v
