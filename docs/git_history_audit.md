@@ -1,16 +1,16 @@
 # Git history audit (privacy)
 
-**Audit date:** 2026-08-24  
-**Starting branch / HEAD audited:** `main` @
+**Original audit date:** 2026-08-24  
+**Starting branch / HEAD audited (pre-rewrite):** `main` @
 `7d0da0f40adba57c6cf1c412fde94ee46607c52d`  
-**Additional refs inspected:** `origin/main`, `origin/local-backup`,
+**Additional refs inspected then:** `origin/main`, `origin/local-backup`,
 `origin/sentiment`, and the working branch created from that HEAD.
 
 This note records a **non-disclosing** audit: path names, object metadata
 (size, blob hash), commit identifiers, and scanner finding *types* only. It
 does not quote Reddit text, IDs, or credential values.
 
-## Commands / tools used
+## Commands / tools used (original audit)
 
 - `git log --all --pretty=format: --name-only` — unique historical paths
 - `git rev-list --objects --all` plus `git cat-file --batch-check` — blob type,
@@ -21,47 +21,45 @@ does not quote Reddit text, IDs, or credential values.
   `data/` dumps, archives, and lockfiles) for common credential patterns
 - Current-tree `git ls-files` inventory of `data/` (names and sizes only)
 
-No history-rewriting tools (`git filter-repo`, BFG, force-push, forced branch
-replacement) were run as part of this audit.
+The original audit did **not** rewrite history. The follow-up sanitization
+is recorded below.
 
-## Categories of historical files found
+## Categories of historical files found (pre-rewrite)
 
 Record-level or archive-like paths appeared in Git history, including:
 
-| Category | Examples (paths only) |
+| Category | Examples (path classes only) |
 | --- | --- |
-| Raw Reddit exports | `data/raw/reddit_raw.json` (blobs up to ~10 MiB) |
-| Compressed archives | `data/raw/aiwars_submissions.zst` (~7 MiB) |
-| Extracted corpora | `data/extracted/aiwars.jsonl` (~52 MiB), `data/extracted/sample_ai_posts.jsonl` |
-| Filtered / processed record files | `data/filtered/*_keyword_filtered.{json,csv}`, `*_filtered_cleaned.csv`, `*_duckdb_processed.csv`, `*_sample_preview.csv`, `*_full_filtered_posts*.csv` |
-| Per-subreddit processed CSVs | `data/processed/subreddit_csv/*.csv` |
-| Per-record LLM / filter outputs | `data/processed/fewshot_classification_results.csv`, `filtered_ai_bias.csv`, `classified_*.csv`, `keywords_filtered_ai_bias.*` |
-| Cleaned record-level tables | `data/processed/reddit_bias_data_clean.csv` (blobs up to ~11 MiB) |
-| Sentiment / result tables | `data/results/sentiment_labeled.csv`, `sentiment_labeled_output.csv` |
-| Summary tables that can include examples | `data/filtered/_summaries/examples_per_category.csv` (~1.5 MiB) |
-| Databases | `reddit.duckdb` (~1.3 MiB) |
-| Other named research CSV | `depression_posts.csv` (present in history; not in current HEAD) |
+| Raw Reddit exports | `data/raw/` JSON dumps |
+| Compressed archives | `data/raw/` `.zst` |
+| Extracted corpora | `data/extracted/` JSONL |
+| Filtered / processed record files | `data/filtered/` keyword-filtered, cleaned, preview, and full-filtered tables |
+| Per-subreddit processed CSVs | `data/processed/subreddit_csv/` |
+| Per-record LLM / filter outputs | `data/processed/` classification and filter result tables |
+| Cleaned record-level tables | `data/processed/` cleaned bias tables |
+| Sentiment / result tables | `data/results/` labeled outputs |
+| Summary tables that can include examples | `data/filtered/_summaries/` |
+| Databases | root-level DuckDB files |
+| Other named research CSVs | root-level `*_posts*.csv` and similar research dumps |
 
-Approximate sensitive-path blob mass in the object database at audit time:
-**~651 MiB** across **180** matching objects (including trees). Largest blobs
-were processed CSV/JSONL corpora under `data/`, not source code.
+Approximate sensitive-path blob mass in the object database at original audit
+time: **~651 MiB** across **118** matching blobs (plus trees in the earlier
+count). Largest blobs were processed CSV/JSONL corpora under `data/`, not
+source code.
 
-Current HEAD (pre-remediation) still tracked `data/filtered/*_keyword_filtered.{json,csv}`
-files whose schema included Reddit `id` plus `clean_text` (record-level). Those
-paths are removed from the **current tree** by the privacy PR that added this
-document; they remain in **history**.
+Those paths were removed from the **current tree** by GitHub PR #2
+(`privacy/remove-record-level-reddit-data`). Before sanitization they remained
+in **history**.
 
-## Record-level Reddit artifacts in history
+## Record-level Reddit artifacts in history (pre-rewrite)
 
-**Yes. Record-level Reddit artifacts remain recoverable in Git history.**
+**Yes, before sanitization.** Record-level Reddit artifacts were recoverable
+from reachable Git history of the published branches.
 
-Anyone with a clone of this repository (or a fork / backup that still contains
-the relevant commits) can check out older commits and recover filtered text,
-stable post IDs, raw JSON, archives, and related per-record outputs listed
-above. Deleting files from the current revision does not remove those blobs
-from the object database.
+Deleting files from the current revision does not remove those blobs from the
+object database. That is why history rewriting was required.
 
-## Credential exposure
+## Credential exposure (original audit)
 
 **No verified credential exposure** in the source-like blobs scanned.
 
@@ -79,28 +77,133 @@ This is **not** a claim that no secret has ever existed in any blob: large
 `data/` dumps were not content-scanned (to avoid reproducing record-level
 text), and scanners cannot prove absence.
 
-## Limitations
+## History sanitization (PR 1.5)
 
-- Blob **contents** of Reddit corpora were not printed or excerpted.
-- Secret scanning skipped large and `data/` blobs by design.
-- GitHub Issues, Pull Request comments, Actions logs, wikis, and third-party
-  forks were not audited.
-- Unreachable dangling objects without a path, if any, were not exhaustively
-  classified beyond size-ranked blobs from `rev-list --objects --all`.
-- Packfile compression means deleted-from-HEAD files can still be present
-  until history is rewritten **and** clones are replaced.
+**Date:** 2026-08-24  
+**Tool:** `git filter-repo` 2.47.0  
+**Strategy:** A — path-based removal (plus one historical notebook blob strip)  
+**Pre-rewrite default HEAD:** `d7f047f2d9390f1c950d7436c7154621fc746a0c`
+(merge of GitHub PR #2 onto `main`)  
+**Post-rewrite default HEAD (rewrite commit):**
+`4f7d8be7ed8fe3ee58070e8cb025107077b06303`
 
-## Recommendation
+The current-tree snapshot of PR #2 was preserved exactly (path list and blob
+IDs identical before vs after rewrite). One later documentation commit on
+rewritten `main` may follow this rewrite HEAD; use `origin/main` as the
+canonical next-base.
 
-**History rewriting is recommended as a follow-up**, not as part of the current
-privacy PR.
+### Why Strategy A
 
-There is **no** immediate verified credential exposure that would justify an
-emergency rewrite in this change set. There **is** a publication blocker:
-record-level Reddit research artifacts remain in Git history and should be
-removed with a planned sanitization (for example `git filter-repo` or BFG),
-followed by rotating any credentials if a later scan finds them, coordinating
-force-updates of published branches, and asking collaborators to re-clone.
+Sensitive material was concentrated in identifiable data-path classes and a
+small set of root-level research dumps. Code, configuration, schemas, docs,
+and synthetic fixtures were retainable. Strategy B (orphan / re-root reset)
+would have discarded useful code history, including unique collaborator
+commits on `sentiment`, without a matching privacy gain once those path
+classes and the oversized notebook blob were removed.
 
-Until that follow-up is done, **do not describe the repository as safe to
-republish** solely because the current tree has been cleaned.
+### Path classes removed from reachable rewritten history
+
+- `data/raw/`, `data/extracted/`, `data/processed/`, `data/filtered/`,
+  `data/results/` (kept `data/README.md`)
+- Root-level research dumps matching `*_posts*.csv` and DuckDB files
+- Archive/database globs: `*.zst`, `*.duckdb`, `*.sqlite`, `*.sqlite3`,
+  `*.parquet`
+- Record-level filter / classification / sentiment / topic filename classes
+- One historical `summary.ipynb` blob (~433 KiB) that contained embedded
+  outputs; current scrubbed notebooks were kept
+
+Synthetic fixtures under `tests/fixtures/synthetic/` were **not** removed.
+
+### Branches and tags
+
+| Ref | Action |
+| --- | --- |
+| `main` | Rewritten and force-updated (`--force-with-lease`) |
+| `sentiment` | Rewritten and force-updated (unique non-data commits retained) |
+| `local-backup` | Deleted from remote (obsolete pointer into old history) |
+| `privacy/remove-record-level-reddit-data` | Deleted from remote (PR #2 already merged) |
+| tags | None existed; none created |
+
+Do **not** start future feature branches from pre-rewrite local copies.
+Branch PR 2 work from rewritten `origin/main` only.
+
+### Known sensitive-object reachability
+
+- Pre-rewrite: 118 identified sensitive blobs (~621 MiB blob payload;
+  ~651 MiB in the earlier inclusive audit estimate) were reachable from
+  published history.
+- Post-rewrite published refs / fresh clone: **0 / 118 reachable**. All 118
+  were missing from the rewritten object database.
+
+### Size (supporting evidence only)
+
+| Location | Pack size (approx.) |
+| --- | --- |
+| Pre-rewrite development clone | 115 MiB pack |
+| Dedicated rewrite clone after filter-repo | 1.84 MiB pack |
+| Fresh post-push clone (ordinary refs) | 584 KiB pack |
+
+Size reduction is supporting evidence, not the acceptance criterion.
+Acceptance is path-history + blob-reachability + fresh-clone checks.
+
+### Post-rewrite credential scan
+
+Custom regex scan of 435 source-like blobs (≤400 KiB) in the rewritten
+repository: **zero** verified credential findings. Historical env-like paths
+remain `.env.example` and `.envrc` only.
+
+### Fresh-clone verification
+
+A new clone of `github.com/nabinkim0318/reddit-bias-perception` after the
+force-update:
+
+- Default HEAD is the rewritten `main`
+- Ordinary fetched refs: `main`, `sentiment` (no tags; stale branches gone)
+- Prohibited historical path classes: **no matches**
+- Known sensitive blobs: **not present / not reachable**
+- Privacy regression tests: **9 passed, 1 skipped**
+- Current notebooks: scrubbed (no stored outputs)
+- Synthetic fixture IDs remain `SYNTH-*`
+
+Ordinary `git clone` / `git fetch` of branch tips does **not** download
+GitHub `refs/pull/*`.
+
+### Residual remote exposure (not the same as ordinary Git history)
+
+Verified remaining GitHub-side exposure after ref rewrite:
+
+- `refs/pull/1/head` and `refs/pull/2/head` still exist on the GitHub remote
+  and still name **pre-rewrite** commit objects.
+- GitHub REST/HTML still returned those old commit objects, and API blob
+  lookup still returned known sensitive blob objects, after the branch
+  force-update.
+
+**GitHub Support data-removal is recommended** so cached commits, PR refs,
+and blob objects can be purged. Rewriting published branches does not by
+itself expire GitHub caches.
+
+Forks at sanitization time: **0**. Rewriting origin would not rewrite a
+third-party fork if one appears later.
+
+Old local clones (including any collaborator clone) still contain the
+pre-rewrite object database until they are discarded and replaced. **Do not
+push those clones back** to this repository.
+
+### Recontamination controls
+
+- `.gitignore` privacy rules from PR #2 remain in force.
+- `tests/unit/test_public_artifact_privacy.py` remains in CI.
+- Future PRs must branch from rewritten `origin/main`.
+- The private pre-rewrite mirror/bundle is a recovery artifact only; it is
+  not part of the public repository.
+
+## Current recommendation
+
+Ordinary published branch/tag history in a fresh clone is **sanitized**.
+
+The repository **is** a safe base for new PRs from rewritten `main`.
+
+Republication remains **conditional** until GitHub Support removes cached
+PR refs / commit / blob objects, and until old clones are replaced. Do not
+claim that GitHub-hosted cached views are gone; they were still reachable
+by old object ID after the force-update.
