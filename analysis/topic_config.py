@@ -254,6 +254,23 @@ def config_snapshot(
     return snapshot
 
 
+def stability_config_identity(
+    config: TopicModelConfig, seeds: Sequence[int]
+) -> dict[str, Any]:
+    """Seed-independent configuration identity for a multi-seed stability run."""
+    return {
+        "calculate_probabilities": config.calculate_probabilities,
+        "clustering": clustering_kwargs(config),
+        "embedding_model": config.embedding_model,
+        "language": config.language,
+        "nr_topics": config.nr_topics,
+        "nr_topics_mode": config.nr_topics_mode,
+        "seeds": [int(seed) for seed in seeds],
+        "umap": asdict(config.umap),
+        "vectorizer_source": config.vectorizer_source,
+    }
+
+
 def with_seed(config: TopicModelConfig, seed: int) -> TopicModelConfig:
     return TopicModelConfig(
         random_seed=int(seed),

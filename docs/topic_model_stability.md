@@ -92,7 +92,10 @@ python -m analysis.topic_stability_fit --input LOCAL.csv --output-dir LOCAL_DIR
 ```
 
 These commands may download embedding assets and read local research data.
-They are not part of `make demo`.
+They are not part of `make demo`. Each seed directory stores `assignments.json`
+and `topic_run_manifest.json` (input SHA, seed, package version, config). The
+aggregate stability report records `input_sha256` and a seed-independent
+`config_hash`. Structural ARI is still not semantic validation.
 
 Aggregate stability from already-computed assignment vectors:
 

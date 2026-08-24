@@ -222,6 +222,26 @@ def summarize_topic_stability(
     return report
 
 
+def annotate_stability_provenance(
+    report: Mapping[str, Any],
+    *,
+    input_filename: Optional[str] = None,
+    input_sha256: Optional[str] = None,
+    config_identity: Optional[Mapping[str, Any]] = None,
+) -> dict[str, Any]:
+    """Attach input/config identity without claiming a real-data stability score."""
+    payload = dict(report)
+    if input_filename is not None:
+        payload["input_filename"] = Path(input_filename).name
+    if input_sha256 is not None:
+        payload["input_sha256"] = input_sha256
+    if config_identity is not None:
+        identity = dict(config_identity)
+        payload["config_hash"] = sha256_json(identity)
+        payload["config_identity"] = identity
+    return payload
+
+
 def _coerce_run(run: TopicRunSummary | Mapping[str, Any]) -> TopicRunSummary:
     if isinstance(run, TopicRunSummary):
         return run

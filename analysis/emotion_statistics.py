@@ -176,6 +176,14 @@ def summarize_emotions(
     return pd.DataFrame(rows)
 
 
+def _inference_status_for_n_clusters(n_clusters: int) -> str:
+    if n_clusters < 2:
+        return "not_estimable"
+    if n_clusters < FEW_CLUSTER_THRESHOLD:
+        return "limited_few_clusters"
+    return "cluster_robust"
+
+
 def _validate_cluster_column(
     frame: pd.DataFrame,
     cluster_column: str,
@@ -196,11 +204,7 @@ def _validate_cluster_column(
         raise EmotionStatisticsError(
             f"clustered inference requires at least two clusters in {cluster_column!r}"
         )
-    if n_clusters < FEW_CLUSTER_THRESHOLD:
-        status = "limited_few_clusters"
-    else:
-        status = "cluster_robust"
-    return n_clusters, status
+    return n_clusters, _inference_status_for_n_clusters(n_clusters)
 
 
 def _extract_wald_omnibus(fitted: Any, group_column: str) -> dict[str, Any]:
@@ -344,8 +348,6 @@ def fit_clustered_emotion_model(
     emotion: str,
     group_column: str,
     cluster_column: str,
-    n_clusters: int,
-    inference_status: str,
 ) -> dict[str, Any]:
     from statsmodels.formula.api import ols
 
@@ -354,6 +356,12 @@ def fit_clustered_emotion_model(
     work[emotion] = numeric.loc[numeric.notna()]
     n_posts = int(len(work))
     n_groups = int(work[group_column].nunique(dropna=True))
+    n_clusters = (
+        int(work[cluster_column].nunique(dropna=True))
+        if cluster_column in work.columns and n_posts
+        else 0
+    )
+    inference_status = _inference_status_for_n_clusters(n_clusters)
     result = {
         "emotion": emotion,
         "excluded_missing_emotion": int(numeric.isna().sum()),
@@ -366,6 +374,12 @@ def fit_clustered_emotion_model(
         "p_raw": None,
         "contrasts": [],
     }
+    if n_clusters < 2:
+        result["inference_status"] = "not_estimable"
+        result["omnibus_unavailable_reason"] = (
+            "need at least two clusters among rows with a non-missing emotion score"
+        )
+        return result
     if n_posts < 3 or n_groups < 2:
         result["inference_status"] = "not_estimable"
         result["omnibus_unavailable_reason"] = (
@@ -497,8 +511,6 @@ def run_emotion_statistics(
             emotion=emotion,
             group_column=group_column,
             cluster_column=cluster_column,
-            n_clusters=n_clusters,
-            inference_status=inference_status,
         )
         contrasts.extend(fit.get("contrasts") or [])
         tests.append(
@@ -523,10 +535,17 @@ def run_emotion_statistics(
     limitations = list(STATISTICS_LIMITATIONS)
     if inference_status == "limited_few_clusters":
         limitations.append(
-            f"Only {n_clusters} clusters were observed, below the project "
-            f"heuristic of {FEW_CLUSTER_THRESHOLD}. Cluster-robust standard "
-            "errors can be unstable with few clusters; this is flagged rather "
-            "than treated as a solved design problem."
+            f"Only {n_clusters} clusters were observed in the mapped evaluable "
+            f"table, below the project heuristic of {FEW_CLUSTER_THRESHOLD}. "
+            "Cluster-robust standard errors can be unstable with few clusters; "
+            "this is flagged rather than treated as a solved design problem."
+        )
+    if any(row["inference_status"] == "limited_few_clusters" for row in tests):
+        limitations.append(
+            "Per-emotion n_clusters is computed after dropping missing scores "
+            "for that outcome. An emotion can have fewer clusters than the "
+            "mapped evaluable table; that outcome-specific count is the "
+            "relevant cluster metadata for the fitted model."
         )
     manifest = {
         "alpha": DEFAULT_ALPHA,
@@ -555,6 +574,7 @@ def run_emotion_statistics(
         "model_specification": MODEL_SPECIFICATION,
         "multiple_testing_method": MULTIPLICITY_METHOD,
         "n_clusters": n_clusters,
+        "n_clusters_by_emotion": {row["emotion"]: row["n_clusters"] for row in tests},
         "n_groups": n_groups,
         "observational_unit": "reddit_post",
         "overall_status": "success",
@@ -602,8 +622,6 @@ def write_statistics_outputs(
         "emotion_contrasts.csv": sha256_file(contrasts_path),
         "emotion_descriptives.csv": sha256_file(descriptives_path),
     }
-    write_json(manifest_path, manifest)
-    manifest["output_checksums"]["analysis_manifest.json"] = sha256_file(manifest_path)
     write_json(manifest_path, manifest)
     return {
         "contrasts": str(contrasts_path),

@@ -8,6 +8,7 @@ from analysis.topic_config import (
     clustering_kwargs,
     config_snapshot,
     load_topic_model_config,
+    stability_config_identity,
     umap_kwargs,
     with_seed,
 )
@@ -44,3 +45,11 @@ def test_fixed_nr_topics_is_available_for_controlled_runs():
     assert config.nr_topics == 12
     assert config.nr_topics_mode == "fixed"
     assert config.uses_exploratory_auto_topics is False
+
+
+def test_stability_config_identity_is_seed_independent():
+    config = TopicModelConfig(random_seed=11)
+    identity = stability_config_identity(config, [11, 23])
+    assert identity["seeds"] == [11, 23]
+    assert "random_state" not in identity["umap"]
+    assert identity["nr_topics"] == "auto"

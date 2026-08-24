@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -14,6 +15,7 @@ from analysis.emotion_statistics import (
     write_statistics_outputs,
 )
 from analysis.topic_mapping import TopicMappingError
+from processing.hashing import sha256_file
 
 FIXTURE_DIR = (
     Path(__file__).resolve().parents[1] / "fixtures" / "synthetic" / "methodology"
@@ -68,6 +70,8 @@ def test_all_emotions_are_reported_including_null_results():
     # Admiration was constructed with a large category gap; anger was not.
     admiration = tests.set_index("emotion").loc["emotion_admiration"]
     anger = tests.set_index("emotion").loc["emotion_anger"]
+    assert int(admiration["n_clusters"]) == 12
+    assert admiration["inference_status"] == "cluster_robust"
     assert admiration["p_raw"] < 0.05
     assert anger["n_posts"] > 0
 
@@ -93,9 +97,31 @@ def test_few_clusters_are_flagged_not_silently_treated_as_solved():
     result = run_emotion_statistics(frame)
     assert result["manifest"]["inference_status"] == "limited_few_clusters"
     assert result["manifest"]["n_clusters"] < 10
+    assert result["tests"]["inference_status"].eq("limited_few_clusters").all()
     assert any(
         "few clusters" in item.lower() for item in result["manifest"]["limitations"]
     )
+
+
+def test_emotion_n_clusters_is_outcome_specific():
+    frame = _synthetic_frame().copy()
+    keep = {
+        "SynthHarbor01",
+        "SynthHarbor02",
+        "SynthHarbor03",
+        "SynthHarbor04",
+        "SynthHarbor05",
+        "SynthHarbor06",
+    }
+    frame.loc[~frame["subreddit"].isin(keep), "emotion_joy"] = pd.NA
+    result = run_emotion_statistics(frame)
+    tests = result["tests"].set_index("emotion")
+    assert int(result["manifest"]["n_clusters"]) == 12
+    assert int(tests.loc["emotion_admiration", "n_clusters"]) == 12
+    assert tests.loc["emotion_admiration", "inference_status"] == "cluster_robust"
+    assert int(tests.loc["emotion_joy", "n_clusters"]) == 6
+    assert tests.loc["emotion_joy", "inference_status"] == "limited_few_clusters"
+    assert result["manifest"]["n_clusters_by_emotion"]["emotion_joy"] == 6
 
 
 def test_aggregate_outputs_exclude_source_text_and_record_ids():
@@ -140,10 +166,23 @@ def test_write_outputs_and_manifest(tmp_path):
         "emotion_anger",
         "emotion_joy",
     }
-    manifest = (tmp_path / "analysis_manifest.json").read_text(encoding="utf-8")
-    assert "benjamini_hochberg" in manifest
-    assert "SYNTH-STAT-" not in manifest
-    assert "cluster-robust" in manifest
+    manifest_path = tmp_path / "analysis_manifest.json"
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    checksums = payload["output_checksums"]
+    assert "analysis_manifest.json" not in checksums
+    assert checksums["emotion_descriptives.csv"] == sha256_file(
+        tmp_path / "emotion_descriptives.csv"
+    )
+    assert checksums["emotion_clustered_tests.csv"] == sha256_file(
+        tmp_path / "emotion_clustered_tests.csv"
+    )
+    assert checksums["emotion_contrasts.csv"] == sha256_file(
+        tmp_path / "emotion_contrasts.csv"
+    )
+    text = manifest_path.read_text(encoding="utf-8")
+    assert "benjamini_hochberg" in text
+    assert "SYNTH-STAT-" not in text
+    assert "cluster-robust" in text
 
 
 def test_exploratory_manova_is_labeled_unadjusted():

@@ -40,7 +40,11 @@ Clustered inference requires:
 - no missing cluster labels among evaluable rows
 - at least two clusters
 
-The number of clusters is always reported.
+The number of clusters is always reported. Dataset-level `n_clusters` in
+`analysis_manifest.json` is the mapped evaluable table. Each emotion model's
+`n_clusters` and `inference_status` are recomputed **after** dropping missing
+scores for that outcome, so a sparse emotion is not labelled `cluster_robust`
+merely because the full table had many subreddits.
 
 If clustered inference is requested and those checks fail, the analysis
 **refuses** rather than silently falling back to independent-row ANOVA.

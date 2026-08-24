@@ -19,9 +19,12 @@ from analysis.bertopic_model import run_topic_model
 from analysis.topic_config import (
     load_topic_model_config,
     parse_stability_seeds,
+    stability_config_identity,
     with_seed,
 )
+from analysis.topic_manifest import write_topic_run_manifest
 from analysis.topic_stability import (
+    annotate_stability_provenance,
     summarize_run,
     summarize_topic_stability,
     write_stability_report,
@@ -58,6 +61,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(f"missing text column {args.text_column!r}", file=sys.stderr)
         return 2
     docs = frame[args.text_column].fillna("").astype(str).tolist()
+    input_sha256 = sha256_file(input_path)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     runs = []
@@ -67,7 +71,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             with_seed(config, seed),
             docs,
             input_filename=input_path.name,
-            input_sha256=sha256_file(input_path),
+            input_sha256=input_sha256,
         )
         run_dir = output_dir / f"seed_{seed}"
         run_dir.mkdir(parents=True, exist_ok=True)
@@ -75,8 +79,14 @@ def main(argv: Optional[list[str]] = None) -> int:
             json.dumps({"seed": seed, "assignments": result.topics}, indent=2) + "\n",
             encoding="utf-8",
         )
+        write_topic_run_manifest(run_dir / "topic_run_manifest.json", result.manifest)
         runs.append(summarize_run(seed, result.topics))
-    report = summarize_topic_stability(runs)
+    report = annotate_stability_provenance(
+        summarize_topic_stability(runs),
+        input_filename=input_path.name,
+        input_sha256=input_sha256,
+        config_identity=stability_config_identity(config, seeds),
+    )
     write_stability_report(output_dir / "topic_stability_report.json", report)
     print(
         "Wrote local multi-seed stability artifacts. ARI is structural only "

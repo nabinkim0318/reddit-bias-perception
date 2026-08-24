@@ -21,11 +21,13 @@ from analysis.topic_mapping import (
     load_topic_category_mapping,
 )
 from analysis.topic_stability import (
+    annotate_stability_provenance,
     assignment_checksum,
     summarize_run,
     summarize_topic_stability,
     write_stability_report,
 )
+from processing.hashing import sha256_file
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_DIR = REPO_ROOT / "tests" / "fixtures" / "synthetic" / "methodology"
@@ -47,11 +49,20 @@ def test_synthetic_methodology_e2e(tmp_path, monkeypatch):
         summarize_run(int(item["seed"]), item["assignments"])
         for item in assignments_payload["runs"]
     ]
-    stability = summarize_topic_stability(runs)
+    stability = annotate_stability_provenance(
+        summarize_topic_stability(runs),
+        input_filename="topic_assignments.json",
+        input_sha256=sha256_file(FIXTURE_DIR / "topic_assignments.json"),
+        config_identity={"nr_topics": "auto", "seeds": [11, 23, 37, 53, 71]},
+    )
     write_stability_report(tmp_path / "topic_stability_report.json", stability)
 
     assert stability["n_runs"] == 5
     assert stability["stability_declared"] is False
+    assert stability["input_sha256"] == sha256_file(
+        FIXTURE_DIR / "topic_assignments.json"
+    )
+    assert len(stability["config_hash"]) == 64
     assert (
         stability["topic_count_distribution"]["min"]
         < stability["topic_count_distribution"]["max"]
@@ -104,6 +115,10 @@ def test_synthetic_methodology_e2e(tmp_path, monkeypatch):
     assert tests["p_fdr_bh"].notna().all()
     assert manifest["multiple_testing_method"] == "benjamini_hochberg"
     assert manifest["n_clusters"] == 12
+    assert "analysis_manifest.json" not in manifest["output_checksums"]
+    assert manifest["output_checksums"]["emotion_clustered_tests.csv"] == sha256_file(
+        Path(paths["tests"])
+    )
     assert manifest["mapping"]["mapping_provenance"] == "enforced"
     assert "cluster-robust" in manifest["covariance_specification"]
     assert "SYNTH-STAT-" not in tests.to_csv(index=False)

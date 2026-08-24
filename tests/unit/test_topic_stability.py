@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from analysis.topic_stability import (
+    annotate_stability_provenance,
     compute_assignment_stability,
     summarize_run,
     summarize_topic_stability,
@@ -63,3 +64,18 @@ def test_stability_report_topic_count_and_outlier_rate_variation():
     again = summarize_topic_stability(list(reversed(runs)))
     assert again["pairwise_ari_all"] == report["pairwise_ari_all"]
     assert again["seeds"] == [11, 23, 37]
+
+
+def test_stability_report_records_input_and_config_identity():
+    runs = [summarize_run(11, [0, 0, 1, 1])]
+    annotated = annotate_stability_provenance(
+        summarize_topic_stability(runs),
+        input_filename="local_posts.csv",
+        input_sha256="a" * 64,
+        config_identity={"embedding_model": "all-MiniLM-L6-v2", "seeds": [11]},
+    )
+    assert annotated["input_filename"] == "local_posts.csv"
+    assert annotated["input_sha256"] == "a" * 64
+    assert annotated["config_identity"]["seeds"] == [11]
+    assert len(annotated["config_hash"]) == 64
+    assert annotated["stability_declared"] is False
