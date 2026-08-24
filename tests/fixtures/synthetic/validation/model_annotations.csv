@@ -1,0 +1,13 @@
+id,subreddit,subreddit_group,matched_bias_types,clean_text,status,pred_label,error_type,llm_reasoning,raw_output,schema_version
+SYNTH-VAL-0001,SynthArt,creative_AI_communities,gender,"[SYNTHETIC] Fictional model Pixora draws every scientist as a pale man in a lab coat and never anyone else.",success,yes,,,yes,2
+SYNTH-VAL-0002,SynthTech,technical,age,"[SYNTHETIC] The fictional renderer CrayonBox keeps crashing when sampling steps are raised.",success,no,,,no,2
+SYNTH-VAL-0003,SynthNews,general_reddit,race,"[SYNTHETIC] I think fictional toy LunaDraw is overpriced compared with other toys.",success,yes,,,yes,2
+SYNTH-VAL-0004,SynthArt,creative_AI_communities,gender,"[SYNTHETIC] LunaDraw always paints a ceo as a man and a secretary as a woman.",success,no,,,no,2
+SYNTH-VAL-0005,SynthCrit,critical_discussion,body_type,"[SYNTHETIC] Someone said Pixora refuses to draw elders; I only saw one screenshot.",success,yes,,,yes,2
+SYNTH-VAL-0006,SynthTech,technical,disability,"[SYNTHETIC] Pixora dancer outputs look odd; maybe identity, maybe only lighting.",success,no,,,no,2
+SYNTH-VAL-0007,SynthNews,general_reddit,culture,[removed],success,yes,,,yes,2
+SYNTH-VAL-0008,SynthArt,creative_AI_communities,gender,[deleted],parse_error,,malformed_output,,not a contract label,2
+SYNTH-VAL-0009,SynthTech,technical,age,"[SYNTHETIC] How do I install the fictional CUDA driver for Pixora?",model_error,,generation_exception,,,2
+SYNTH-VAL-0010,SynthCrit,critical_discussion,race,"[SYNTHETIC] Pixora erases wheelchairs from every street scene I generate.",success,yes,,,yes,2
+SYNTH-VAL-0011,SynthNews,general_reddit,gender,"[SYNTHETIC] Copyright law for fictional training sets is confusing.",success,no,,,no,2
+SYNTH-VAL-0001,SynthArt,creative_AI_communities,gender,"[SYNTHETIC] Duplicate source row for the same fictional scientist prompt.",success,yes,,,yes,2

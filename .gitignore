@@ -108,6 +108,20 @@ bertopic_post_topics.csv
 bertopic_topic_info.csv
 examples_per_category.csv
 
+# Local human-validation working files (may contain Reddit-derived text)
+/validation_runs/
+/validation_private/
+/human_annotations/
+/annotation_tasks/
+sampling_index.csv
+sampling_index.json
+sampling_index*.csv
+annotation_tasks.csv
+annotator_*.csv
+adjudication.csv
+adjudication_*.csv
+validation_report.json
+
 # Public-safe exceptions: synthetic fixtures only (not derived from Reddit users)
 !tests/fixtures/synthetic/
 !tests/fixtures/synthetic/**

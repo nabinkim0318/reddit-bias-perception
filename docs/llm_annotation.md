@@ -3,6 +3,17 @@
 Automated few-shot labels are **model predictions**, not human-validated
 ground truth. This document describes schema version 2.
 
+## Operational construct
+
+The yes/no label answers whether the post **discusses visual-identity bias
+in AI-generated images** (unfair, distorted, or missing portrayal of human
+identity in generated images). It does **not** measure whether an AI system
+objectively exhibits bias, and it is not a general “social bias” detector.
+
+See [annotation_codebook.md](annotation_codebook.md) and
+[human_validation_protocol.md](human_validation_protocol.md). This
+repository does not claim that a human-validation study has been completed.
+
 ## Status and label
 
 | `status` | `pred_label` | Meaning |

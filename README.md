@@ -24,6 +24,9 @@ reddit-bias-perception/
 │   ├── llm_annotation.py           # yes/no + failure-status contract
 │   └── manifest.py                 # run provenance
 │
+├── validation/                     # blinded sampling + human-vs-model evaluation
+├── docs/annotation_codebook.md
+├── docs/human_validation_protocol.md
 ├── tests/fixtures/synthetic/       # fully synthetic public fixtures
 ├── artifacts/                      # generated demo output (gitignored)
 ```
@@ -168,6 +171,30 @@ Few-shot labels are model predictions, not human-validated ground truth.
 
 See [docs/llm_annotation.md](docs/llm_annotation.md). Artifacts without `status` are a prior schema; re-run annotation rather than migrating them.
 
+### Annotation validity
+
+The operational yes/no construct is whether a post **discusses visual-identity
+bias in AI-generated images** (see [docs/annotation_codebook.md](docs/annotation_codebook.md)).
+That is a discourse/perception label. It is not a detector of objective AI-system
+bias, and the project name should not be read as a claim that the classifier
+“detects AI bias.”
+
+- Automated `yes`/`no` values are **model predictions**, not human-validated
+  ground truth.
+- This repository includes a reproducible human-validation **framework**
+  (blinded deterministic sampling, double annotation, optional adjudication,
+  agreement metrics, and aggregate model-vs-human evaluation). See
+  [docs/human_validation_protocol.md](docs/human_validation_protocol.md).
+- **No completed human-validation result is claimed by this repository.**
+  Shipping the framework is not the same as completing a study.
+- Human `uncertain` and `insufficient_context` labels are counted but excluded
+  from binary evaluation denominators. They are not forced into `yes`/`no`.
+- Model `parse_error` / `model_error` rows are reported as execution failures
+  and are never treated as scientific `"no"`.
+
+Real validation task files (source text, sampling indexes, annotator CSVs)
+remain local/private. Public tests use fictional synthetic fixtures only.
+
 ---
 
 ## Tests
@@ -183,6 +210,7 @@ Includes:
 - Annotation-contract and parser tests
 - Public-artifact privacy regression
 - Synthetic end-to-end pipeline regression
+- Human-validation framework tests (sampling, agreement, synthetic E2E)
 - Other fast offline unit tests
 
 Live Reddit API tests, model downloads, GPU jobs, and BERTopic training are

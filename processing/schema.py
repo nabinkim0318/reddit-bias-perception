@@ -16,6 +16,7 @@ class ClassificationResult(BaseModel):
     ``pred_label`` is the scientific yes/no construct and is set only when
     ``status == "success"``. Unsuccessful runs leave ``pred_label`` null.
     Automated labels are model predictions, not human-validated ground truth.
+    The operational construct is documented in docs/annotation_codebook.md.
     """
 
     id: str

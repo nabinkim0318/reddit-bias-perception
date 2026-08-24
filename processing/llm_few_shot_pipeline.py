@@ -1,6 +1,7 @@
 ### processing/llm_few_shot_pipeline.py
 """
-Few-shot classification using Gemma 2B model to determine whether a Reddit post discusses bias in AI-generated images.
+Few-shot classification: whether a post discusses visual-identity bias
+in AI-generated images (discourse/perception, not objective system bias).
 
 Scientific labels are yes/no only after a successful parse. Model, generation,
 and parse failures are recorded as status + null pred_label, never as "no".
