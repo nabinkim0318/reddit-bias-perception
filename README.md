@@ -70,6 +70,12 @@ Expected output directory: `artifacts/synthetic_demo/`
 - `synthetic_demo_aggregate.json` — compact counts only
 - `synthetic_demo_manifest.json` — input checksum, code SHA, config hash, stage counts
 
+Canonical resume reuses those outputs only when the manifest matches the current
+input checksum, config hash, and schema version **and** the recorded aggregate
+SHA-256 still matches the file on disk. `code_sha` is stored for provenance but
+is not a cache key, so a documentation-only commit does not by itself
+invalidate a matching synthetic run.
+
 ### What the demo exercises
 
 - loading tracked synthetic fixtures

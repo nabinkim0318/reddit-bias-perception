@@ -151,7 +151,11 @@ def cached_run_is_reusable(
     config_hash: str,
     aggregate_path: Path,
 ) -> bool:
-    """Reuse only when provenance matches the current input and config."""
+    """Reuse only when provenance matches the current input, config, and aggregate.
+
+    ``code_sha`` is recorded for provenance but is not a cache key, so a
+    documentation-only commit does not by itself invalidate a matching run.
+    """
     if manifest.get("overall_status") not in {OVERALL_SUCCESS, OVERALL_REUSED}:
         return False
     if int(manifest.get("manifest_schema_version") or 0) != MANIFEST_SCHEMA_VERSION:
@@ -165,5 +169,14 @@ def cached_run_is_reusable(
         return False
     recorded_schema = (manifest.get("config") or {}).get("manifest_schema_version")
     if recorded_schema not in (None, MANIFEST_SCHEMA_VERSION):
+        return False
+    artifacts = manifest.get("artifacts") or {}
+    aggregate_meta = artifacts.get("aggregate") or {}
+    recorded_sha = (
+        aggregate_meta.get("sha256") if isinstance(aggregate_meta, dict) else None
+    )
+    if not recorded_sha:
+        return False
+    if sha256_file(aggregate_path) != recorded_sha:
         return False
     return True

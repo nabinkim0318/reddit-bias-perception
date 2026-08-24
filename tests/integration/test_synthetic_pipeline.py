@@ -20,10 +20,7 @@ from processing.manifest import (
     read_json,
 )
 from processing.synthetic_annotator import SYNTHETIC_ANNOTATOR_ID
-from processing.synthetic_pipeline import (
-    SyntheticPipelineError,
-    run_synthetic_pipeline,
-)
+from processing.synthetic_pipeline import SyntheticPipelineError, run_synthetic_pipeline
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_INPUT = REPO_ROOT / "tests" / "fixtures" / "synthetic" / "posts.json"
@@ -251,6 +248,21 @@ def test_stale_output_is_not_reused(tmp_path):
     assert second["manifest"]["overall_status"] == OVERALL_SUCCESS
     assert second["manifest"]["input"]["checksum_sha256"] != first_checksum
     assert second["aggregate"]["total_records"] > first_total
+
+
+def test_tampered_aggregate_is_not_reused(tmp_path):
+    first = _run_pipeline(tmp_path, force=True)
+    output_dir = tmp_path / "run"
+    aggregate_path = output_dir / AGGREGATE_FILENAME
+    payload = json.loads(aggregate_path.read_text(encoding="utf-8"))
+    payload["yes"] = 999
+    aggregate_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    second = _run_pipeline(tmp_path, force=False)
+    assert second["reused"] is False
+    assert second["manifest"]["cache_reused"] is False
+    assert second["aggregate"]["yes"] == first["aggregate"]["yes"]
+    assert second["aggregate"]["yes"] != 999
 
 
 def test_matching_cache_is_reused(tmp_path):
