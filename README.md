@@ -75,7 +75,7 @@ The annotator is a deterministic stand-in (`synthetic-demo-annotator/v1`). The
 demo does **not** call Reddit, load a real LLM, fit BERTopic, or reproduce
 study findings. Outputs are pipeline-validation artifacts.
 
-Canonical resume reuses those outputs only when the manifest matches the current
+The demo reuses cached outputs only when the manifest matches the current
 input checksum, config hash, and schema version **and** the recorded aggregate
 SHA-256 still matches the file on disk. `code_sha` is stored for provenance but
 is not a cache key, so a documentation-only commit does not by itself invalidate
