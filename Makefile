@@ -16,21 +16,17 @@ check:
 	poetry check && poetry run black --check . && poetry run isort --check-only .
 
 
-# ======== Pipeline ========
-pipeline:
-	poetry run python pipeline_main.py
-
-commit:
-	make format && make test
-	git status
-	git add .
-	git commit -m "$(m)"
-	git push
-	git status
+# ======== Canonical offline demo ========
+# Synthetic fixtures only. No Reddit credentials, private data, network, GPU,
+# or real LLM. Output is a governed aggregate + provenance manifest.
+demo:
+	PYTHONPATH=. poetry run python -m processing.run_pipeline --synthetic \
+		--input tests/fixtures/synthetic/posts.json \
+		--output-dir artifacts/synthetic_demo
 
 # ======== Testing ========
 test:
-	PYTHONPATH=. python -m pytest tests/ -m "not slow" --disable-warnings
+	PYTHONPATH=. poetry run pytest tests/ -m "not slow and not integration_external" --disable-warnings
 
 test-all:
-	PYTHONPATH=. python -m pytest tests/ --disable-warnings
+	PYTHONPATH=. poetry run pytest tests/ --disable-warnings

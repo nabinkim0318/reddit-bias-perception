@@ -20,5 +20,6 @@ Schema coverage (fictional content, representative fields):
 - crawler-shaped fields (`title`, `selftext`, `comments`, scores) without
   `author`, `username`, or `permalink`
 - keyword-filtered output fields (`clean_text`, `matched_keywords`, …)
+- synthetic subreddit-group assignments used by the offline demo
 
 Do not replace these records with real Reddit exports.

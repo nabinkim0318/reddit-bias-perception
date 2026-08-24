@@ -63,6 +63,12 @@ The public repository is **not** intended to contain:
 synthetic** records written for tests and documentation. They are not derived
 from Reddit users. They must not be replaced with real exports.
 
+The supported public command
+(`python -m processing.run_pipeline --synthetic ...`) reads only those
+fixtures. Real Reddit-derived data are obtained separately, remain local, and
+are not needed to run that demo. This repository does not claim the full
+real-data research workflow is reproducible from a clean clone.
+
 ## Privacy / re-identification
 
 Removing usernames alone does **not** make Reddit text anonymous.

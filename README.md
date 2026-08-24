@@ -11,108 +11,126 @@ The project supports data collection via Reddit API, text preprocessing, few-sho
 ## Project Structure
 
 ```
-reddit_bias_perception/
-├── Makefile                        # CLI tasks (install, format, test, etc.)
-├── README.md                       # Project documentation
-├── .env.example                    # Example environment variables
-├── main.py                         # Analysis pipeline (sentiment, topic modeling)
-├── pipeline_main.py                # Data collection & preprocessing pipeline
+reddit-bias-perception/
+├── Makefile                        # install, format, test, demo
+├── README.md
+├── main.py                         # shim to processing.run_pipeline
 │
-├── config/                         # All config files and constants
-│   ├── config.py                   # File paths, model configs, constants
-│   ├── vectorizer_config.py        # Stopwords and vectorizer settings for topic modeling
-│   ├── fewshot_prompt_template.j2  # Prompt template for LLM few-shot classification
-│   ├── ai_keywords.json            # Keywords related to AI topics
-│   ├── bias_keywords.json          # Keywords grouped by bias type
-│   ├── emotion_mapping.json        # Mapping of emotion → sentiment (GoEmotions)
-│   └── subreddit_groups.json       # Subreddit groups (e.g., expert vs casual)
+├── processing/
+│   ├── run_pipeline.py             # canonical CLI (synthetic + legacy private)
+│   ├── synthetic_pipeline.py       # offline synthetic workflow
+│   ├── keyword_filter.py
+│   ├── clean_text.py
+│   ├── llm_annotation.py           # yes/no + failure-status contract
+│   └── manifest.py                 # run provenance
 │
-├── reddit_crawler/                # Reddit API crawling modules
-│   ├── reddit_client.py           # Authenticated Reddit API wrapper
-│   ├── subreddit_fetcher.py       # Fetch posts & comments from subreddits
-│   └── utils.py                   # Helper functions for crawling
-│
-├── processing/                    # Preprocessing and filtering logic
-│   ├── clean_text.py              # Text cleaning (lowercasing, stopwords, etc.)
-│   ├── keyword_filter.py          # Filters based on bias and AI keywords
-│   ├── llm_few_shot.py            # Few-shot LLM classifier logic
-│   └── utils_technical_filter.py  # Optional: removes technical or off-topic content
-│
-├── analysis/                      # Analysis modules
-│   ├── sentiment_analysis.py      # Dual sentiment analysis (GoEmotions + VADER)
-│   ├── bertopic_model.py          # Topic modeling using BERTopic
-│   ├── topic_mapper.py            # Optional: map topic IDs to names
-│   └── emotion/                   # (Optional) Emotion-focused analysis
-│       ├── clustering.py
-│       ├── manova.py
-│       └── mean_plot.py
-│
-├── visualization/                # Visualization helpers (matplotlib, seaborn)
-│   └── plots.py
-│
-├── notebooks/                    # Jupyter notebooks for exploration
-│   ├── 01_data_pipeline_overview.ipynb
-│   ├── 02_llm_sample_check.ipynb
-│   └── 03_analysis_summary.ipynb
-│
-├── tests/                        # Unit and integration tests
-│   ├── assets/                   # Test fixtures and mock templates
-│   ├── fixtures/synthetic/       # Fully synthetic public fixtures
-│   └── ...
-│
-├── utils/                        # Generic utility functions
-│   └── text_utils.py
-│
-├── data/                         # Local research data (gitignored except README)
-│   └── README.md                 # Explains that corpora stay local
-├── docs/data_statement.md        # Public data / privacy policy
-├── docs/git_history_audit.md     # History audit (no record contents)
-│
-├── pyproject.toml                # Poetry configuration
-└── poetry.lock                   # Poetry lockfile
-'''
+├── tests/fixtures/synthetic/       # fully synthetic public fixtures
+├── artifacts/                      # generated demo output (gitignored)
+```
 
 ---
 
-## Pipelines
+## Reproducible synthetic demo
 
-### 1. Data Collection & Preprocessing (`pipeline_main.py`)
+This is the **supported public/offline path**. It exercises preprocessing,
+keyword filtering, the annotation contract, aggregation, and provenance using
+fully synthetic fixtures.
+
+It does **not** reproduce study findings, validate bias results, or recreate
+Reddit analyses. Demo outputs are pipeline-validation artifacts.
+
+### Prerequisites
+
+- Python 3.10–3.12
+- Poetry
 
 ```bash
-poetry run python pipeline_main.py
+poetry install --with=dev
 ```
 
-This script:
+Dependency installation may need package-index access. After install, the demo
+itself is runtime-offline.
 
-- Crawls posts & comments using Reddit API
-- Cleans the text (removes noise, stopwords, etc.)
-- Runs few-shot classification via LLM (Gemma 2B)
-- Applies keyword filtering for bias + AI relevance
+### Canonical command
+
+```bash
+make demo
+```
+
+Equivalent:
+
+```bash
+PYTHONPATH=. poetry run python -m processing.run_pipeline --synthetic \
+  --input tests/fixtures/synthetic/posts.json \
+  --output-dir artifacts/synthetic_demo
+```
+
+Expected output directory: `artifacts/synthetic_demo/`
+
+- `synthetic_demo_aggregate.json` — compact counts only
+- `synthetic_demo_manifest.json` — input checksum, code SHA, config hash, stage counts
+
+Canonical resume reuses those outputs only when the manifest matches the current
+input checksum, config hash, and schema version **and** the recorded aggregate
+SHA-256 still matches the file on disk. `code_sha` is stored for provenance but
+is not a cache key, so a documentation-only commit does not by itself
+invalidate a matching synthetic run.
+
+### What the demo exercises
+
+- loading tracked synthetic fixtures
+- canonical text preprocessing and date-window filtering
+- keyword filtering and deduplication
+- deterministic fake annotation (`synthetic-demo-annotator/v1`)
+- aggregate summary + provenance manifest
+
+### What it deliberately does not exercise
+
+- Reddit API / private Reddit corpora
+- Hugging Face / Llama / other real LLMs
+- BERTopic, GoEmotions, VADER
+- GPU or model downloads
+- network access at runtime
+
+Demo data are synthetic. No Reddit source text is distributed. No real LLM is
+required. Results are not research findings.
+
+`make test` runs the meaningful offline suite, including this demo path.
 
 ---
 
-### 2. Analysis Pipeline (`main.py`)
+## Real Reddit data (local only)
 
-```bash
-poetry run python main.py
-```
+Real Reddit-derived corpora are obtained separately, remain on the researcher's
+machine (typically under `data/`), and are **not** required for the public
+synthetic demo. They must not be committed. Provenance and governance for those
+files are a research-data concern; this repository does **not** claim that the
+full real-data workflow is reproducible from a clean clone.
 
-This script:
+The legacy runner `python -m processing.run_pipeline --subreddit <name>` still
+exists for local private dumps. It may load a real LLM, assumes files under
+`data/`, and resumes on file existence only (not provenance). It is not the
+supported public command.
 
-- Performs sentiment analysis (GoEmotions + VADER)
-- Runs BERTopic for topic modeling
-- Saves labeled results and topic distributions
+---
+
+## Pipelines (legacy / exploratory)
+
+Sentiment analysis and BERTopic modules remain in `analysis/` for local
+research. They are **not** part of the canonical demo and are not invoked by
+`make demo` or `main.py`.
 
 ---
 
 ## Development Commands
 
-| Command       | Description                   |
-|---------------|-------------------------------|
-| `make install`| Install dependencies with Poetry |
-| `make format` | Run black and isort            |
-| `make check`  | Check formatting and config    |
-| `make test`   | Run all tests via pytest       |
+| Command        | Description                                      |
+|----------------|--------------------------------------------------|
+| `make install` | Install dependencies with Poetry                 |
+| `make format`  | Run black and isort                              |
+| `make check`   | Check formatting and config                      |
+| `make test`    | Offline tests (`not slow and not integration_external`) |
+| `make demo`    | Canonical synthetic end-to-end workflow          |
 
 ---
 
@@ -162,8 +180,13 @@ make test
 
 Includes:
 
-- Unit tests for each module
-- Integration tests for LLM filtering
+- Annotation-contract and parser tests
+- Public-artifact privacy regression
+- Synthetic end-to-end pipeline regression
+- Other fast offline unit tests
+
+Live Reddit API tests, model downloads, GPU jobs, and BERTopic training are
+not part of the default suite.
 
 ---
 

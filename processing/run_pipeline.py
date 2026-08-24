@@ -1,3 +1,17 @@
+"""Pipeline runner.
+
+Canonical public/offline command (synthetic fixtures only)::
+
+    python -m processing.run_pipeline --synthetic \\
+        --input tests/fixtures/synthetic/posts.json \\
+        --output-dir artifacts/synthetic_demo
+
+The ``--subreddit`` / ``--all`` interface is a local research runner. It
+expects private extracted dumps under ``data/`` and may load a real LLM.
+File-existence resumability for that path is unchanged and is not
+provenance-aware.
+"""
+
 import argparse
 import logging
 import sys
@@ -7,21 +21,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, Sequence
 
-# ---- import your pipeline steps ----
-from processing.duckdb_data_processing import main as duckdb_data_processing
-from processing.keyword_filter import main as keyword_filter
-from processing.llm_few_shot_pipeline import main as llm_filter
-from processing.python_pipeline import main as python_pipeline
-
 # ---------- Config ----------
-PROJECT_ROOT = Path(__file__).resolve().parents[0].parents[0]
-print(PROJECT_ROOT)
-DATA_DIR = PROJECT_ROOT / "data"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = REPO_ROOT / "data"
 EXTRACTED_DIR = DATA_DIR / "extracted"
 FILTERED_DIR = DATA_DIR / "filtered"
-
-print(DATA_DIR)
-print(FILTERED_DIR)
 
 
 @dataclass
@@ -64,11 +68,24 @@ def filter_steps(
     return selected
 
 
+def _legacy_step_fns() -> tuple[Callable[[str], object], ...]:
+    """Import the private-data stages only when that runner is invoked."""
+    from processing.duckdb_data_processing import main as duckdb_data_processing
+    from processing.keyword_filter import main as keyword_filter
+    from processing.llm_few_shot_pipeline import main as llm_filter
+    from processing.python_pipeline import main as python_pipeline
+
+    return duckdb_data_processing, python_pipeline, keyword_filter, llm_filter
+
+
 def build_steps(subreddit: str) -> list[Step]:
     """
     Define the pipeline and expected artifacts produced by each step.
     """
     FILTERED_DIR.mkdir(parents=True, exist_ok=True)
+    duckdb_data_processing, python_pipeline, keyword_filter, llm_filter = (
+        _legacy_step_fns()
+    )
 
     duckdb_out = FILTERED_DIR / f"{subreddit}_duckdb_processed.csv"
     python_filtered = FILTERED_DIR / f"{subreddit}_filtered_cleaned.csv"
@@ -155,19 +172,44 @@ def run_pipeline_for_subreddit(
         return subreddit, False, str(e)
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Batch runner for Reddit AI-bias pipeline"
+        description=(
+            "Canonical offline command: --synthetic --input PATH --output-dir PATH. "
+            "Legacy --subreddit/--all runs require local private dumps."
+        )
     )
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--subreddit", type=str, help="Run a single subreddit (e.g., 'midjourney')"
+    parser.add_argument(
+        "--synthetic",
+        action="store_true",
+        help="Run the canonical offline synthetic demo (no Reddit, no LLM)",
     )
-    group.add_argument(
-        "--subreddits", nargs="+", help="Run multiple subreddits (space-separated)"
+    parser.add_argument(
+        "--input",
+        type=Path,
+        help="Input artifact for --synthetic (JSON list of records)",
     )
-    group.add_argument(
-        "--all", action="store_true", help=f"Auto-discover all from {EXTRACTED_DIR}"
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        help="Run directory for --synthetic aggregate and manifest",
+    )
+    parser.add_argument(
+        "--groups",
+        type=Path,
+        default=None,
+        help="Optional subreddit-groups CSV for --synthetic",
+    )
+    parser.add_argument(
+        "--subreddit", type=str, help="Legacy: run a single subreddit (private data)"
+    )
+    parser.add_argument(
+        "--subreddits", nargs="+", help="Legacy: run multiple subreddits"
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help=f"Legacy: auto-discover all from {EXTRACTED_DIR}",
     )
     parser.add_argument(
         "--jobs", "-j", type=int, default=1, help="Parallel processes (default: 1)"
@@ -190,7 +232,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"]
     )
-    return parser.parse_args()
+    args = parser.parse_args(argv)
+    if args.synthetic:
+        if args.input is None or args.output_dir is None:
+            parser.error("--synthetic requires --input and --output-dir")
+        return args
+    if not args.subreddit and not args.subreddits and not args.all:
+        parser.error(
+            "specify --synthetic --input PATH --output-dir PATH "
+            "(canonical offline demo) or a legacy --subreddit/--subreddits/--all run"
+        )
+    return args
 
 
 def resolve_targets(args: argparse.Namespace) -> list[str]:
@@ -207,12 +259,24 @@ def resolve_targets(args: argparse.Namespace) -> list[str]:
     return []
 
 
-def main() -> None:
-    args = parse_args()
+def main(argv: Optional[Sequence[str]] = None) -> None:
+    args = parse_args(argv)
     logging.basicConfig(
         level=getattr(logging, args.log_level),
         format="%(asctime)s | %(levelname)s | %(message)s",
     )
+    if args.synthetic:
+        from processing.synthetic_pipeline import run_from_cli
+
+        raise SystemExit(
+            run_from_cli(
+                input_path=args.input,
+                output_dir=args.output_dir,
+                groups_path=args.groups,
+                force=args.force,
+            )
+        )
+
     FILTERED_DIR.mkdir(parents=True, exist_ok=True)
 
     targets = resolve_targets(args)

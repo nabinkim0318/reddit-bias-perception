@@ -54,8 +54,10 @@ ipykernel = "^6.29.5"
 profile = "black"
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 markers = [
-  "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "integration_external: tests that call Reddit, Hugging Face, or other network services",
 ]
 
 [tool.poetry.plugins."poetry.plugin"]
