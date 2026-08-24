@@ -36,4 +36,4 @@ jobs:
         poetry run isort --check-only .
 
     - name: Run simple tests
-      run: PYTHONPATH=. python -m pytest tests/unit/test_simple.py -v
+      run: PYTHONPATH=. python -m pytest tests/unit/test_simple.py tests/unit/test_public_artifact_privacy.py -v

@@ -1,0 +1,123 @@
+[
+  {
+    "id": "SYNTH-POST-0001",
+    "subreddit": "SynthPrismWorkshop",
+    "title": "LampshadeForge keeps painting Ambervale lighthouse keepers as identical silver foxes",
+    "selftext": "Every brochure prompt about a lighthouse keeper in Ambervale returns a navy-cape silver fox, never a teal otter in a garden hat. This gender stereotype in image generation looks like artificial intelligence copying one costume-shop mannequin.",
+    "comments": [
+      "The east pavilion kiosk used the same fox stencil on violin teachers."
+    ],
+    "top_comments": [
+      "The east pavilion kiosk used the same fox stencil on violin teachers."
+    ],
+    "score": 12,
+    "num_comments": 1,
+    "upvote_ratio": 0.82,
+    "flair": "synthetic-discussion",
+    "created_utc": 1672531200.0
+  },
+  {
+    "id": "SYNTH-POST-0002",
+    "subreddit": "SynthLanternStudio",
+    "title": "Has anyone seen the PrismKettle pamphlet from the glass pier?",
+    "selftext": "",
+    "comments": [],
+    "top_comments": [],
+    "score": 3,
+    "num_comments": 0,
+    "upvote_ratio": 1.0,
+    "flair": null,
+    "created_utc": 1672617600.0
+  },
+  {
+    "id": "SYNTH-POST-0003",
+    "subreddit": "SynthTownSquare",
+    "title": "[deleted]",
+    "selftext": "[removed]",
+    "comments": [],
+    "top_comments": [],
+    "score": 0,
+    "num_comments": 0,
+    "upvote_ratio": 0.5,
+    "flair": null,
+    "created_utc": 1672704000.0
+  },
+  {
+    "id": "SYNTH-POST-0004",
+    "subreddit": "SynthCritiqueCircle",
+    "title": "Duplicate-id probe: first copy of the river-map poster",
+    "selftext": "Fictional note for pipeline dedupe tests. LampshadeForge drew every ferry captain as a marble statue with gold epaulets.",
+    "comments": ["Keep both copies so the loader can notice the repeated id."],
+    "top_comments": ["Keep both copies so the loader can notice the repeated id."],
+    "score": 4,
+    "num_comments": 1,
+    "upvote_ratio": 0.7,
+    "flair": "pipeline-probe",
+    "created_utc": 1672790400.0
+  },
+  {
+    "id": "SYNTH-POST-0004",
+    "subreddit": "SynthCritiqueCircle",
+    "title": "Duplicate-id probe: second copy of the river-map poster",
+    "selftext": "Same synthetic id on purpose. The second copy mentions a copper compass rose that the first copy omits.",
+    "comments": [],
+    "top_comments": [],
+    "score": 1,
+    "num_comments": 0,
+    "upvote_ratio": 0.6,
+    "flair": "pipeline-probe",
+    "created_utc": 1672794000.0
+  },
+  {
+    "id": "SYNTH-POST-0005",
+    "subreddit": "SynthTownSquare",
+    "title": "Ambervale lantern festival schedule",
+    "selftext": "Paper kites and cocoa at the river steps on Friday. Bring a folding stool. No computers involved.",
+    "comments": ["I will bring extra cocoa tins."],
+    "top_comments": ["I will bring extra cocoa tins."],
+    "score": 8,
+    "num_comments": 1,
+    "upvote_ratio": 0.91,
+    "flair": "event",
+    "created_utc": 1672876800.0
+  },
+  {
+    "id": "SYNTH-POST-0006",
+    "subreddit": "SynthPrismWorkshop",
+    "title": "Technical group example: sampler charts for LampshadeForge",
+    "selftext": "A lab notebook about step counts is not a representation complaint. This row exists so group=technical fixtures stay distinct.",
+    "comments": [],
+    "top_comments": [],
+    "score": 2,
+    "num_comments": 0,
+    "upvote_ratio": 0.75,
+    "flair": "notes",
+    "created_utc": 1680307200.0
+  },
+  {
+    "id": "SYNTH-POST-0007",
+    "subreddit": "SynthLanternStudio",
+    "title": "Creative group example: garden-hat otters never appear in the pier kiosk",
+    "selftext": "Prompting LampshadeForge for a market greeter always yields the silver fox, never the teal otter. Race and gender cues in image generation keep collapsing to one mascot.",
+    "comments": [],
+    "top_comments": [],
+    "score": 9,
+    "num_comments": 0,
+    "upvote_ratio": 0.88,
+    "flair": "prompt-diary",
+    "created_utc": 1680393600.0
+  },
+  {
+    "id": "SYNTH-POST-0008",
+    "subreddit": "SynthTownSquare",
+    "title": "General group example: the library poster printer and missing grandparents",
+    "selftext": "The town library poster printer, which the brochure calls artificial intelligence, draws every grandparent as a teenager. Age bias in image generation is the whole complaint.",
+    "comments": ["The printer is next to the fern exhibit."],
+    "top_comments": ["The printer is next to the fern exhibit."],
+    "score": 6,
+    "num_comments": 1,
+    "upvote_ratio": 0.79,
+    "flair": "town-notice",
+    "created_utc": 1680480000.0
+  }
+]
