@@ -1,40 +1,75 @@
-### analysis/emotion_mean_plot.py
-"""
-Plots mean emotion probabilities per bias category using barplots.
+"""Mean emotion heatmap by mapped topic category.
+
+Local visualization only. Mapped categories are exploratory topic-derived
+groupings, not ground-truth bias labels. Importing this module has no
+research-data side effects.
 """
 
-import ast
-import json
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-# Load data
-SENTIMENT_CSV = "data/results/sentiment_labeled.csv"
-TOPIC_MAP_JSON = "config/topic_to_bias.json"
+from analysis.emotion_statistics import (
+    expand_goemotions_probs,
+    infer_emotion_columns,
+    prepare_analysis_frame,
+)
 
-print("📥 Loading data...")
-df = pd.read_csv(SENTIMENT_CSV)
-with open(TOPIC_MAP_JSON, "r") as f:
-    topic_map = json.load(f)
 
-df["bias_category"] = df["topic"].map(topic_map)
-df = df.dropna(subset=["bias_category", "goemotions_probs"])
+def plot_emotion_means(
+    frame: pd.DataFrame,
+    *,
+    group_column: str,
+    emotion_columns: list[str],
+    output_path: Path,
+) -> None:
+    work = frame.dropna(subset=[group_column, *emotion_columns])
+    mean_df = work.groupby(group_column)[emotion_columns].mean().T
+    plt.figure(figsize=(12, 6))
+    sns.heatmap(mean_df, cmap="YlGnBu", annot=True, fmt=".2f")
+    plt.title("Mean emotion scores by mapped topic category")
+    plt.xlabel("Mapped topic category")
+    plt.ylabel("Emotions")
+    plt.tight_layout()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_path, dpi=300)
 
-# Expand emotion probs
-df_emotions = pd.DataFrame(df["goemotions_probs"].apply(ast.literal_eval).tolist())
-df_emotions["bias_category"] = df["bias_category"].values
 
-# Compute means
-mean_df = df_emotions.groupby("bias_category").mean().T
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Local heatmap of mean emotion scores by mapped topic category. "
+            "Not confirmatory."
+        )
+    )
+    parser.add_argument("--input", required=True)
+    parser.add_argument("--output", default="data/results/emotion_heatmap.png")
+    parser.add_argument("--group-column", default="mapped_topic_category")
+    parser.add_argument("--topic-mapping", default=None)
+    parser.add_argument("--topic-run-id", default=None)
+    parser.add_argument("--topic-assignment-checksum", default=None)
+    args = parser.parse_args()
+    frame = pd.read_csv(args.input)
+    prepared, _ = prepare_analysis_frame(
+        expand_goemotions_probs(frame),
+        group_column=args.group_column,
+        mapping_path=Path(args.topic_mapping) if args.topic_mapping else None,
+        topic_run_id=args.topic_run_id,
+        topic_assignment_checksum=args.topic_assignment_checksum,
+    )
+    emotions = infer_emotion_columns(prepared)
+    plot_emotion_means(
+        prepared,
+        group_column=args.group_column,
+        emotion_columns=emotions,
+        output_path=Path(args.output),
+    )
 
-# Plot
-plt.figure(figsize=(12, 6))
-sns.heatmap(mean_df, cmap="YlGnBu", annot=True, fmt=".2f")
-plt.title("Mean Emotion Probabilities per Bias Category")
-plt.xlabel("Bias Category")
-plt.ylabel("Emotions")
-plt.tight_layout()
-plt.savefig("data/results/emotion_heatmap.png", dpi=300)
-plt.show()
+
+if __name__ == "__main__":
+    main()

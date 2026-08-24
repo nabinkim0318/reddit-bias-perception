@@ -1,63 +1,111 @@
-### analysis/emotion_manova.py
-"""
-MANOVA + Post-hoc ANOVA analysis on GoEmotions probabilities
-Grouped by bias category derived from topic model
+"""Legacy unadjusted MANOVA diagnostic.
+
+This is **not** the supported inferential path. MANOVA here does not account
+for subreddit clustering and must not be treated as confirmatory.
+
+Importing this module does not read research files or run models.
+
+See ``analysis.emotion_statistics`` for the cluster-aware exploratory path.
 """
 
-import ast
-import json
+from __future__ import annotations
 
-import numpy as np
+import argparse
+import sys
+import warnings
+from pathlib import Path
+from typing import Optional, Sequence
+
 import pandas as pd
-from statsmodels.formula.api import ols
-from statsmodels.multivariate.manova import MANOVA
-from statsmodels.stats.anova import anova_lm
 
-# Load sentiment data
-SENTIMENT_CSV = "data/results/sentiment_labeled.csv"
-TOPIC_MAP_JSON = "config/topic_to_bias.json"
-ANOVA_RESULTS_CSV = "data/results/emotion_anova_results.csv"
-
-print("📥 Loading data...")
-df = pd.read_csv(SENTIMENT_CSV)
-
-with open(TOPIC_MAP_JSON, "r") as f:
-    topic_map = json.load(f)
-
-# Map topic ID to bias category
-df["bias_category"] = df["topic"].map(topic_map)
-df = df.dropna(subset=["bias_category", "goemotions_probs"])
-
-# Expand emotion probabilities into columns
-print("🔍 Extracting emotion vectors...")
-example_probs = ast.literal_eval(df["goemotions_probs"].iloc[0])
-emotion_labels = [f"emotion_{i}" for i in range(len(example_probs))]
-
-df_emotions = pd.DataFrame(
-    df["goemotions_probs"].apply(ast.literal_eval).to_list(), columns=emotion_labels
+from analysis.emotion_statistics import (
+    EmotionStatisticsError,
+    expand_goemotions_probs,
+    infer_emotion_columns,
+    prepare_analysis_frame,
 )
-df = pd.concat([df.reset_index(drop=True), df_emotions], axis=1)
 
-# MANOVA
-manova_formula = " + ".join(emotion_labels)
-print("🧠 Running MANOVA...")
-manova = MANOVA.from_formula(f"{manova_formula} ~ bias_category", data=df)
-print(manova.mv_test())
+MANOVA_LIMITATIONS = [
+    "This MANOVA does not account for subreddit clustering.",
+    "It is an unadjusted exploratory diagnostic, not confirmatory inference.",
+    "Mapped topic categories are exploratory, not ground-truth bias categories.",
+]
 
-# Post-hoc ANOVA
-print("\n📊 Post-hoc ANOVA per emotion:")
-results = []
-for emotion in emotion_labels:
-    model = ols(f"{emotion} ~ C(bias_category)", data=df).fit()
-    aov = anova_lm(model, typ=2)
-    f_val = round(aov["F"][0], 3)
-    p_val = round(aov["PR(>F)"][0], 4)
-    results.append((emotion, f_val, p_val))
-    if p_val < 0.05:
-        print(f"✔️ {emotion}: F = {f_val}, p = {p_val}")
 
-# Save results to CSV
-results_df = pd.DataFrame(results, columns=["emotion", "F", "p"])
-results_df.to_csv(ANOVA_RESULTS_CSV, index=False)
-print(f"\n📁 Saved ANOVA results to {ANOVA_RESULTS_CSV}")
-print("\n✅ Analysis complete. Use these results for plotting or reporting.")
+def run_exploratory_manova(
+    frame: pd.DataFrame,
+    *,
+    emotion_columns: Sequence[str],
+    group_column: str,
+) -> str:
+    """Return a string report. Does not write files or print at import time."""
+    from statsmodels.multivariate.manova import MANOVA
+
+    work = frame.dropna(subset=[group_column, *emotion_columns]).copy()
+    if work.empty:
+        raise EmotionStatisticsError("no rows available for exploratory MANOVA")
+    formula = " + ".join(emotion_columns) + f" ~ {group_column}"
+    manova = MANOVA.from_formula(formula, data=work)
+    header = (
+        "UNADJUSTED EXPLORATORY MANOVA (not cluster-aware; not confirmatory)\n"
+        + "\n".join(f"- {item}" for item in MANOVA_LIMITATIONS)
+        + "\n\n"
+    )
+    return header + str(manova.mv_test())
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Legacy unadjusted MANOVA. Not the supported inferential path. "
+            "Does not account for subreddit clustering."
+        )
+    )
+    parser.add_argument("--input", required=True)
+    parser.add_argument("--group-column", default="mapped_topic_category")
+    parser.add_argument("--emotion-columns", default=None)
+    parser.add_argument("--topic-mapping", default=None)
+    parser.add_argument("--topic-run-id", default=None)
+    parser.add_argument("--topic-assignment-checksum", default=None)
+    args = parser.parse_args(argv)
+    warnings.warn(
+        "analysis.emotion_manova is an unadjusted exploratory diagnostic and "
+        "is not the supported cluster-aware inferential path.",
+        UserWarning,
+        stacklevel=1,
+    )
+    path = Path(args.input)
+    frame = pd.read_csv(path) if path.suffix.lower() != ".json" else pd.read_json(path)
+    try:
+        prepared, _ = prepare_analysis_frame(
+            expand_goemotions_probs(frame),
+            group_column=args.group_column,
+            mapping_path=Path(args.topic_mapping) if args.topic_mapping else None,
+            topic_run_id=args.topic_run_id,
+            topic_assignment_checksum=args.topic_assignment_checksum,
+        )
+        emotions = infer_emotion_columns(
+            prepared,
+            (
+                [
+                    part.strip()
+                    for part in args.emotion_columns.split(",")
+                    if part.strip()
+                ]
+                if args.emotion_columns
+                else None
+            ),
+        )
+        print(
+            run_exploratory_manova(
+                prepared, emotion_columns=emotions, group_column=args.group_column
+            )
+        )
+    except EmotionStatisticsError as exc:
+        print(f"exploratory MANOVA error: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -24,9 +24,12 @@ reddit-bias-perception/
 │   ├── llm_annotation.py           # yes/no + failure-status contract
 │   └── manifest.py                 # run provenance
 │
+├── analysis/                       # local topic modeling + exploratory stats
 ├── validation/                     # blinded sampling + human-vs-model evaluation
 ├── docs/annotation_codebook.md
 ├── docs/human_validation_protocol.md
+├── docs/topic_model_stability.md
+├── docs/statistical_methodology.md
 ├── tests/fixtures/synthetic/       # fully synthetic public fixtures
 ├── artifacts/                      # generated demo output (gitignored)
 ```
@@ -123,6 +126,49 @@ Sentiment analysis and BERTopic modules remain in `analysis/` for local
 research. They are **not** part of the canonical demo and are not invoked by
 `make demo` or `main.py`.
 
+## Topic modeling
+
+BERTopic is an **exploratory** tool. Topic identities are run-specific labels,
+not stable scientific categories. Stochastic components (especially UMAP) use
+an explicit configured seed; `nr_topics="auto"` remains an exploratory choice
+and may yield different topic counts and outlier rates across seeds.
+
+Structural assignment stability across configured seeds is summarized with a
+label-permutation-invariant metric (Adjusted Rand Index). That measures
+partition agreement, not semantic validity. A single topic solution does not
+establish that the topics are meaningful, and this repository does **not**
+claim a measured real-data BERTopic stability score unless a governed
+multi-seed run on local data is completed separately.
+
+Topic-to-category mappings are bound to a specific topic run. “Topic 3” from
+seed A must not be labeled with the name that belonged to “Topic 3” from seed
+B.
+
+See [docs/topic_model_stability.md](docs/topic_model_stability.md). Real
+fitting is local/research-only and is not part of `make demo` or default CI.
+
+## Statistical analysis
+
+Reddit posts are the observational units. Posts from the same subreddit are
+not assumed independent. The supported exploratory path is
+
+```text
+emotion_score ~ C(mapped_topic_category)
+```
+
+with subreddit-clustered covariance when clustering is supportable. Multiple
+emotion-level omnibus tests are Benjamini–Hochberg FDR-corrected. Effect
+estimates and confidence intervals are reported; null results are not hidden.
+
+Mapped topic categories are exploratory topic-derived groupings, not ground
+truth. These analyses do not support causal inference, do not validate
+BERTopic or GoEmotions, and do not treat Reddit discourse as a population
+estimate.
+
+See [docs/statistical_methodology.md](docs/statistical_methodology.md).
+Importing `analysis.emotion_statistics` does not read research files. Default
+CI uses synthetic tables only.
+
 ---
 
 ## Development Commands
@@ -211,9 +257,11 @@ Includes:
 - Public-artifact privacy regression
 - Synthetic end-to-end pipeline regression
 - Human-validation framework tests (sampling, agreement, synthetic E2E)
+- Topic-stability and BERTopic probability-assignment tests (no model download)
+- Clustered emotion-statistics helpers and synthetic methodology E2E
 - Other fast offline unit tests
 
-Live Reddit API tests, model downloads, GPU jobs, and BERTopic training are
+Live Reddit API tests, model downloads, GPU jobs, and real BERTopic training are
 not part of the default suite.
 
 ---
