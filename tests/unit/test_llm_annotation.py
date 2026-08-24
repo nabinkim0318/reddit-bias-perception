@@ -322,3 +322,36 @@ def test_successful_no_is_preserved() -> None:
     assert len(yes_df) == 0
     assert len(no_df) == 1
     assert len(unclassified_df) == 0
+
+
+def test_success_with_null_label_is_unclassified() -> None:
+    """Malformed v2: status=success with a null label must not enter yes/no."""
+    result_df = pd.DataFrame(
+        [
+            {
+                "id": "SYNTH-ANN-0",
+                "subreddit": "synthetic",
+                "clean_text": "synthetic item",
+                "status": STATUS_SUCCESS,
+                "pred_label": None,
+                "error_type": None,
+                "llm_reasoning": "",
+                "raw_output": "",
+                "schema_version": ANNOTATION_SCHEMA_VERSION,
+            }
+        ]
+    )
+
+    yes_df, no_df, unclassified_df = split_annotation_frames(result_df)
+
+    assert len(yes_df) == 0
+    assert len(no_df) == 0
+    assert len(unclassified_df) == 1
+    assert unclassified_df.iloc[0]["status"] == STATUS_SUCCESS
+    assert pd.isna(unclassified_df.iloc[0]["pred_label"])
+
+    counts = summarize_annotation_counts(result_df)
+    assert counts["success_yes"] == 0
+    assert counts["success_no"] == 0
+    assert counts["unclassified"] == 1
+    assert counts["total"] == 1

@@ -317,13 +317,23 @@ def classify_batch(
     )
 
 
+def _scientific_split_masks(result_df: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
+    """Yes/no only when both status and pred_label match the scientific contract."""
+    yes_mask = result_df["status"].eq(STATUS_SUCCESS) & result_df["pred_label"].eq(
+        "yes"
+    )
+    no_mask = result_df["status"].eq(STATUS_SUCCESS) & result_df["pred_label"].eq("no")
+    return yes_mask, no_mask
+
+
 def split_annotation_frames(
     result_df: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Split annotations into success-yes, success-no, and unclassified frames.
 
-    Only ``status == success`` rows participate in the scientific yes/no split.
-    Missing ``status`` (prior schema) is treated as unclassified, not as ``no``.
+    Only ``status == success`` with ``pred_label`` ``yes``/``no`` enter those
+    frames. ``success`` with a null label, missing ``status``, and all failures
+    are unclassified — never coerced to ``no``.
     """
     if result_df.empty:
         empty = pd.DataFrame(columns=ANNOTATION_COLUMNS)
@@ -336,10 +346,10 @@ def split_annotation_frames(
             result_df.copy(),
         )
 
-    success = result_df["status"].eq(STATUS_SUCCESS)
-    yes_df = result_df[success & result_df["pred_label"].eq("yes")].copy()
-    no_df = result_df[success & result_df["pred_label"].eq("no")].copy()
-    unclassified_df = result_df[~success].copy()
+    yes_mask, no_mask = _scientific_split_masks(result_df)
+    yes_df = result_df[yes_mask].copy()
+    no_df = result_df[no_mask].copy()
+    unclassified_df = result_df[~(yes_mask | no_mask)].copy()
     return yes_df, no_df, unclassified_df
 
 
@@ -365,12 +375,12 @@ def summarize_annotation_counts(result_df: pd.DataFrame) -> Dict[str, int]:
             "unclassified": n,
         }
 
-    success = result_df["status"].eq(STATUS_SUCCESS)
-    success_yes = int((success & result_df["pred_label"].eq("yes")).sum())
-    success_no = int((success & result_df["pred_label"].eq("no")).sum())
+    yes_mask, no_mask = _scientific_split_masks(result_df)
+    success_yes = int(yes_mask.sum())
+    success_no = int(no_mask.sum())
     parse_error = int(result_df["status"].eq(STATUS_PARSE_ERROR).sum())
     model_error = int(result_df["status"].eq(STATUS_MODEL_ERROR).sum())
-    unclassified = int((~success).sum())
+    unclassified = int((~(yes_mask | no_mask)).sum())
     return {
         "total": int(len(result_df)),
         "success_yes": success_yes,

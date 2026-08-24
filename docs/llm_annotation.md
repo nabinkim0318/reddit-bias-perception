@@ -41,7 +41,7 @@ rather than migrating them.
 
 - `success` + `yes` → `*_filtered_ai_bias.csv`
 - `success` + `no` → `*_filtered_ai_non_bias.csv`
-- any other status → `*_filtered_ai_unclassified.csv`
+- anything else, including `success` with a null label → `*_filtered_ai_unclassified.csv`
 - all rows → `*_llm_classification_results.csv`
 
 Failed records are excluded from yes/no prevalence denominators. Run logs
