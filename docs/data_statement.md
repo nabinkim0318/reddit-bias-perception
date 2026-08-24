@@ -97,7 +97,11 @@ topic assignments) are **automated annotations**. They should not be treated as
 human-validated ground truth unless a separate validation process has been
 documented and applied. The LLM yes/no contract, failure statuses, and
 exclusion of unsuccessful rows from prevalence counts are described in
-[`docs/llm_annotation.md`](llm_annotation.md).
+[`docs/llm_annotation.md`](llm_annotation.md). A reproducible
+human-validation **framework** (codebook, blinded sampling, agreement, and
+aggregate evaluation) is in [`docs/annotation_codebook.md`](annotation_codebook.md)
+and [`docs/human_validation_protocol.md`](human_validation_protocol.md). The
+existence of that framework is not a completed validation study.
 
 ## Takedown / contact
 

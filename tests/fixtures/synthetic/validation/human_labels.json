@@ -1,0 +1,48 @@
+{
+  "SYNTH-VAL-0001": {
+    "a": "yes",
+    "b": "yes"
+  },
+  "SYNTH-VAL-0002": {
+    "a": "no",
+    "b": "no"
+  },
+  "SYNTH-VAL-0003": {
+    "a": "no",
+    "b": "no"
+  },
+  "SYNTH-VAL-0004": {
+    "a": "yes",
+    "b": "yes"
+  },
+  "SYNTH-VAL-0005": {
+    "a": "yes",
+    "b": "no",
+    "adjudicated_label": "yes",
+    "adjudication_status": "resolved"
+  },
+  "SYNTH-VAL-0006": {
+    "a": "uncertain",
+    "b": "uncertain"
+  },
+  "SYNTH-VAL-0007": {
+    "a": "insufficient_context",
+    "b": "insufficient_context"
+  },
+  "SYNTH-VAL-0008": {
+    "a": "insufficient_context",
+    "b": "insufficient_context"
+  },
+  "SYNTH-VAL-0009": {
+    "a": "no",
+    "b": "no"
+  },
+  "SYNTH-VAL-0010": {
+    "a": "yes",
+    "b": "yes"
+  },
+  "SYNTH-VAL-0011": {
+    "a": "no",
+    "b": "no"
+  }
+}
