@@ -216,12 +216,14 @@ def test_vader_initializes_lazily_and_is_cached(monkeypatch):
 
 
 def test_goemotions_provenance_reports_requested_identity():
-    assert goemotions_provenance() == {
+    default = goemotions_provenance()
+    assert default == {
         "model_id": DEFAULT_GOEMOTIONS_MODEL_ID,
         "model_revision": None,
     }
     assert DEFAULT_GOEMOTIONS_MODEL_REVISION is None
     assert DEFAULT_GOEMOTIONS_MODEL_ID == "SamLowe/roberta-base-go_emotions"
+    # Unset revision is reported as None; it is not an implicit pin.
 
     runtime = GoEmotionsRuntime(
         model_id="model-a",

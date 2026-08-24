@@ -59,7 +59,12 @@ def goemotions_provenance(
     model_id: str = DEFAULT_GOEMOTIONS_MODEL_ID,
     model_revision: Optional[str] = DEFAULT_GOEMOTIONS_MODEL_REVISION,
 ) -> dict[str, Optional[str]]:
-    """Requested GoEmotions identity. ``model_revision`` may be None."""
+    """Return the requested GoEmotions identity.
+
+    ``model_revision`` is ``None`` when no immutable SHA or tag was supplied.
+    An explicit model ID alone is not a pin and does not make a run
+    scientifically reproducible or domain-validated.
+    """
     return {
         "model_id": model_id,
         "model_revision": model_revision,
