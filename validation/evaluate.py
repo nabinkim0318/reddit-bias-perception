@@ -272,12 +272,8 @@ def classification_metrics(confusion: Mapping[str, int]) -> dict[str, Optional[f
     recall = _safe_div(tp, tp + fn)
     specificity = _safe_div(tn, tn + fp)
     accuracy = _safe_div(tp + tn, tp + tn + fp + fn)
-    if precision is None or recall is None:
-        f1: Optional[float] = None
-    elif precision + recall == 0:
-        f1 = None
-    else:
-        f1 = 2.0 * precision * recall / (precision + recall)
+    f1_denom = 2 * tp + fp + fn
+    f1 = None if f1_denom == 0 else (2 * tp) / f1_denom
     if recall is None or specificity is None:
         balanced: Optional[float] = None
     else:
@@ -408,6 +404,11 @@ def evaluate_validation(
 ) -> dict[str, Any]:
     adjudication = dict(adjudication or {})
     align_double_annotations(index, annotations_a, annotations_b)
+    extra_adjudication = set(adjudication) - set(index)
+    if extra_adjudication:
+        raise ValidationInputError(
+            f"unknown task_id in adjudication: {sorted(extra_adjudication)}"
+        )
     references = resolve_references(index, annotations_a, annotations_b, adjudication)
 
     paired_a = [annotations_a[task_id].label for task_id in index]

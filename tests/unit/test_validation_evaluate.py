@@ -114,6 +114,20 @@ def test_zero_denominator_metrics_are_unavailable() -> None:
     assert metrics["balanced_accuracy"] is None
 
 
+def test_f1_is_zero_when_defined_but_no_true_positives() -> None:
+    metrics = classification_metrics(
+        {
+            "true_positive": 0,
+            "true_negative": 0,
+            "false_positive": 1,
+            "false_negative": 1,
+        }
+    )
+    assert metrics["precision_yes"] == 0.0
+    assert metrics["recall_yes"] == 0.0
+    assert metrics["f1_yes"] == 0.0
+
+
 def test_model_failures_excluded_from_binary_metrics() -> None:
     index = {
         "VAL-0001": SamplingIndexRow(
@@ -245,6 +259,35 @@ def test_adjudication_is_separate_and_resolves_disagreement() -> None:
     assert with_adj["confusion_matrix"]["true_positive"] == 1
     assert annotations_a["VAL-0001"].label == "yes"
     assert annotations_b["VAL-0001"].label == "no"
+
+
+def test_unknown_adjudication_task_is_rejected() -> None:
+    index = {"VAL-0001": _index_success("VAL-0001", "yes", "SYNTH-VAL-0001")}
+    labels = {"VAL-0001": _ann("VAL-0001", "yes")}
+    adjudication = {
+        "VAL-0001": AdjudicationRecord(
+            task_id="VAL-0001",
+            annotator_a_label="yes",
+            annotator_b_label="yes",
+            adjudicated_label="yes",
+            adjudication_status="resolved",
+        ),
+        "VAL-9999": AdjudicationRecord(
+            task_id="VAL-9999",
+            annotator_a_label="yes",
+            annotator_b_label="no",
+            adjudicated_label="yes",
+            adjudication_status="resolved",
+        ),
+    }
+    with pytest.raises(ValidationInputError, match="unknown task_id in adjudication"):
+        evaluate_validation(
+            index=index,
+            annotations_a=labels,
+            annotations_b=labels,
+            adjudication=adjudication,
+            bootstrap_iterations=0,
+        )
 
 
 def test_missing_annotation_is_detected() -> None:

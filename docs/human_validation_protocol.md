@@ -142,7 +142,9 @@ If used, write a **separate** artifact that preserves original A/B labels:
 Do not overwrite A/B files. A third reader (or a documented consensus rule)
 assigns `adjudicated_label`. Unresolved items, and items adjudicated to
 `uncertain` or `insufficient_context`, stay out of binary performance
-denominators.
+denominators. Every `task_id` in the adjudication file must exist in the
+sampling index; unknown IDs are rejected rather than ignored.
+`unresolved` rows must not carry an `adjudicated_label`.
 
 If adjudication is **not** used:
 
@@ -164,7 +166,8 @@ Binary metrics use only tasks where **both** are true:
 Compute a confusion matrix (`yes` as the positive class), precision, recall,
 F1, accuracy (secondary), and, where defined, specificity and balanced
 accuracy. Zero denominators yield null / unavailable, not fabricated zeros
-that pretend to be estimates.
+that pretend to be estimates. A defined F1 of 0 (no true positives, but
+`FP + FN > 0`) is reported as 0.0, not unavailable.
 
 Optional deterministic bootstrap confidence intervals may be attached to
 precision, recall, F1, and accuracy. They are percentile intervals under a

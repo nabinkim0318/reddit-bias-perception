@@ -131,6 +131,8 @@ class AdjudicationRecord(BaseModel):
         if self.adjudication_status == "resolved":
             if self.adjudicated_label is None:
                 raise ValueError("resolved adjudication requires adjudicated_label")
+        elif self.adjudicated_label is not None:
+            raise ValueError("unresolved adjudication must not carry adjudicated_label")
         return self
 
 

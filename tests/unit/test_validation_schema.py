@@ -71,3 +71,14 @@ def test_adjudication_resolved_requires_label() -> None:
             adjudicated_label=None,
             adjudication_status="resolved",
         )
+
+
+def test_adjudication_unresolved_forbids_label() -> None:
+    with pytest.raises(ValidationError):
+        AdjudicationRecord(
+            task_id="VAL-0001",
+            annotator_a_label="yes",
+            annotator_b_label="no",
+            adjudicated_label="yes",
+            adjudication_status="unresolved",
+        )
