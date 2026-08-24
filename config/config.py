@@ -28,6 +28,7 @@ SUBREDDIT_CSV_DIR = os.path.join(PROCESSED_DIR, "subreddit_csv")
 OUTPUT_DIR = PROCESSED_DIR
 CLASSIFIED_YES = os.path.join(OUTPUT_DIR, "filtered_ai_bias.csv")
 CLASSIFIED_NO = os.path.join(OUTPUT_DIR, "filtered_ai_non_bias.csv")
+CLASSIFIED_UNCLASSIFIED = os.path.join(OUTPUT_DIR, "filtered_ai_unclassified.csv")
 FEWSHOT_RESULT = os.path.join(OUTPUT_DIR, "llm_classification_results.csv")
 
 FINAL_ANALYSIS_INPUT = CLASSIFIED_YES

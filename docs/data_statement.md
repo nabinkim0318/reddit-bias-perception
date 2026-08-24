@@ -89,7 +89,9 @@ methodology write-up.
 Model-generated labels (for example LLM classifications, sentiment scores, or
 topic assignments) are **automated annotations**. They should not be treated as
 human-validated ground truth unless a separate validation process has been
-documented and applied.
+documented and applied. The LLM yes/no contract, failure statuses, and
+exclusion of unsuccessful rows from prevalence counts are described in
+[`docs/llm_annotation.md`](llm_annotation.md).
 
 ## Takedown / contact
 
