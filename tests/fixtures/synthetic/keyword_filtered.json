@@ -1,0 +1,38 @@
+[
+  {
+    "id": "SYNTH-POST-0001",
+    "subreddit": "SynthPrismWorkshop",
+    "subreddit_group": "technical",
+    "clean_text": "LampshadeForge keeps painting Ambervale lighthouse keepers as identical silver foxes Every brochure prompt about a lighthouse keeper in Ambervale returns a navy-cape silver fox, never a teal otter in a garden hat. This gender stereotype in image generation looks like artificial intelligence copying one costume-shop mannequin.",
+    "clean_text_lc": "lampshadeforge keeps painting ambervale lighthouse keepers as identical silver foxes every brochure prompt about a lighthouse keeper in ambervale returns a navy-cape silver fox, never a teal otter in a garden hat. this gender stereotype in image generation looks like artificial intelligence copying one costume-shop mannequin.",
+    "matched_bias_types": ["gender"],
+    "matched_keywords": ["artificial intelligence", "gender", "image generation", "stereotype"]
+  },
+  {
+    "id": "SYNTH-POST-0007",
+    "subreddit": "SynthLanternStudio",
+    "subreddit_group": "creative_ai_communities",
+    "clean_text": "Creative group example: garden-hat otters never appear in the pier kiosk Prompting LampshadeForge for a market greeter always yields the silver fox, never the teal otter. Race and gender cues in image generation keep collapsing to one mascot.",
+    "clean_text_lc": "creative group example: garden-hat otters never appear in the pier kiosk prompting lampshadeforge for a market greeter always yields the silver fox, never the teal otter. race and gender cues in image generation keep collapsing to one mascot.",
+    "matched_bias_types": ["gender", "race"],
+    "matched_keywords": ["gender", "image generation", "race"]
+  },
+  {
+    "id": "SYNTH-POST-0008",
+    "subreddit": "SynthTownSquare",
+    "subreddit_group": "general_reddit",
+    "clean_text": "General group example: the library poster printer and missing grandparents The town library poster printer, which the brochure calls artificial intelligence, draws every grandparent as a teenager. Age bias in image generation is the whole complaint.",
+    "clean_text_lc": "general group example: the library poster printer and missing grandparents the town library poster printer, which the brochure calls artificial intelligence, draws every grandparent as a teenager. age bias in image generation is the whole complaint.",
+    "matched_bias_types": ["age", "general_bias"],
+    "matched_keywords": ["age", "artificial intelligence", "bias", "image generation"]
+  },
+  {
+    "id": "SYNTH-POST-0009",
+    "subreddit": "SynthCritiqueCircle",
+    "subreddit_group": "critical_discussion",
+    "clean_text": "Critical group example: the mural plotter refuses to draw the dock workers with canes LampshadeForge image generation keeps replacing mobility aids with floating lanterns, which is a disability stereotype in a fictional town mural.",
+    "clean_text_lc": "critical group example: the mural plotter refuses to draw the dock workers with canes lampshadeforge image generation keeps replacing mobility aids with floating lanterns, which is a disability stereotype in a fictional town mural.",
+    "matched_bias_types": ["disability"],
+    "matched_keywords": ["disability", "image generation", "stereotype"]
+  }
+]

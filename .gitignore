@@ -18,11 +18,15 @@ __pycache__/
 *.log
 build/
 dist/
+.pytest_cache/
+.hypothesis/
 
 # -------------------------
-# Virtual environments
+# Virtual environments & secrets
 # -------------------------
 .env
+.env.*
+!.env.example
 .venv/
 env/
 venv/
@@ -32,22 +36,77 @@ venv/
 # -------------------------
 .ipynb_checkpoints/
 
-# -------------------------
-# Data: ignored except for filtered folder's 
-# *_keyword_filtered.{csv,json}
-# -------------------------
-/data/*                        
-!/data/filtered/               
-/data/filtered/*               
-!/data/filtered/*_keyword_filtered.csv
-!/data/filtered/*_keyword_filtered.json
+# =============================================================================
+# Local / private research data vs public artifacts
+#
+# This repository's public tree is intended to hold source code, configuration,
+# schemas, documentation, synthetic fixtures, and (if later designated)
+# governed aggregate outputs.
+#
+# It is NOT intended to hold Reddit post/comment text, Reddit IDs, usernames,
+# permalinks, raw archives, processed corpora, or per-record model/topic
+# annotations tied to identifiable Reddit records.
+#
+# Researchers may keep local copies under /data, /models, /results, and similar
+# paths. Those files must stay untracked. Public-safe exceptions are listed
+# explicitly below.
+# =============================================================================
 
-# -------------------------
-# Local DB / archives 
-# -------------------------
+# Entire local data tree (raw, extracted, processed, filtered, results)
+/data/**
+!/data/README.md
+
+# Generated analysis / run output at the repository root
+/results/
+/output/
+/runs/
+
+# Local model weights and caches
+/models/
+.cache/
+.huggingface/
+*.bin
+*.safetensors
+*.gguf
+
+# Archive, database, and record-oriented dump formats
 *.zst
 *.parquet
 *.duckdb
+*.sqlite
+*.sqlite3
 *.jsonl
-/reddit.duckdb
-data/filtered/*.csv
+!tests/fixtures/synthetic/**/*.jsonl
+
+# Record-level Reddit / analysis artifacts by common filename
+reddit_raw.json
+reddit.duckdb
+depression_posts.csv
+*_keyword_filtered.json
+*_keyword_filtered.csv
+*_filtered_cleaned.csv
+*_duckdb_processed.csv
+*_sample_preview.csv
+*_full_filtered_posts*.csv
+reddit_bias_data_clean.csv
+filtered_ai_bias.csv
+filtered_ai_bias_.csv
+filtered_ai_non_bias.csv
+keywords_filtered_ai_bias.csv
+keywords_filtered_ai_bias.json
+fewshot_classification_results.csv
+llm_classification_results.csv
+classified_bias.csv
+classified_yes.csv
+classified_no.csv
+classified_nonbias.csv
+bias_uncertain.csv
+sentiment_labeled.csv
+sentiment_labeled_output.csv
+bertopic_post_topics.csv
+bertopic_topic_info.csv
+examples_per_category.csv
+
+# Public-safe exceptions: synthetic fixtures only (not derived from Reddit users)
+!tests/fixtures/synthetic/
+!tests/fixtures/synthetic/**
