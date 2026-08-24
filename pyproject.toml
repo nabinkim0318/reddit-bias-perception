@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "reddit-bias-perception"
 version = "0.1.0"
-description = "Sentiment analysis on AI bias-related Reddit posts using ONNX and VADER"
+description = "Privacy-aware research pipeline for studying Reddit discussion of visual-identity bias in AI-generated images"
 readme = "README.md"
 license = "MIT"
 authors = ["Nabin Kim <nabinkim0318@gmail.com>"]

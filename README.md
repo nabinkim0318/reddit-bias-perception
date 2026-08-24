@@ -1,69 +1,64 @@
 # Reddit Bias Perception
 
-A modular pipeline to collect, filter, and analyze Reddit posts for bias in AI-generated images.
+A privacy-aware research-engineering pipeline for studying how Reddit posts
+discuss perceived visual-identity bias in AI-generated images.
 
-The project supports data collection via Reddit API, text preprocessing, few-shot classification (LLM), keyword filtering, sentiment analysis, and topic modeling.
+[![CI](https://github.com/nabinkim0318/reddit-bias-perception/actions/workflows/ci.yml/badge.svg)](https://github.com/nabinkim0318/reddit-bias-perception/actions/workflows/ci.yml)
 
-**Public repository policy:** this Git tree is intended to distribute source code, configuration, schemas, documentation, and synthetic fixtures. It does **not** distribute record-level Reddit text, Reddit IDs, usernames, or permalinks. See [docs/data_statement.md](docs/data_statement.md), [docs/git_history_audit.md](docs/git_history_audit.md), and [tests/fixtures/synthetic/README.md](tests/fixtures/synthetic/README.md).
+The operational question is whether a post **discusses** unfair, distorted, or
+missing portrayal of human identity in generated images — not whether an AI
+system is objectively biased. A model `yes` does not prove objective AI bias.
 
----
+## What this demonstrates
 
-## Project Structure
+- **Failure-aware LLM annotation.** Successful `yes`/`no` labels are stored
+  separately from parse and model failures, so execution errors cannot silently
+  become scientific negatives.
+- **Public-safe, provenance-backed execution.** The supported demo runs on
+  fully synthetic fixtures, writes compact aggregates plus checksummed run
+  manifests, and is covered by offline CI.
+- **Human-validation tooling, not a claimed study.** Blinded sampling, double
+  annotation, and agreement metrics ship as a reproducible framework; this
+  repository does not claim a completed validation result.
+- **Exploratory topic analysis with run-specific identities.** Topic IDs are
+  local to a fit. Assignment agreement across seeds is measured without treating
+  a partition as semantically valid.
+- **Cluster-aware exploratory statistics.** Emotion scores are compared across
+  mapped topic categories with subreddit-clustered covariance, FDR correction,
+  and reported effect estimates with confidence intervals.
 
-```
-reddit-bias-perception/
-├── Makefile                        # install, format, test, demo
-├── README.md
-├── main.py                         # shim to processing.run_pipeline
-│
-├── processing/
-│   ├── run_pipeline.py             # canonical CLI (synthetic + legacy private)
-│   ├── synthetic_pipeline.py       # offline synthetic workflow
-│   ├── keyword_filter.py
-│   ├── clean_text.py
-│   ├── llm_annotation.py           # yes/no + failure-status contract
-│   └── manifest.py                 # run provenance
-│
-├── analysis/                       # local topic modeling + exploratory stats
-├── validation/                     # blinded sampling + human-vs-model evaluation
-├── docs/annotation_codebook.md
-├── docs/human_validation_protocol.md
-├── docs/topic_model_stability.md
-├── docs/statistical_methodology.md
-├── tests/fixtures/synthetic/       # fully synthetic public fixtures
-├── artifacts/                      # generated demo output (gitignored)
-```
+## Quick start
 
----
-
-## Reproducible synthetic demo
-
-This is the **supported public/offline path**. It exercises preprocessing,
-keyword filtering, the annotation contract, aggregation, and provenance using
-fully synthetic fixtures.
-
-It does **not** reproduce study findings, validate bias results, or recreate
-Reddit analyses. Demo outputs are pipeline-validation artifacts.
-
-### Prerequisites
-
-- Python 3.10–3.12
-- Poetry
+Requires Python 3.10–3.12 and [Poetry](https://python-poetry.org/).
 
 ```bash
 poetry install --with=dev
-```
-
-Dependency installation may need package-index access. After install, the demo
-itself is runtime-offline.
-
-### Canonical command
-
-```bash
 make demo
 ```
 
-Equivalent:
+Installing dependencies may need package-index access. After that, `make demo`
+is runtime-offline: it uses fully synthetic data and does not need Reddit
+credentials, a GPU, or a real LLM.
+
+Optionally:
+
+```bash
+make test
+```
+
+### What `make demo` exercises
+
+```mermaid
+flowchart LR
+    A[Synthetic fixture] --> B[Preprocess]
+    B --> C[Deduplicate]
+    C --> D[Keyword filter]
+    D --> E[Annotation contract]
+    E --> F[Aggregate]
+    F --> G[Run manifest]
+```
+
+Equivalent command:
 
 ```bash
 PYTHONPATH=. poetry run python -m processing.run_pipeline --synthetic \
@@ -71,62 +66,102 @@ PYTHONPATH=. poetry run python -m processing.run_pipeline --synthetic \
   --output-dir artifacts/synthetic_demo
 ```
 
-Expected output directory: `artifacts/synthetic_demo/`
+Outputs in `artifacts/synthetic_demo/` (gitignored):
 
 - `synthetic_demo_aggregate.json` — compact counts only
 - `synthetic_demo_manifest.json` — input checksum, code SHA, config hash, stage counts
 
+The annotator is a deterministic stand-in (`synthetic-demo-annotator/v1`). The
+demo does **not** call Reddit, load a real LLM, fit BERTopic, or reproduce
+study findings. Outputs are pipeline-validation artifacts.
+
 Canonical resume reuses those outputs only when the manifest matches the current
 input checksum, config hash, and schema version **and** the recorded aggregate
 SHA-256 still matches the file on disk. `code_sha` is stored for provenance but
-is not a cache key, so a documentation-only commit does not by itself
-invalidate a matching synthetic run.
+is not a cache key, so a documentation-only commit does not by itself invalidate
+a matching synthetic run.
 
-### What the demo exercises
+## What this repository does not claim
 
-- loading tracked synthetic fixtures
-- canonical text preprocessing and date-window filtering
-- keyword filtering and deduplication
-- deterministic fake annotation (`synthetic-demo-annotator/v1`)
-- aggregate summary + provenance manifest
+- It does **not** detect whether AI image systems are objectively biased.
+- A model `yes` is a prediction about **discussion**, not evidence of system-level bias.
+- Keyword matches are not `yes` labels; failed parses are not `no`.
+- `make demo` does not reproduce research findings.
+- Shipping a human-validation **framework** is not a completed validation study.
+- Topic-model and clustered-statistics modules are exploratory. They do not
+  establish causal effects, Reddit representativeness, or semantic validity of
+  topics.
 
-### What it deliberately does not exercise
+## Construct
 
-- Reddit API / private Reddit corpora
-- Hugging Face / Llama / other real LLMs
-- BERTopic, GoEmotions, VADER
-- GPU or model downloads
-- network access at runtime
+| Object | What it is |
+|---|---|
+| Reddit post | Observational unit: discourse about visual-identity portrayal in generated images |
+| Model `pred_label` | Automated prediction of that discourse construct (`yes`/`no` on success only) |
+| Human validation | Codebook + blinded protocol for evaluating those predictions |
+| Objective AI-system bias | **Out of scope.** Not measured by this software |
 
-Demo data are synthetic. No Reddit source text is distributed. No real LLM is
-required. Results are not research findings.
+The codebook construct is `visual_identity_bias_in_ai_generated_images`:
+whether the post discusses unfair, distorted, or missing portrayal of human
+identity (race, gender, body type, disability, age, culture) in AI-generated
+images. See [docs/annotation_codebook.md](docs/annotation_codebook.md).
 
-`make test` runs the meaningful offline suite, including this demo path.
+## Annotation contract
 
----
+Few-shot labels are model predictions, not human-validated ground truth.
 
-## Real Reddit data (local only)
+- On success, `pred_label` is `yes` or `no`.
+- On parse or model failure, `pred_label` is null and `status` records the failure.
+- Malformed replies are not guessed. Failures are never stored as `"no"`.
+- Unsuccessful rows are excluded from yes/no prevalence denominators.
+
+See [docs/llm_annotation.md](docs/llm_annotation.md). Artifacts without `status`
+are a prior schema; re-run annotation rather than migrating them.
+
+## Human validation
+
+This repository includes a reproducible human-validation **framework** (blinded
+deterministic sampling, double annotation, optional adjudication, agreement
+metrics, and aggregate model-vs-human evaluation). See
+[docs/human_validation_protocol.md](docs/human_validation_protocol.md).
+
+- **No completed human-validation result is claimed by this repository.**
+- Human `uncertain` and `insufficient_context` labels are counted but excluded
+  from binary evaluation denominators. They are not forced into `yes`/`no`.
+- Model `parse_error` / `model_error` rows are reported as execution failures
+  and are never treated as scientific `"no"`.
+
+Real validation task files remain local/private. Public tests use fictional
+synthetic fixtures only.
+
+## Public data policy
+
+This Git tree distributes source code, configuration, schemas, documentation,
+and synthetic fixtures. It does **not** distribute record-level Reddit text,
+Reddit IDs, usernames, or permalinks.
+
+Ordinary published branch history in a fresh clone has been sanitized of those
+record-level artifacts. Residual GitHub-side caches of old pull-request refs
+are a separate concern; see [docs/git_history_audit.md](docs/git_history_audit.md).
 
 Real Reddit-derived corpora are obtained separately, remain on the researcher's
 machine (typically under `data/`), and are **not** required for the public
-synthetic demo. They must not be committed. Provenance and governance for those
-files are a research-data concern; this repository does **not** claim that the
-full real-data workflow is reproducible from a clean clone.
+synthetic demo. They must not be committed. This repository does **not** claim
+that the full real-data workflow is reproducible from a clean clone.
 
 The legacy runner `python -m processing.run_pipeline --subreddit <name>` still
 exists for local private dumps. It may load a real LLM, assumes files under
 `data/`, and resumes on file existence only (not provenance). It is not the
 supported public command.
 
----
+See [docs/data_statement.md](docs/data_statement.md) and
+[tests/fixtures/synthetic/README.md](tests/fixtures/synthetic/README.md).
 
-## Pipelines (legacy / exploratory)
+## Topic modeling
 
 Sentiment analysis and BERTopic modules remain in `analysis/` for local
 research. They are **not** part of the canonical demo and are not invoked by
 `make demo` or `main.py`.
-
-## Topic modeling
 
 BERTopic is an **exploratory** tool. Topic identities are run-specific labels,
 not stable scientific categories. Stochastic components (especially UMAP) use
@@ -169,83 +204,38 @@ See [docs/statistical_methodology.md](docs/statistical_methodology.md).
 Importing `analysis.emotion_statistics` does not read research files. Default
 CI uses synthetic tables only.
 
----
+## Where to look
 
-## Development Commands
+| Path | Role |
+|---|---|
+| `processing/` | Canonical pipeline, LLM contract, synthetic runner, provenance |
+| `validation/` | Blinded sampling and human-vs-model evaluation |
+| `analysis/` | Local topic modeling, stability, clustered emotion statistics |
+| `tests/fixtures/synthetic/` | Fully synthetic public fixtures |
+| `docs/` | Codebook, protocol, methodology, data statement |
+| `artifacts/` | Generated demo output (gitignored) |
 
-| Command        | Description                                      |
-|----------------|--------------------------------------------------|
-| `make install` | Install dependencies with Poetry                 |
-| `make format`  | Run black and isort                              |
-| `make check`   | Check formatting and config                      |
-| `make test`    | Offline tests (`not slow and not integration_external`) |
-| `make demo`    | Canonical synthetic end-to-end workflow          |
+## Development commands
 
----
+| Command | Description |
+|---|---|
+| `poetry install --with=dev` | Install runtime and development dependencies |
+| `make format` | Run black and isort |
+| `make check` | Check formatting and Poetry config |
+| `make test` | Offline tests (`not slow and not integration_external`) |
+| `make demo` | Canonical synthetic end-to-end workflow |
 
 ## Configuration
 
-Environment variables and paths are defined in:
+Environment variables and paths are defined in `config/config.py`. A `.env`
+file is **not** required for `make demo`. Reddit and Hugging Face credentials
+in `.env.example` are only for the local private-data runner.
 
-- `config/config.py` → all file paths and constants
-- `.env` → API keys and credentials
-
-### Example `.env`
-```
-REDDIT_CLIENT_ID=your_id
-REDDIT_CLIENT_SECRET=your_secret
-REDDIT_USER_AGENT=script:reddit_bias:v1.0 (by u/yourname)
-HF_TOKEN=hf_your_token
-```
-
----
-
-## Outputs
-
-Pipeline scripts may write record-level files under local `data/` (raw dumps, cleaned corpora, per-record labels). **Those files are local research artifacts and are gitignored.** They are not published in this repository.
-
-Public examples for tests and documentation are synthetic only (`tests/fixtures/synthetic/`). `.gitignore` is written to block accidental recommits of Reddit corpora, archives, databases, and per-record outputs; it cannot erase objects that already exist in Git history. See [docs/git_history_audit.md](docs/git_history_audit.md).
-
-### LLM annotation contract
-
-Few-shot labels are model predictions, not human-validated ground truth.
-
-- On success, `pred_label` is `yes` or `no`.
-- On parse or model failure, `pred_label` is null and `status` records the failure.
-- Malformed replies are not guessed. Failures are never stored as `"no"`.
-- Unsuccessful rows are written to `*_filtered_ai_unclassified.csv` and excluded from yes/no prevalence denominators.
-
-See [docs/llm_annotation.md](docs/llm_annotation.md). Artifacts without `status` are a prior schema; re-run annotation rather than migrating them.
-
-### Annotation validity
-
-The operational yes/no construct is whether a post **discusses visual-identity
-bias in AI-generated images** (see [docs/annotation_codebook.md](docs/annotation_codebook.md)).
-That is a discourse/perception label. It is not a detector of objective AI-system
-bias, and the project name should not be read as a claim that the classifier
-“detects AI bias.”
-
-- Automated `yes`/`no` values are **model predictions**, not human-validated
-  ground truth.
-- This repository includes a reproducible human-validation **framework**
-  (blinded deterministic sampling, double annotation, optional adjudication,
-  agreement metrics, and aggregate model-vs-human evaluation). See
-  [docs/human_validation_protocol.md](docs/human_validation_protocol.md).
-- **No completed human-validation result is claimed by this repository.**
-  Shipping the framework is not the same as completing a study.
-- Human `uncertain` and `insufficient_context` labels are counted but excluded
-  from binary evaluation denominators. They are not forced into `yes`/`no`.
-- Model `parse_error` / `model_error` rows are reported as execution failures
-  and are never treated as scientific `"no"`.
-
-Real validation task files (source text, sampling indexes, annotator CSVs)
-remain local/private. Public tests use fictional synthetic fixtures only.
-
----
+Pipeline scripts may write record-level files under local `data/`. Those files
+are local research artifacts and are gitignored. Public examples are synthetic
+only (`tests/fixtures/synthetic/`).
 
 ## Tests
-
-Test files are under `tests/` and can be run with:
 
 ```bash
 make test
@@ -264,8 +254,18 @@ Includes:
 Live Reddit API tests, model downloads, GPU jobs, and real BERTopic training are
 not part of the default suite.
 
----
+## Further reading
+
+- [docs/annotation_codebook.md](docs/annotation_codebook.md) — human construct and labels
+- [docs/llm_annotation.md](docs/llm_annotation.md) — parser and failure statuses
+- [docs/human_validation_protocol.md](docs/human_validation_protocol.md) — validation framework
+- [docs/topic_model_stability.md](docs/topic_model_stability.md) — topic identities and ARI
+- [docs/statistical_methodology.md](docs/statistical_methodology.md) — clustered inference and FDR
+- [docs/data_statement.md](docs/data_statement.md) — public vs local data
+- [docs/git_history_audit.md](docs/git_history_audit.md) — history sanitization
 
 ## License
 
-MIT License for the software in this repository. The license does **not** grant rights to redistribute Reddit users' content. See [docs/data_statement.md](docs/data_statement.md).
+MIT License for the software in this repository (`pyproject.toml`). The license
+does **not** grant rights to redistribute Reddit users' content. See
+[docs/data_statement.md](docs/data_statement.md).
