@@ -1,0 +1,26 @@
+{
+  "document_count": 24,
+  "notes": "Fully synthetic topic labels for the same ordered SYNTH-STAT rows. Seed 23 is a permutation of seed 11.",
+  "runs": [
+    {
+      "seed": 11,
+      "assignments": [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, -1]
+    },
+    {
+      "seed": 23,
+      "assignments": [7, 7, 7, 7, 7, 7, 7, 7, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, -1]
+    },
+    {
+      "seed": 37,
+      "assignments": [0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, -1]
+    },
+    {
+      "seed": 53,
+      "assignments": [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1]
+    },
+    {
+      "seed": 71,
+      "assignments": [0, 0, 0, 0, -1, -1, 0, 0, 1, 1, -1, 1, 1, 1, 1, 1, 2, 2, 2, -1, 2, 2, 2, -1]
+    }
+  ]
+}

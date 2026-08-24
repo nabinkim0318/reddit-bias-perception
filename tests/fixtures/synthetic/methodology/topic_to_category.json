@@ -1,0 +1,11 @@
+{
+  "labels": {
+    "0": "portrayal_stereotype",
+    "1": "technical_complaint",
+    "2": "policy_discussion"
+  },
+  "mapping_schema_version": 1,
+  "mapping_version": 1,
+  "topic_assignment_checksum": "33d1221771257b474ee22671eb9812ba1e10ddf2e98b8baf2ff4558a1fe0a779",
+  "topic_run_id": "synthetic-topic-run-seed-11"
+}

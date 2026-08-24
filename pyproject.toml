@@ -27,8 +27,10 @@ onnxruntime = "^1.16.3"
 # Classical sentiment model
 vadersentiment = "^3.3.2"
 
-# Topic modeling
+# Topic modeling and exploratory clustered inference
 bertopic = "^0.17.0"
+scikit-learn = "^1.4"
+statsmodels = "^0.14.2"
 
 # Reddit crawling
 asyncpraw = "^7.8.1"

@@ -39,5 +39,7 @@ jobs:
       run: |
         PYTHONPATH=. poetry run pytest tests/ \
           -m "not slow and not integration_external" -v
-        # Includes annotation-contract, synthetic pipeline, privacy, and
-        # human-validation framework tests. No Reddit, HF, GPU, or human files.
+        # Includes annotation-contract, synthetic pipeline, privacy,
+        # human-validation, topic-stability, probability-assignment, and
+        # clustered-statistics tests. No Reddit, HF, GPU, real BERTopic fit,
+        # or human files.

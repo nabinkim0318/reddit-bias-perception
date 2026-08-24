@@ -52,6 +52,10 @@ MODEL_ID = "meta-llama/Meta-Llama-3-8B-Instruct"
 TOPIC_OUTPUT = os.path.join(RESULTS_DIR, "bertopic_topic_info.csv")
 TOPIC_ASSIGNMENT_PATH = os.path.join(RESULTS_DIR, "bertopic_post_topics.csv")
 TOPIC_MODEL_PATH = os.path.join("models", "bertopic_model")
+TOPIC_MODEL_CONFIG_PATH = os.path.join(CONFIG_DIR, "topic_model.json")
+TOPIC_RUN_MANIFEST_PATH = os.path.join(RESULTS_DIR, "topic_run_manifest.json")
+TOPIC_STABILITY_REPORT_PATH = os.path.join(RESULTS_DIR, "topic_stability_report.json")
+STATS_OUTPUT_DIR = os.path.join(RESULTS_DIR, "emotion_statistics")
 
 # === SENTIMENT ANALYSIS ===
 SENTIMENT_OUTPUT = os.path.join(RESULTS_DIR, "sentiment_labeled.csv")

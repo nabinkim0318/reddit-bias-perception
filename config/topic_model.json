@@ -1,0 +1,27 @@
+{
+  "calculate_probabilities": true,
+  "clustering": {
+    "accepts_random_state": false,
+    "algorithm": "hdbscan",
+    "cluster_selection_method": "eom",
+    "metric": "euclidean",
+    "min_cluster_size": 10,
+    "notes": "HDBSCAN is treated as deterministic given UMAP embeddings. The supported APIs do not take random_state.",
+    "prediction_data": true
+  },
+  "embedding_model": "all-MiniLM-L6-v2",
+  "language": "english",
+  "nr_topics": "auto",
+  "nr_topics_mode": "exploratory_auto",
+  "random_seed": 42,
+  "stability_seeds": [11, 23, 37, 53, 71],
+  "umap": {
+    "metric": "cosine",
+    "min_dist": 0.0,
+    "n_components": 5,
+    "n_neighbors": 15
+  },
+  "vectorizer": {
+    "source": "utils.archive_vectorizer_config.vectorizer_model"
+  }
+}
