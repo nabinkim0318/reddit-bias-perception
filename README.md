@@ -4,6 +4,8 @@ A modular pipeline to collect, filter, and analyze Reddit posts for bias in AI-g
 
 The project supports data collection via Reddit API, text preprocessing, few-shot classification (LLM), keyword filtering, sentiment analysis, and topic modeling.
 
+**Public repository policy:** this Git tree is intended to distribute source code, configuration, schemas, documentation, and synthetic fixtures. It does **not** distribute record-level Reddit text, Reddit IDs, usernames, or permalinks. See [docs/data_statement.md](docs/data_statement.md), [docs/git_history_audit.md](docs/git_history_audit.md), and [tests/fixtures/synthetic/README.md](tests/fixtures/synthetic/README.md).
+
 ---
 
 ## Project Structure
@@ -55,22 +57,16 @@ reddit_bias_perception/
 │
 ├── tests/                        # Unit and integration tests
 │   ├── assets/                   # Test fixtures and mock templates
-│   │   └── test_prompt_template.j2
-│   ├── test_llm_few_shot.py
-│   ├── test_llm_few_shot_integration.py
-│   ├── test_sentiment_analysis.py
-│   ├── test_bertopic_model.py
+│   ├── fixtures/synthetic/       # Fully synthetic public fixtures
 │   └── ...
 │
 ├── utils/                        # Generic utility functions
 │   └── text_utils.py
 │
-├── data/                         # Local data (ignored by Git)
-│   ├── raw/                      # Raw JSON dumps from Reddit
-│   ├── processed/                # Cleaned & filtered datasets
-│   └── results/                  # Output from sentiment & topic analysis
-│       ├── sentiment_labeled_output.csv
-│       └── ...
+├── data/                         # Local research data (gitignored except README)
+│   └── README.md                 # Explains that corpora stay local
+├── docs/data_statement.md        # Public data / privacy policy
+├── docs/git_history_audit.md     # History audit (no record contents)
 │
 ├── pyproject.toml                # Poetry configuration
 └── poetry.lock                   # Poetry lockfile
@@ -139,14 +135,9 @@ HF_TOKEN=hf_your_token
 
 ## Outputs
 
-| File                     | Description                            |
-|--------------------------|----------------------------------------|
-| `reddit_raw.json`        | Raw Reddit posts/comments              |
-| `reddit_bias_data_clean.csv` | Cleaned text data                  |
-| `classified_bias.csv`    | LLM-labeled bias posts                 |
-| `filtered_ai_bias.csv`   | Keyword-filtered AI-relevant posts     |
-| `sentiment_labeled.csv`  | Sentiment analysis output              |
-| `bertopic_post_topics.csv` | BERTopic topic assignments          |
+Pipeline scripts may write record-level files under local `data/` (raw dumps, cleaned corpora, per-record labels). **Those files are local research artifacts and are gitignored.** They are not published in this repository.
+
+Public examples for tests and documentation are synthetic only (`tests/fixtures/synthetic/`). `.gitignore` is written to block accidental recommits of Reddit corpora, archives, databases, and per-record outputs; it cannot erase objects that already exist in Git history. See [docs/git_history_audit.md](docs/git_history_audit.md).
 
 ---
 
@@ -167,4 +158,4 @@ Includes:
 
 ## License
 
-MIT License. Feel free to fork and extend.
+MIT License for the software in this repository. The license does **not** grant rights to redistribute Reddit users' content. See [docs/data_statement.md](docs/data_statement.md).
