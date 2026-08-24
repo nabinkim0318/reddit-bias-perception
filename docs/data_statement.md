@@ -119,13 +119,14 @@ address.
 
 ## Historical data
 
-Older Git history of this project **did** contain record-level research
+Older Git history of this project previously contained record-level research
 artifacts (filtered corpora, raw JSON, archives, databases, and per-record
-outputs). Removing files from the current tree does not erase them from prior
-commits.
+outputs). The ordinary published Git history was subsequently rewritten and
+verified through a fresh-clone audit. Known record-level research artifacts
+are no longer reachable from the sanitized published branch history.
 
-The audit performed for this privacy remediation is documented in
-[`docs/git_history_audit.md`](git_history_audit.md). Until a follow-up history
-sanitization is completed, those historical objects remain recoverable by
-anyone with a clone of the repository (including forks and backups made from
-it).
+GitHub-hosted pull-request refs or cached historical commit/blob objects may
+persist separately from that ordinary history. Independent clones or backups
+created before the rewrite cannot be retroactively erased by rewriting this
+repository. Details and the latest residual-risk status are documented in
+[`docs/git_history_audit.md`](git_history_audit.md).
